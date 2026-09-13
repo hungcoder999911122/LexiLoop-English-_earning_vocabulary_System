@@ -1,0 +1,73 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial, sans-serif;
+}
+
+body {
+	background-image: url('../assets/images/bg_Dangky_Dangnhap.png') !important;
+	background-size: cover !important;
+	background-position: center !important;
+	background-repeat: no-repeat !important;
+	background-attachment: fixed !important;
+	display: flex !important;
+	justify-content: center !important;
+	align-items: center !important;
+	min-height: 100vh !important;
+}
+
+/* Khung chứa Form Đăng nhập */
+.box {
+	background: rgba(255, 255, 255, 0.88) !important;
+	padding: 35px 30px !important;
+	border-radius: 12px !important;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+	width: 100% !important;
+	max-width: 380px !important;
+	border: none !important;
+}
+
+	.box h2 {
+		text-align: center;
+		margin-bottom: 20px;
+		color: #1b4332;
+	}
+
+	.box input[type="email"],
+	.box input[type="password"] {
+		width: 100%;
+		padding: 10px 12px;
+		margin-top: 5px;
+		margin-bottom: 15px;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		outline: none;
+	}
+
+	.box input[type="submit"],
+	.box input[type="button"] {
+		width: 100%;
+		padding: 10px;
+		border: none;
+		border-radius: 6px;
+		font-size: 15px;
+		cursor: pointer;
+		font-weight: bold;
+		margin-top: 10px;
+	}
+
+	.box input[type="submit"] {
+		background-color: #2d6a4f;
+		color: white;
+	}
+
+	.box input[type="button"] {
+		background-color: #e0e0e0;
+		color: #333;
+	}
+
+.footer-action {
+	text-align: center;
+	margin-top: 15px;
+}

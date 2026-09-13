@@ -1,0 +1,545 @@
+/* .header.section{
+	background-color:white;
+	word-spacing:0px;
+	
+} */
+
+/* Định dạng tất cả header */
+
+/* header {
+    background-color: var(--color-white);
+} */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Tông màu chung áp dụng cho các file css */
+
+/* =========================================
+   FRESH LEARNING PALETTE
+   ========================================= */
+:root {
+    /* Màu thương hiệu */
+    --color-primary: #0e7748;
+    --color-primary-dark: #0f7e34;
+    --color-primary-light: #cdf2dd;
+
+    /* Màu tương tác chính */
+    --color-accent: #2563eb;
+    --color-accent-dark: #1d4ed8;
+    --color-accent-light: #eff6ff;
+
+    /* Màu nhấn cho thành tích và ôn tập */
+    --color-warning: #b45309;
+    --color-warning-light: #fff7ed;
+
+    /* Trạng thái */
+    --color-success: #15803d;
+    --color-danger: #c2413b;
+    --color-danger-light: #fef2f2;
+
+    /* Nền, card và viền */
+    --color-background: #f6fbf8;
+    --color-surface: #ffffff;
+    --color-white: #ffffff;
+    --color-border: #d7e8df;
+
+    /* Văn bản */
+    --color-text: #17342a;
+    --color-text-muted: #5d7268;
+
+    /* Layout */
+    --sidebar-width: 245px;
+    --sidebar-width-collapsed: 76px;
+}
+
+/* ========================================
+   THẺ TIÊU ĐỀ (h1 - h4)
+   ======================================== */
+
+h1 {
+    font-family: Arial, sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-text);
+}
+
+h2 {
+    font-family: Arial, sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+h3 {
+    font-family: Arial, sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+h4 {
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+/* ========================================
+   THẺ VĂN BẢN CƠ BẢN
+   ======================================== */
+
+p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}
+
+a {
+    text-decoration: none;
+    color: var(--color-primary);
+}
+
+/* ========================================
+   BODY
+   ======================================== */
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ========================================
+   NÚT BẤM
+   ======================================== */
+
+button {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* =========================================
+   SIDEBAR DÙNG CHUNG
+   ========================================= */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: var(--sidebar-width);
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 26px 16px;
+
+    background-color: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+
+    z-index: 1000;
+}
+
+/* Logo LexiLoop */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 0 0 32px 10px;
+
+    color: var(--color-primary-dark);
+    text-decoration: none;
+
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+
+    transition: color 0.2s ease;
+}
+
+.sidebar-logo:hover {
+    color: var(--color-primary);
+}
+
+.logo-badge {
+    font-size: 22px;
+}
+
+/* Nhóm menu chính */
+.sidebar-nav {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+
+    width: 100%;
+}
+
+/* Một nút menu */
+.sidebar-link {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+
+    border-radius: 12px;
+
+    color: var(--color-text-muted);
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+/*
+    Icon có kích thước cố định.
+    Nhờ vậy, tên menu dài/ngắn không làm icon bị lệch.
+*/
+.sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+
+    flex: 0 0 22px;
+}
+
+/* Hover: nhẹ, gọn và không quá nổi bật */
+.sidebar-link:hover {
+    background-color: var(--color-background);
+    color: var(--color-primary);
+
+    transform: translateX(3px);
+}
+
+/* Menu của trang đang mở */
+.sidebar-link.active {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+
+    font-weight: 700;
+}
+
+/* Vạch xanh ở cạnh trái giúp nhận diện menu active */
+.sidebar-link.active::before {
+    content: "";
+
+    position: absolute;
+    top: 20%;
+    bottom: 20%;
+    left: 0;
+
+    width: 4px;
+
+    background-color: var(--color-primary);
+    border-radius: 0 4px 4px 0;
+}
+
+/* Nhóm nút đặt sát đáy sidebar, ví dụ: Đăng xuất */
+.sidebar-bottom {
+
+    width: 100%;
+    /* Dự phòng trường hợp flex: 1 bị lỗi trên trình duyệt cũ */
+    margin-top: auto; 
+
+    margin-top: auto;
+    padding-top: 15px;
+
+    border-top: 1px solid var(--color-border);
+}
+
+/* Đăng xuất có màu cảnh báo khi hover */
+.sidebar-logout:hover {
+    background-color: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+/* Hỗ trợ điều hướng bằng phím Tab */
+.sidebar-logo:focus-visible,
+.sidebar-link:focus-visible {
+    outline: 3px solid var(--color-accent-light);
+    outline-offset: 2px;
+}
+
+/* =========================================
+   VÙNG NỘI DUNG BÊN PHẢI SIDEBAR
+   ========================================= */
+
+.page-content {
+    min-height: 100vh;
+    margin-left: var(--sidebar-width);
+}
+
+/* =========================================
+   SIDEBAR THU GỌN TRÊN MÀN HÌNH NHỎ
+   ========================================= */
+
+@media (max-width: 860px) {
+    .sidebar {
+        width: var(--sidebar-width-collapsed);
+        padding: 20px 10px;
+    }
+
+    .sidebar-logo {
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    /*
+        Ẩn chữ, chỉ giữ emoji logo và icon.
+        span cuối của sidebar-link là nhãn menu.
+    */
+    .sidebar-logo span:last-child,
+    .sidebar-link > span:last-child {
+        display: none;
+    }
+
+    .sidebar-link {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .sidebar-bottom {
+        padding-top: 12px;
+    }
+
+    .page-content {
+        margin-left: var(--sidebar-width-collapsed);
+    }
+}
+/* =========================================================
+   GUEST PREVIEW - LỜI MỜI ĐĂNG NHẬP
+   Chỉ hiển thị khi người dùng chưa đăng nhập.
+   ========================================================= */
+
+.guest-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    /* Cùng phong cách card với biểu đồ và bảng lịch sử */
+    margin-bottom: 28px;
+    padding: 28px 30px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+
+    max-width: 1200px;
+    margin: 20px auto 24px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--color-white) 0%,
+            var(--color-primary-light) 100%
+        );
+
+    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.06);
+}
+
+/* Vòng tròn chứa icon minh họa */
+.guest-preview-card__icon {
+    display: flex;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: center;
+
+    width: 64px;
+    height: 64px;
+
+    border: 1px solid var(--color-primary);
+    border-radius: 50%;
+
+    background-color: var(--color-white);
+
+    font-size: 30px;
+}
+
+/* Cho phần nội dung chiếm vùng còn lại */
+.guest-preview-card__content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Tiêu đề */
+.guest-preview-card__content h2 {
+    margin: 0 0 8px;
+
+    color: var(--color-text);
+
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* Mô tả ngắn */
+.guest-preview-card__content p {
+    margin: 0;
+
+    color: var(--color-text-muted);
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Khung chứa các lợi ích đăng nhập */
+.guest-preview-card__benefits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    margin: 16px 0 20px;
+    padding: 0;
+
+    list-style: none;
+}
+
+/* Mỗi lợi ích là một khối nhỏ, không dồn thành đoạn văn */
+.guest-preview-card__benefits li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 8px 10px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+
+    background-color: var(--color-white);
+
+    color: var(--color-text);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Dấu tích đứng trước từng lợi ích */
+.guest-preview-card__benefits li::before {
+    content: "✓";
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    background-color: var(--color-primary);
+    color: var(--color-white);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Nút đăng nhập */
+.guest-preview-card__login {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+    padding: 0 18px;
+
+    border-radius: 10px;
+
+    background-color: var(--color-primary);
+    color: var(--color-white);
+
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+/* Trạng thái khi rê chuột vào nút */
+.guest-preview-card__login:hover {
+    background-color: var(--color-primary-dark);
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 6px 12px rgba(31, 45, 36, 0.18);
+}
+
+/* Hỗ trợ người dùng điều hướng bằng bàn phím */
+.guest-preview-card__login:focus-visible {
+    outline: 3px solid var(--color-primary-light);
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   RESPONSIVE - MÀN HÌNH ĐIỆN THOẠI
+   ========================================================= */
+
+@media (max-width: 640px) {
+    .guest-preview-card {
+        flex-direction: column;
+        align-items: flex-start;
+
+        padding: 22px 20px;
+    }
+
+    .guest-preview-card__icon {
+        flex-basis: 52px;
+
+        width: 52px;
+        height: 52px;
+
+        font-size: 24px;
+    }
+
+    .guest-preview-card__content h2 {
+        font-size: 18px;
+    }
+
+    .guest-preview-card__benefits {
+        flex-direction: column;
+        align-items: stretch;
+
+        width: 100%;
+    }
+
+    .guest-preview-card__benefits li {
+        width: 100%;
+    }
+
+    .guest-preview-card__login {
+        width: 100%;
+    }
+}

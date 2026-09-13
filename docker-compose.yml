@@ -1,0 +1,43 @@
+services:
+  # Server chạy PHP + Apache
+  web:
+    build: .
+    container_name: web_app_1
+    ports:
+      - "8082:80"
+    # Thay đổi dường dẫn cho phù hợp với dự án
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+
+  # Database MySQL
+  db:
+    image: mysql:8.0
+    container_name: web_db_1
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: db_LexiLoop
+      MYSQL_USER: webuser
+      MYSQL_PASSWORD: webpass123
+    ports:
+      - "3309:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./data/db_LexiLoop.sql:/docker-entrypoint-initdb.d/init.sql
+  # phpMyAdmin - giao diện quản lý MySQL qua web (không bắt buộc, nhưng rất tiện)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: web_phpmyadmin_1
+    restart: always
+    ports:
+      - "8083:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root123
+    depends_on:
+      - db
+
+volumes:
+  db_data:

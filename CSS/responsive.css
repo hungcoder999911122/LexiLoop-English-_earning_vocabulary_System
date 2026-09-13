@@ -1,0 +1,1116 @@
+/*
+=========================================================
+LEXILOOP - RESPONSIVE CSS DÙNG CHUNG
+=========================================================
+
+Mục đích:
+- Dùng chung cho các trang HTML của LexiLoop.
+- Không dùng Bootstrap/framework.
+- Chỉ xử lý responsive và các lỗi bố cục khi màn hình thu hẹp.
+- CSS riêng của từng trang vẫn chịu trách nhiệm cho giao diện riêng.
+
+Thứ tự nhúng CSS khuyến nghị:
+
+<link rel="stylesheet" href="../../CSS/Style.css">
+<link rel="stylesheet" href="../../CSS/[TenTrang].css">
+<link rel="stylesheet" href="../../CSS/responsive.css">
+
+responsive.css nên được đặt CUỐI để các quy tắc responsive có độ ưu tiên
+cao hơn CSS nền của từng trang.
+
+Các mốc:
+- Desktop lớn : > 1199px
+- Desktop nhỏ / Tablet lớn : 992px - 1199px
+- Tablet      : 768px - 991px
+- Mobile      : <= 767px
+- Mobile nhỏ  : <= 480px
+=========================================================
+*/
+
+
+/* =====================================================
+   0. QUY TẮC AN TOÀN CHUNG
+   ===================================================== */
+
+/* Tránh padding + width làm phần tử vượt khỏi màn hình */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Media không được tràn khỏi phần tử cha */
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Các phần tử Flex/Grid được phép co lại */
+.flex-item,
+.main-content,
+.page-content,
+.content-area,
+[class*="_NoiDung"],
+[class*="_Panel"] {
+    min-width: 0;
+}
+
+/* Nội dung dài không phá vỡ chiều ngang trang */
+p,
+h1,
+h2,
+h3,
+h4,
+a,
+button,
+label,
+td,
+th {
+    overflow-wrap: anywhere;
+}
+
+
+/* =====================================================
+   1. DESKTOP NHỎ / TABLET LỚN
+   992px -> 1199px
+   ===================================================== */
+
+@media (max-width: 1199px) {
+
+    /* ---------- HOMEPAGE ---------- */
+
+    .hero,
+    .how-it-works,
+    .features,
+    .cta-section,
+    .footer-container {
+        padding-left: 32px;
+        padding-right: 32px;
+    }
+
+    .hero-content {
+        gap: 32px;
+    }
+
+    .hero h1 {
+        font-size: 38px;
+    }
+
+    .features-list {
+        gap: 18px;
+    }
+
+
+    /* ---------- TRANG DANH SÁCH CHỦ ĐỀ ---------- */
+
+    .topic-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+
+    /* ---------- TRANG DANH SÁCH TỪ VỰNG ---------- */
+
+    .main-content,
+    .content-area {
+        min-width: 0;
+    }
+
+    .vocab-table {
+        min-width: 700px;
+    }
+
+
+    /* ---------- ADMIN ---------- */
+
+    .D_Dashboard_admin_NoiDung,
+    .D_Caidathethong_NoiDung,
+    .D_Quanlychude_NoiDung,
+    .D_Quanlynguoidung_NoiDung,
+    .D_Quanlytuvung_NoiDung,
+    .D_Thongkehethong_NoiDung {
+        padding-left: 28px;
+        padding-right: 28px;
+        min-width: 0;
+    }
+
+    .D_Dashboard_admin_HangTheSo,
+    .D_Thongkehethong_HangTheSo,
+    .D_Thongkehethong_HangBieuDo,
+    .D_Caidathethong_HangPanel {
+        gap: 16px;
+    }
+}
+
+
+/* =====================================================
+   2. TABLET
+   768px -> 991px
+   ===================================================== */
+
+@media (max-width: 991px) {
+
+    /* =================================================
+       2.1. USER PAGES - SIDEBAR 220/260px
+       ================================================= */
+
+    /*
+       Không nên giữ sidebar fixed 220/260px trên tablet.
+       Chuyển sang sidebar nằm trên cùng để nội dung có toàn bộ
+       chiều ngang còn lại.
+    */
+
+    .layout-wrapper {
+        display: block;
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+        height: auto;
+
+        padding: 16px 20px;
+
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+
+        flex-direction: column;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .sidebar-link {
+        flex: 0 1 auto;
+    }
+
+    .sidebar-bottom {
+        margin-top: 12px;
+    }
+
+    .page-content {
+        margin-left: 0;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .main-content {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    /* ---------- TOP HEADER USER ---------- */
+
+    .top-header {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .top-header-act {
+        gap: 8px;
+    }
+
+
+    /* ---------- TOPIC LIST ---------- */
+
+    .topic-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .topics-header-content {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .topic-section {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+
+    /* ---------- HOMEPAGE ---------- */
+
+    header {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .main-nav {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .nav-list {
+        gap: 16px;
+    }
+
+    .nav-auth {
+        gap: 8px;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 36px;
+        padding-top: 120px;
+        padding-bottom: 60px;
+    }
+
+    .hero-content {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .hero-visual {
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .how-it-works-content {
+        grid-template-columns: 1fr;
+    }
+
+    .features-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cta-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 20px;
+    }
+
+
+    /* ---------- FLASHCARD / QUIZ ---------- */
+
+    .B_Flashcarddemo_Header,
+    .B_Quizdemo_Header,
+    .B_LexiLoopinfo_Header {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .B_Flashcarddemo_Main,
+    .B_Quizdemo_Main,
+    .B_LexiLoopinfo_Main {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+
+    /* =================================================
+       2.2. ADMIN PAGES
+       ================================================= */
+
+    .D_Dashboard_admin_Body,
+    .D_Caidathethong_Body,
+    .D_Quanlychude_Body,
+    .D_Quanlynguoidung_Body,
+    .D_Quanlytuvung_Body,
+    .D_Thongkehethong_Body {
+        display: block;
+    }
+
+    .D_Dashboard_admin_Sidebar,
+    .D_Caidathethong_Sidebar,
+    .D_Quanlychude_Sidebar,
+    .D_Quanlynguoidung_Sidebar,
+    .D_Quanlytuvung_Sidebar,
+    .D_Thongkehethong_Sidebar {
+        width: 100%;
+        min-height: auto;
+
+        padding: 10px 0;
+
+        border-right: none;
+        border-bottom: 1px solid #000000;
+
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .D_Dashboard_admin_MucMenu,
+    .D_Caidathethong_MucMenu,
+    .D_Quanlychude_MucMenu,
+    .D_Quanlynguoidung_MucMenu,
+    .D_Quanlytuvung_MucMenu,
+    .D_Thongkehethong_MucMenu {
+        padding: 10px 16px;
+    }
+
+    .D_Dashboard_admin_GachNgang,
+    .D_Caidathethong_GachNgang,
+    .D_Quanlychude_GachNgang,
+    .D_Quanlynguoidung_GachNgang,
+    .D_Quanlytuvung_GachNgang,
+    .D_Thongkehethong_GachNgang {
+        display: none;
+    }
+
+    .D_Dashboard_admin_NoiDung,
+    .D_Caidathethong_NoiDung,
+    .D_Quanlychude_NoiDung,
+    .D_Quanlynguoidung_NoiDung,
+    .D_Quanlytuvung_NoiDung,
+    .D_Thongkehethong_NoiDung {
+        width: 100%;
+        padding: 24px;
+    }
+
+    .D_Dashboard_admin_HangTheSo,
+    .D_Thongkehethong_HangTheSo {
+        flex-wrap: wrap;
+    }
+
+    .D_Dashboard_admin_TheSo,
+    .D_Thongkehethong_TheSo {
+        min-width: calc(50% - 8px);
+    }
+
+    .D_Thongkehethong_HangBieuDo,
+    .D_Caidathethong_HangPanel {
+        flex-wrap: wrap;
+    }
+
+    .D_Thongkehethong_HopBieuDo,
+    .D_Caidathethong_Panel {
+        min-width: calc(50% - 8px);
+    }
+
+    .D_Quanlychude_HangTieuDe,
+    .D_Quanlynguoidung_HangTieuDe,
+    .D_Quanlytuvung_HangTieuDe,
+    .D_Thongkehethong_HangTieuDe {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .D_Quanlynguoidung_OTimKiem {
+        width: min(320px, 100%);
+    }
+
+    /* Cho bảng có thể cuộn ngang thay vì làm vỡ toàn trang */
+    .D_Quanlychude_Bang,
+    .D_Quanlynguoidung_Bang,
+    .D_Quanlytuvung_Bang {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* Modal không vượt khỏi màn hình tablet */
+    .D_Quanlychude_HopModal,
+    .D_Quanlytuvung_HopModal {
+        width: min(420px, calc(100% - 40px));
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+    .D_Quanlynguoidung_HopModal {
+        width: min(420px, calc(100% - 40px));
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+
+    /* ---------- ACCOUNT SETTING ---------- */
+
+    .wrapper {
+        width: calc(100% - 32px);
+    }
+
+    .top-row {
+        grid-template-columns: 1fr;
+    }
+
+    .flex-row {
+        flex-wrap: wrap;
+    }
+
+    .flex-row .form-group {
+        width: calc(50% - 10px);
+        min-width: 220px;
+    }
+}
+
+
+/* =====================================================
+   3. MOBILE
+   <= 767px
+   ===================================================== */
+
+@media (max-width: 767px) {
+
+    /* =================================================
+       3.1. QUY TẮC CHUNG
+       ================================================= */
+
+    html {
+        overflow-x: hidden;
+    }
+
+    body {
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+    }
+
+    /* Tiêu đề chung giảm kích thước */
+    h1 {
+        font-size: 32px;
+    }
+
+    h2 {
+        font-size: 26px;
+    }
+
+    h3 {
+        font-size: 21px;
+    }
+
+    h4 {
+        font-size: 18px;
+    }
+
+    p {
+        font-size: 15px;
+    }
+
+
+    /* =================================================
+       3.2. SIDEBAR USER
+       ================================================= */
+
+    .sidebar {
+        padding: 14px 16px;
+    }
+
+    .sidebar-logo {
+        margin-bottom: 10px;
+    }
+
+    /*
+       Trên mobile menu không chiếm quá nhiều chiều cao.
+       Nếu JS sau này có menu hamburger, có thể đổi display
+       của .sidebar-nav bằng class mở/đóng.
+    */
+    .sidebar-nav {
+        display: none;
+    }
+
+    .sidebar-bottom {
+        margin-top: 0;
+    }
+
+    .page-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+
+    /* =================================================
+       3.3. TOP HEADER USER
+       ================================================= */
+
+    .top-header {
+        min-height: auto;
+        padding: 12px 16px;
+
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .top-header-act {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .top-header-btn {
+        max-width: 100%;
+    }
+
+
+    /* =================================================
+       3.4. TOPIC LIST
+       ================================================= */
+
+    .topics-header {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .topics-header-content {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .topics-header h1 {
+        font-size: 30px;
+    }
+
+    .topic-section {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .topics-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .topics-search {
+        width: 100%;
+        max-width: none;
+    }
+
+    .topic-filter {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .topic-filter select {
+        width: 100%;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .topic-list {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .topic-card {
+        min-width: 0;
+    }
+
+
+    /* =================================================
+       3.5. VOCABULARY LIST
+       ================================================= */
+
+    .content-area {
+        padding-left: 16px;
+        padding-right: 16px;
+        min-width: 0;
+    }
+
+    .topic-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    /*
+       Bảng từ vựng có nhiều cột.
+       Không ép các cột co đến mức chữ bị nát.
+       Cho phép cuộn ngang trong chính bảng.
+    */
+    .vocab-table {
+        width: 100%;
+        min-width: 680px;
+    }
+
+    .vocab-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    /* =================================================
+       3.6. HOMEPAGE
+       ================================================= */
+
+    header {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .main-nav {
+        min-height: auto;
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+
+    /*
+       Menu desktop có thể quá rộng trên mobile.
+       Ẩn nav-list để tránh header vỡ.
+       Khi anh làm hamburger bằng JS, có thể thay phần này
+       bằng class .nav-list.is-open.
+    */
+    .nav-list {
+        display: none;
+    }
+
+    .nav-auth {
+        margin-left: auto;
+    }
+
+    .nav-auth a {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .hero {
+        width: 100%;
+        padding: 108px 16px 48px;
+        gap: 28px;
+    }
+
+    .hero-content {
+        width: 100%;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+        line-height: 1.2;
+    }
+
+    .hero-description {
+        font-size: 15px;
+    }
+
+    .hero-visual {
+        width: 100%;
+    }
+
+    .hero-image {
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    .how-it-works,
+    .features,
+    .cta-section {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .how-it-works-content {
+        gap: 16px;
+    }
+
+    .features-list {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .feature-card {
+        min-width: 0;
+    }
+
+    .cta-section {
+        padding-top: 40px;
+        padding-bottom: 40px;
+    }
+
+    .footer-container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .footer-nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+
+    /* =================================================
+       3.7. FLASHCARD / QUIZ / INFO
+       ================================================= */
+
+    .B_Flashcarddemo_Header,
+    .B_Quizdemo_Header,
+    .B_LexiLoopinfo_Header {
+        padding: 14px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .B_Flashcarddemo_Main,
+    .B_Quizdemo_Main,
+    .B_LexiLoopinfo_Main {
+        width: 100%;
+        padding: 20px 16px;
+    }
+
+    /*
+       Các demo hiện đang dùng grid 2 cột.
+       Mobile chuyển về 1 cột.
+    */
+    .B_Quizdemo_Container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .B_Quizdemo_Question {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* =================================================
+       3.8. AUTH - ĐĂNG NHẬP / ĐĂNG KÝ
+       ================================================= */
+
+    .box {
+        width: calc(100% - 32px);
+        max-width: 420px;
+        padding: 16px;
+    }
+
+    /*
+       Các form input/select/button nên chiếm toàn bộ chiều rộng
+       trên mobile nếu HTML dùng các phần tử này trong .box.
+    */
+    .box input,
+    .box select,
+    .box textarea,
+    .box button {
+        max-width: 100%;
+    }
+
+    fieldset {
+        width: 100%;
+    }
+
+
+    /* ---------- QUÊN / ĐẶT LẠI MẬT KHẨU ---------- */
+
+    .A_QuenMatKhau_header,
+    .A_DatLaiMatKhau_header {
+        padding: 14px 16px;
+    }
+
+    .A_QuenMatKhau_logo,
+    .A_DatLaiMatKhau_logo {
+        font-size: 22px;
+    }
+
+    .A_QuenMatKhau_main,
+    .A_DatLaiMatKhau_main {
+        min-height: auto;
+        padding: 24px 16px;
+    }
+
+    .A_QuenMatKhau_boxContainer,
+    .A_DatLaiMatKhau_boxContainer {
+        width: 100%;
+        max-width: 420px;
+        padding: 26px 20px;
+    }
+
+
+    /* =================================================
+       3.9. ADMIN MOBILE
+       ================================================= */
+
+    .D_Dashboard_admin_Topbar,
+    .D_Caidathethong_Topbar,
+    .D_Quanlychude_Topbar,
+    .D_Quanlynguoidung_Topbar,
+    .D_Quanlytuvung_Topbar,
+    .D_Thongkehethong_Topbar {
+        padding: 12px 16px;
+
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .D_Dashboard_admin_Logo,
+    .D_Caidathethong_Logo,
+    .D_Quanlychude_Logo,
+    .D_Quanlynguoidung_Logo,
+    .D_Quanlytuvung_Logo,
+    .D_Thongkehethong_Logo {
+        font-size: 18px;
+    }
+
+    .D_Dashboard_admin_TopbarPhai,
+    .D_Caidathethong_TopbarPhai,
+    .D_Quanlychude_TopbarPhai,
+    .D_Quanlynguoidung_TopbarPhai,
+    .D_Quanlytuvung_TopbarPhai,
+    .D_Thongkehethong_TopbarPhai {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .D_Dashboard_admin_TimKiem,
+    .D_Caidathethong_TimKiem,
+    .D_Quanlychude_TimKiem,
+    .D_Quanlynguoidung_TimKiem,
+    .D_Quanlytuvung_TimKiem,
+    .D_Thongkehethong_TimKiem {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .D_Dashboard_admin_Sidebar,
+    .D_Caidathethong_Sidebar,
+    .D_Quanlychude_Sidebar,
+    .D_Quanlynguoidung_Sidebar,
+    .D_Quanlytuvung_Sidebar,
+    .D_Thongkehethong_Sidebar {
+        display: flex;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .D_Dashboard_admin_MucMenu,
+    .D_Caidathethong_MucMenu,
+    .D_Quanlychude_MucMenu,
+    .D_Quanlynguoidung_MucMenu,
+    .D_Quanlytuvung_MucMenu,
+    .D_Thongkehethong_MucMenu {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 10px 14px;
+    }
+
+    .D_Dashboard_admin_NoiDung,
+    .D_Caidathethong_NoiDung,
+    .D_Quanlychude_NoiDung,
+    .D_Quanlynguoidung_NoiDung,
+    .D_Quanlytuvung_NoiDung,
+    .D_Thongkehethong_NoiDung {
+        padding: 20px 16px;
+        width: 100%;
+    }
+
+    .D_Dashboard_admin_TieuDe,
+    .D_Caidathethong_TieuDe,
+    .D_Quanlychude_TieuDe,
+    .D_Quanlynguoidung_TieuDe,
+    .D_Quanlytuvung_TieuDe,
+    .D_Thongkehethong_TieuDe {
+        font-size: 22px;
+    }
+
+    .D_Dashboard_admin_HangTheSo,
+    .D_Thongkehethong_HangTheSo,
+    .D_Thongkehethong_HangBieuDo,
+    .D_Caidathethong_HangPanel,
+    .D_Caidathethong_HangHai {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .D_Dashboard_admin_TheSo,
+    .D_Thongkehethong_TheSo,
+    .D_Thongkehethong_HopBieuDo,
+    .D_Caidathethong_Panel {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .D_Dashboard_admin_DongHoatDong {
+        gap: 12px;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .D_Quanlychude_HangTieuDe,
+    .D_Quanlynguoidung_HangTieuDe,
+    .D_Quanlytuvung_HangTieuDe,
+    .D_Thongkehethong_HangTieuDe {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .D_Quanlynguoidung_OTimKiem {
+        width: 100%;
+    }
+
+    .D_Quanlynguoidung_HangLoc,
+    .D_Quanlytuvung_HangNutPhai {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /*
+       Bảng quản trị: giữ nguyên cấu trúc bảng và cho cuộn ngang.
+       Đây là cách an toàn nhất vì dữ liệu có nhiều cột.
+    */
+    .D_Quanlychude_Bang,
+    .D_Quanlynguoidung_Bang,
+    .D_Quanlytuvung_Bang {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .D_Quanlychude_Bang th,
+    .D_Quanlychude_Bang td,
+    .D_Quanlynguoidung_Bang th,
+    .D_Quanlynguoidung_Bang td,
+    .D_Quanlytuvung_Bang th,
+    .D_Quanlytuvung_Bang td {
+        padding: 10px 12px;
+    }
+
+    .D_Quanlychude_HopModal,
+    .D_Quanlytuvung_HopModal {
+        width: calc(100% - 32px);
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+
+    /* =================================================
+       3.10. ACCOUNT SETTING
+       ================================================= */
+
+    .wrapper {
+        width: calc(100% - 24px);
+        padding: 16px;
+    }
+
+    .top-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .flex-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .flex-row .form-group {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .D_Caidathethong_HangLogo {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+
+/* =====================================================
+   4. MOBILE RẤT NHỎ
+   <= 480px
+   ===================================================== */
+
+@media (max-width: 480px) {
+
+    /* ---------- TEXT ---------- */
+
+    h1 {
+        font-size: 28px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+
+    h3 {
+        font-size: 20px;
+    }
+
+
+    /* ---------- BUTTON ---------- */
+
+    button {
+        max-width: 100%;
+    }
+
+
+    /* ---------- HOMEPAGE ---------- */
+
+    .hero {
+        padding-top: 100px;
+    }
+
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .hero-cta,
+    .cta-button {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .nav-auth a {
+        font-size: 13px;
+        padding: 7px 10px;
+    }
+
+
+    /* ---------- TOPIC ---------- */
+
+    .topics-header h1 {
+        font-size: 27px;
+    }
+
+    .topic-filter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+
+    /* ---------- AUTH ---------- */
+
+    .box {
+        width: calc(100% - 20px);
+        padding: 14px;
+    }
+
+    .A_QuenMatKhau_main,
+    .A_DatLaiMatKhau_main {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .A_QuenMatKhau_boxContainer,
+    .A_DatLaiMatKhau_boxContainer {
+        padding: 22px 16px;
+    }
+
+
+    /* ---------- ADMIN ---------- */
+
+    .D_Dashboard_admin_NoiDung,
+    .D_Caidathethong_NoiDung,
+    .D_Quanlychude_NoiDung,
+    .D_Quanlynguoidung_NoiDung,
+    .D_Quanlytuvung_NoiDung,
+    .D_Thongkehethong_NoiDung {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .D_Dashboard_admin_Topbar,
+    .D_Caidathethong_Topbar,
+    .D_Quanlychude_Topbar,
+    .D_Quanlynguoidung_Topbar,
+    .D_Quanlytuvung_Topbar,
+    .D_Thongkehethong_Topbar {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}

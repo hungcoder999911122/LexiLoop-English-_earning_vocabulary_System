@@ -1,0 +1,185 @@
+/* =========================================================
+   MODAL YÊU CẦU ĐĂNG NHẬP
+   File này dùng chung với: JS/auth-required.js
+   ========================================================= */
+
+/* Thẻ <dialog> là hộp modal chính do JavaScript tạo ra */
+.auth-required-modal {
+    /* Không dùng viền mặc định của trình duyệt */
+    border: none;
+
+    /* Bo góc để modal mềm mại hơn */
+    border-radius: 16px;
+
+    /* Giới hạn chiều rộng trên màn hình lớn,
+       đồng thời không tràn ở màn hình nhỏ */
+    width: min(420px, calc(100vw - 32px));
+
+    /* Loại bỏ khoảng cách mặc định của dialog */
+    padding: 0;
+
+    /* Đổ bóng giúp modal nổi bật trên nền trang */
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+/* Lớp nền mờ phía sau modal */
+.auth-required-modal::backdrop {
+    background: rgba(15, 23, 42, 0.55);
+}
+
+/* Khu vực nội dung bên trong modal */
+.auth-required-modal__content {
+    /* Để nút đóng có thể đặt ở góc trên bên phải */
+    position: relative;
+
+    padding: 32px;
+
+    text-align: center;
+
+    background: #ffffff;
+}
+
+/* Icon khóa */
+.auth-required-modal__icon {
+    display: inline-grid;
+
+    /* Căn icon vào chính giữa hình tròn */
+    place-items: center;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 50%;
+
+    /* Màu nền xanh nhạt theo tinh thần LexiLoop */
+    background: #e8f7ef;
+
+    font-size: 26px;
+}
+
+/* Tiêu đề thông báo */
+.auth-required-modal__title {
+    margin: 18px 0 10px;
+
+    color: #1f2937;
+
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+/* Phần mô tả quyền lợi đăng nhập */
+.auth-required-modal__description {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Nút X ở góc trên bên phải */
+.auth-required-modal__close {
+    position: absolute;
+
+    top: 12px;
+    right: 14px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #64748b;
+
+    font-size: 28px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+/* Đổi màu khi người dùng rê chuột vào nút đóng */
+.auth-required-modal__close:hover {
+    color: #1f2937;
+}
+
+/* Khu vực chứa hai nút hành động */
+.auth-required-modal__actions {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    margin-top: 26px;
+}
+
+/* Style chung cho nút “Để sau” và link “Đăng nhập” */
+.auth-required-modal__cancel,
+.auth-required-modal__login {
+    border-radius: 8px;
+
+    padding: 11px 18px;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+/* Nút phụ: chỉ đóng modal */
+.auth-required-modal__cancel {
+    border: 1px solid #cbd5e1;
+
+    background: #ffffff;
+
+    color: #475569;
+}
+
+/* Hiệu ứng hover nút phụ */
+.auth-required-modal__cancel:hover {
+    background: #f8fafc;
+}
+
+/* Nút chính: dẫn đến đăng nhập */
+.auth-required-modal__login {
+    border: 1px solid #228b5d;
+
+    background: #228b5d;
+
+    color: #ffffff;
+}
+
+/* Hiệu ứng hover nút đăng nhập */
+.auth-required-modal__login:hover {
+    border-color: #176b46;
+
+    background: #176b46;
+}
+
+/* Khi dùng bàn phím Tab, người dùng vẫn nhìn thấy phần tử đang được chọn */
+.auth-required-modal__close:focus-visible,
+.auth-required-modal__cancel:focus-visible,
+.auth-required-modal__login:focus-visible {
+    outline: 3px solid rgba(34, 139, 93, 0.35);
+
+    outline-offset: 3px;
+}
+
+/* Responsive cho điện thoại */
+@media (max-width: 480px) {
+    .auth-required-modal__content {
+        padding: 28px 20px;
+    }
+
+    .auth-required-modal__actions {
+        flex-direction: column-reverse;
+    }
+
+    .auth-required-modal__cancel,
+    .auth-required-modal__login {
+        width: 100%;
+    }
+}

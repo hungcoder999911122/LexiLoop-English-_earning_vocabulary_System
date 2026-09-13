@@ -1,0 +1,623 @@
+/* LexiLoop - Dashboard người dùng */
+.C_Dashboard_user_body {
+  --db-text: #17221b;
+  --db-muted: #69756d;
+  --db-border: #e1e9e3;
+  --db-green: #2f9e62;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--db-text);
+  background: #f5f8f6;
+}
+
+.C_Dashboard_user_body *,
+.C_Dashboard_user_body *::before,
+.C_Dashboard_user_body *::after {
+  box-sizing: border-box;
+}
+
+/* Header dùng chung nằm ngoài vùng nội dung, vì vậy cần chừa sidebar cố định. */
+.C_Dashboard_user_body > .top-header {
+  width: calc(100% - 245px);
+  margin-left: 245px;
+  box-sizing: border-box;
+}
+
+.C_Dashboard_user_mainContent {
+  width: calc(100% - 245px);
+  min-height: calc(100vh - 76px);
+  margin-left: 245px;
+  padding: 28px clamp(24px, 3vw, 48px) 48px;
+}
+
+.C_Dashboard_user_overview {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.15fr) minmax(340px, 1.2fr) minmax(220px, .72fr);
+  gap: 18px;
+}
+
+.C_Dashboard_user_welcomeCard,
+.C_Dashboard_user_statsCard,
+.C_Dashboard_user_streakCard,
+.C_Dashboard_user_panel {
+  border: 1px solid var(--db-border);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(32, 65, 45, .05);
+}
+
+.C_Dashboard_user_welcomeCard {
+  position: relative;
+  min-height: 238px;
+  overflow: hidden;
+  padding: 30px;
+  color: #fff;
+  background: radial-gradient(circle at 88% 15%, rgba(255,255,255,.18) 0 74px, transparent 75px), linear-gradient(135deg, #246e4a, #3aa86b);
+}
+
+.C_Dashboard_user_welcomeCard h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  margin: 12px 0 9px;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.25;
+}
+
+.C_Dashboard_user_welcomeCard p {
+  position: relative;
+  z-index: 1;
+  max-width: 390px;
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, .85);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.C_Dashboard_user_eyebrow {
+  display: block;
+  color: #7a867e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.C_Dashboard_user_welcomeCard .C_Dashboard_user_eyebrow {
+  position: relative;
+  z-index: 1;
+  color: #ccebd9;
+}
+
+.C_Dashboard_user_primaryButton {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 11px;
+  color: #216d47;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.C_Dashboard_user_primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(13, 56, 34, .18);
+}
+
+.C_Dashboard_user_decorWord {
+  position: absolute;
+  right: 24px;
+  bottom: -28px;
+  color: rgba(255, 255, 255, .09);
+  font-family: Georgia, serif;
+  font-size: 128px;
+  font-weight: 700;
+  line-height: 1;
+  transform: rotate(-8deg);
+}
+
+.C_Dashboard_user_statsCard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: var(--db-border);
+}
+
+.C_Dashboard_user_statItem {
+  position: relative;
+  display: flex;
+  min-height: 118px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 22px;
+  background: #fff;
+}
+
+.C_Dashboard_user_statItem strong {
+  margin-bottom: 5px;
+  color: var(--stat-color);
+  font-size: 27px;
+  line-height: 1;
+}
+
+.C_Dashboard_user_statItem > span:last-of-type {
+  color: var(--db-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.C_Dashboard_user_statItem small {
+  margin-top: 5px;
+  color: var(--db-muted);
+  font-size: 10px;
+}
+
+.C_Dashboard_user_statProgress {
+  width: 100%;
+  height: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #ede8f5;
+}
+
+.C_Dashboard_user_statProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--stat-color);
+}
+
+.C_Dashboard_user_statIcon {
+  position: absolute;
+  top: 16px;
+  right: 17px;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--stat-color);
+  background: var(--stat-bg);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.C_Dashboard_user_statItem--blue {
+  --stat-color: #208bd4;
+  --stat-bg: #e9f5fd;
+}
+
+.C_Dashboard_user_statItem--green {
+  --stat-color: #269c59;
+  --stat-bg: #e9f8ef;
+}
+
+.C_Dashboard_user_statItem--violet {
+  --stat-color: #8b5bd6;
+  --stat-bg: #f2ebfc;
+}
+
+.C_Dashboard_user_statItem--orange {
+  --stat-color: #e88721;
+  --stat-bg: #fff2e4;
+}
+
+.C_Dashboard_user_streakCard {
+  position: relative;
+  min-height: 238px;
+  overflow: hidden;
+  padding: 25px;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(145deg, #ff9a25, #f17a17);
+}
+
+.C_Dashboard_user_streakCard::after {
+  position: absolute;
+  top: -60px;
+  right: -55px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .1);
+  content: "";
+}
+
+.C_Dashboard_user_streakLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.C_Dashboard_user_streakValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.C_Dashboard_user_streakValue strong {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.C_Dashboard_user_streakValue span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.C_Dashboard_user_streakCard p {
+  margin: 8px 0 22px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 12px;
+}
+
+.C_Dashboard_user_streakTip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.C_Dashboard_user_quickSection {
+  margin-top: 30px;
+}
+
+.C_Dashboard_user_sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+.C_Dashboard_user_sectionHeader h3 {
+  margin: 5px 0 0;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.C_Dashboard_user_quickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.C_Dashboard_user_quickCard {
+  --quick-color: #208bd4;
+  --quick-bg: #e8f5fd;
+  display: grid;
+  min-height: 94px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  color: var(--db-text);
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(32, 65, 45, .035);
+  text-decoration: none;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.C_Dashboard_user_quickCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--quick-color);
+  box-shadow: 0 10px 22px rgba(32, 65, 45, .08);
+}
+
+.C_Dashboard_user_quickCard > span:nth-child(2) {
+  min-width: 0;
+}
+
+.C_Dashboard_user_quickCard strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.C_Dashboard_user_quickCard small {
+  display: block;
+  overflow: hidden;
+  color: var(--db-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.C_Dashboard_user_quickCard > b {
+  color: #9ba7a0;
+  font-size: 18px;
+}
+
+.C_Dashboard_user_quickIcon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--quick-color);
+  background: var(--quick-bg);
+  font-size: 23px;
+}
+
+.C_Dashboard_user_quickCard--violet {
+  --quick-color: #8d55d9;
+  --quick-bg: #f1e8fc;
+}
+
+.C_Dashboard_user_quickCard--green {
+  --quick-color: #299e59;
+  --quick-bg: #e8f8ee;
+}
+
+.C_Dashboard_user_quickCard--orange {
+  --quick-color: #e47c1c;
+  --quick-bg: #fff0df;
+}
+
+.C_Dashboard_user_contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(420px, 1.15fr);
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.C_Dashboard_user_panel {
+  padding: 24px;
+}
+
+.C_Dashboard_user_targetPercent {
+  padding: 7px 10px;
+  border-radius: 99px;
+  color: #258b53;
+  background: #e9f7ee;
+  font-size: 13px;
+}
+
+.C_Dashboard_user_targetNumbers {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 24px 0 13px;
+}
+
+.C_Dashboard_user_targetNumbers strong {
+  color: var(--db-green);
+  font-size: 35px;
+  line-height: 1;
+}
+
+.C_Dashboard_user_targetNumbers span {
+  color: var(--db-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.C_Dashboard_user_targetProgress {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eaf0ec;
+}
+
+.C_Dashboard_user_targetProgressBar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #239655, #66c982);
+}
+
+.C_Dashboard_user_targetNote {
+  margin: 12px 0 21px;
+  color: var(--db-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.C_Dashboard_user_textLink {
+  color: #248955;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.C_Dashboard_user_textLink:hover {
+  text-decoration: underline;
+}
+
+.C_Dashboard_user_activityList {
+  display: flex;
+  flex-direction: column;
+}
+
+.C_Dashboard_user_activityRow {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #edf1ee;
+}
+
+.C_Dashboard_user_activityRow:last-child {
+  border-bottom: 0;
+}
+
+.C_Dashboard_user_activityIcon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  color: #299857;
+  background: #eaf7ef;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.C_Dashboard_user_activityIcon--quiz {
+  color: #c75a24;
+  background: #fff1e4;
+}
+
+.C_Dashboard_user_activityIcon--flashcard {
+  color: #299857;
+  background: #eaf7ef;
+}
+
+.C_Dashboard_user_activityInfo {
+  min-width: 0;
+}
+
+.C_Dashboard_user_activityInfo strong,
+.C_Dashboard_user_activityInfo small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.C_Dashboard_user_activityInfo strong {
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+.C_Dashboard_user_activityInfo small {
+  color: #8a958e;
+  font-size: 11px;
+}
+
+.C_Dashboard_user_activityScore {
+  color: #248d55;
+  font-size: 14px;
+}
+
+.C_Dashboard_user_emptyState {
+  display: flex;
+  min-height: 145px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8a958e;
+  text-align: center;
+}
+
+.C_Dashboard_user_emptyState span {
+  color: #68b487;
+  font-size: 28px;
+}
+
+.C_Dashboard_user_emptyState p {
+  margin: 0;
+  font-size: 13px;
+}
+
+
+/* RESPONISVE */
+@media (max-width: 1280px) {
+  .C_Dashboard_user_overview {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .C_Dashboard_user_streakCard {
+    grid-column: 1 / -1;
+    min-height: 190px;
+  }
+
+  .C_Dashboard_user_quickGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .C_Dashboard_user_overview,
+  .C_Dashboard_user_contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .C_Dashboard_user_streakCard {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .C_Dashboard_user_body > .top-header {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .C_Dashboard_user_mainContent {
+    width: 100%;
+    margin-left: 0;
+    padding: 20px 16px 36px;
+  }
+
+  .C_Dashboard_user_welcomeCard {
+    min-height: 225px;
+    padding: 25px 22px;
+  }
+
+  .C_Dashboard_user_statsCard {
+    min-height: 220px;
+  }
+
+  .C_Dashboard_user_statItem {
+    min-height: 105px;
+    padding: 16px;
+  }
+
+  .C_Dashboard_user_quickGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .C_Dashboard_user_quickCard {
+    min-height: 82px;
+  }
+
+  .C_Dashboard_user_contentGrid {
+    margin-top: 24px;
+  }
+
+  .C_Dashboard_user_panel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .C_Dashboard_user_mainContent {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .C_Dashboard_user_statsCard {
+    grid-template-columns: 1fr;
+  }
+
+  .C_Dashboard_user_sectionHeader {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .C_Dashboard_user_primaryButton,
+  .C_Dashboard_user_quickCard {
+    transition: none;
+  }
+}

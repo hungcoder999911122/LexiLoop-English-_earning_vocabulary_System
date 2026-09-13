@@ -1,0 +1,299 @@
+/* =========================================
+   TOPHEADER DÙNG CHUNG
+   ========================================= */
+
+.top-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+
+    min-height: 76px;
+    padding: 0 24px;
+
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Khu vực bên trái: tiêu đề + action riêng */
+.top-header-start {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    min-width: 0;
+}
+
+/* Tiêu đề trang */
+.top-header-context {
+    min-width: 0;
+}
+
+.top-header-title {
+    margin: 0;
+
+    color: var(--color-primary-dark);
+
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* Nơi chứa nút hoặc dropdown riêng từng trang */
+.top-header-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Action chính: ví dụ nút Thêm từ */
+.top-header-page-action {
+    height: 42px;
+    margin: 0;
+    padding: 0 18px;
+
+    border-radius: 22px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+/* Button hành động chính dùng xanh dương */
+.top-header-page-action--primary {
+    background-color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+
+    color: var(--color-white);
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.top-header-page-action--primary:hover {
+    background-color: var(--color-accent-dark);
+
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+}
+
+/* Dropdown hành động: ví dụ lọc lịch sử */
+.top-header-page-action--control {
+    min-width: 150px;
+
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+
+    color: var(--color-text);
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.top-header-page-action--control:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+/* Khu vực avatar và công cụ toàn hệ thống */
+.top-header-act {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    flex-shrink: 0;
+}
+
+/* Icon thông báo / dark mode */
+.top-header-btn {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: 20px;
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease
+}
+
+.top-header-btn:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+.top-header-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.login-btn {
+    min-width: 120px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 20px;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-primary);
+    border-radius: 24px;
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.login-btn:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+/* Menu tài khoản */
+.top-header-account {
+    position: relative;
+}
+
+.top-header-account-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    cursor: pointer;
+    list-style: none;
+}
+
+.top-header-account-summary::-webkit-details-marker {
+    display: none;
+}
+
+.top-header-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.top-header-user-name {
+    max-width: 180px;
+    overflow: hidden;
+
+    color: var(--color-text);
+
+    font-size: 14px;
+    font-weight: 600;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.top-header-account-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+
+    display: grid;
+    min-width: 160px;
+    padding: 8px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+
+    background-color: var(--color-white);
+    box-shadow: 0 10px 24px rgba(23, 52, 42, 0.12);
+}
+
+.top-header-account-menu a {
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    color: var(--color-text);
+
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.top-header-account-menu a:hover {
+    background-color: var(--color-primary-light);
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 767px) {
+    .top-header {
+        gap: 12px;
+
+        min-height: 64px;
+        padding: 0 16px;
+    }
+
+    .top-header-start {
+        gap: 10px;
+    }
+
+    .top-header-title {
+        font-size: 18px;
+    }
+
+    /* Nhường không gian cho title/action/avatar trên mobile */
+    .top-header-btn {
+        display: none;
+    }
+
+    .top-header-user-name {
+        display: none;
+    }
+
+    .top-header-page-action {
+        height: 38px;
+        padding: 0 12px;
+
+        font-size: 13px;
+    }
+
+    .top-header-page-action--control {
+        min-width: 0;
+        max-width: 135px;
+    }
+}

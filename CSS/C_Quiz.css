@@ -1,0 +1,263 @@
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+:root {
+    --color-primary: #2d7a56;
+    --color-primary-light: #e8f5ed;
+    --color-primary-dark: #1f4e38;
+    --color-surface: #ffffff;
+    --color-background: #edf6f0;
+    --color-border: #dceae1;
+    --color-white: #ffffff;
+    --color-text: #1f2d24;
+    --color-text-muted: #758071;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body,
+.C_Quiz_body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+}
+
+/* =========================================
+   BỐ CỤC CHUNG
+   ========================================= */
+.C_Quiz_header,
+.C_Quiz_navButtons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.C_Quiz_timerCircle,
+.C_Quiz_bubble {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* =========================================
+   HEADER & PROGRESS BAR
+   ========================================= */
+.C_Quiz_header {
+    padding: 16px 40px;
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.C_Quiz_logo {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--color-primary-dark);
+}
+
+.C_Quiz_progressText { font-size: 15px; font-weight: 700; color: var(--color-primary-dark); }
+.C_Quiz_headerActions { display: flex; align-items: center; gap: 16px; }
+.C_Quiz_exitButton { min-height: 38px; padding: 0 16px; border: 1px solid #e2b8b8; border-radius: 10px; color: #a83a3a; background: #fff7f7; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.C_Quiz_exitButton:hover { border-color: #cf7777; background: #ffeded; }
+.C_Quiz_exitButton:disabled { cursor: wait; opacity: .65; }
+
+.C_Quiz_progressBarWrapper {
+    max-width: 780px;
+    width: 100%;
+    margin: 18px auto 0;
+    padding: 0 20px;
+}
+
+.C_Quiz_progressBar {
+    width: 100%;
+    height: 8px;
+    border-radius: 10px;
+    background-color: var(--color-border);
+    overflow: hidden;
+}
+
+.C_Quiz_progressFill {
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+/* =========================================
+   MAIN & TIMER
+   ========================================= */
+.C_Quiz_main {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+}
+
+.C_Quiz_timerWrapper { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+.C_Quiz_timerCircle {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--color-primary);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    background-color: var(--color-primary-light);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.06);
+    transition: all 0.3s ease;
+}
+
+.C_Quiz_timerCircle.warning {
+    border-color: #F6D2B5;
+    background-color: #FFF1E4;
+    color: #C75A24;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* =========================================
+   QUESTION & OPTIONS
+   ========================================= */
+.C_Quiz_questionSection {
+    margin-bottom: 28px;
+    text-align: center;
+    background-color: var(--color-white);
+    padding: 24px;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
+}
+
+.C_Quiz_instruction { font-size: 14px; color: var(--color-text-muted); margin: 0 0 10px; font-weight: 500; }
+.C_Quiz_questionWord { font-size: 38px; font-weight: 800; color: var(--color-text); margin: 0; letter-spacing: -0.5px; }
+
+/* Grid đáp án */
+.C_Quiz_optionsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.C_Quiz_optionBtn {
+    min-height: 56px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 16px;
+    background-color: var(--color-white);
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(31, 45, 36, 0.04);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Quiz_optionBtn:hover {
+    background-color: var(--color-background);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(31, 45, 36, 0.08);
+}
+
+.C_Quiz_optionSelected {
+    background-color: var(--color-primary-light) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary-dark) !important;
+    font-weight: 700;
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   NAV BUTTONS & BUBBLES
+   ========================================= */
+.C_Quiz_navButtons { margin-bottom: 36px; }
+
+.C_Quiz_btnNav {
+    height: 46px;
+    padding: 0 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.C_Quiz_btnWhite {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+.C_Quiz_btnWhite:hover:not(:disabled) {
+    background-color: var(--color-background);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+.C_Quiz_btnWhite:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.C_Quiz_btnGray {
+    background-color: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary-dark);
+}
+.C_Quiz_btnGray:hover {
+    background-color: #cce9d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+
+/* Bubbles indicator */
+.C_Quiz_questionListSection {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 18px 24px;
+    box-shadow: 0 4px 12px rgba(31, 45, 36, 0.03);
+}
+
+.C_Quiz_listLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.C_Quiz_bubblesRow { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.C_Quiz_bubble {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--color-border);
+    background-color: var(--color-white);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.C_Quiz_bubble:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.C_Quiz_bubbleFilled { background-color: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary-dark); }
+.C_Quiz_bubble.active { outline: 2px solid var(--color-primary); outline-offset: 2px; font-weight: 800; }
+
+@media (max-width: 600px) {
+    .C_Quiz_header { padding: 14px 16px; }
+    .C_Quiz_headerActions { gap: 9px; }
+    .C_Quiz_exitButton { padding: 0 12px; }
+    .C_Quiz_optionsGrid { grid-template-columns: 1fr; }
+}
