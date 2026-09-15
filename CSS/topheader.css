@@ -297,3 +297,34 @@
         max-width: 135px;
     }
 }
+/* =========================================
+   DARK MODE - TOP HEADER
+   ========================================= */
+
+   html.dark-mode .top-header {
+    background-color: var(--color-surface);
+    border-bottom-color: var(--color-border);
+}
+
+html.dark-mode .top-header-btn {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode .top-header-btn:hover {
+    background-color: #374151;
+}
+
+html.dark-mode .top-header-account-menu {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+html.dark-mode .top-header-account-menu a {
+    color: var(--color-text);
+}
+
+html.dark-mode .top-header-account-menu a:hover {
+    background-color: #374151;
+}
