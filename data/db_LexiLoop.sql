@@ -20,8 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `hoc_ngoai_ngu`
 --
-CREATE DATABASE IF NOT EXISTS `hoc_ngoai_ngu` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE `hoc_ngoai_ngu`;
+CREATE DATABASE IF NOT EXISTS `db_LexiLoop` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE `db_LexiLoop`;
 
 -- --------------------------------------------------------
 
@@ -335,7 +335,7 @@ INSERT INTO `user_vocab_progress` (`id`, `user_id`, `vocabulary_id`, `status`, `
 
 CREATE TABLE `vocabulary` (
   `id` int NOT NULL,
-  `topic_id` int NOT NULL,
+  `topic_id` int DEFAULT NULL,
   `word` varchar(100) NOT NULL,
   `pronunciation` varchar(100) DEFAULT NULL,
   `part_of_speech` varchar(30) DEFAULT NULL,

@@ -1,109 +1,56 @@
 <?php
 require_once '../../includes/auth_guard.php';
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-
-/*
- * auth_guard.php đã chuyển guest về đăng nhập.
- * Vì vậy biến này luôn là ID của tài khoản thật.
- */
+require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
 $user_id = (int) $_SESSION['user_id'];
-
-
-// Khởi tạo các biến mặc định
-$tu_can_on_tap  = 0;
-$tu_da_hoc      = 0;
-$quiz_da_lam    = 0;
-$tong_tu_on_tap = 0;
+$tu_can_on_tap = 0;
+$tu_da_hoc = 0;
+$quiz_da_lam = 0;
 
 try {
-    if (isset($link) && $link) {
-        // Quét danh sách bảng thực tế tránh lỗi phân biệt hoa/thường trên Linux
-        $tables_res = @mysqli_query($link, "SHOW TABLES");
-        $db_tables = [];
-        if ($tables_res) {
-            while ($tbl_row = mysqli_fetch_array($tables_res)) {
-                $db_tables[strtolower($tbl_row[0])] = $tbl_row[0];
-            }
-        }
+    $dueRows = dbSelectView(
+        $link,
+        'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE',
+        'i',
+        [$user_id]
+    );
+    $tu_can_on_tap = (int) ($dueRows[0]['total'] ?? 0);
 
-        $tbl_progress = isset($db_tables['user_vocab_progress']) ? "`" . $db_tables['user_vocab_progress'] . "`" : "`user_vocab_progress`";
-        $tbl_sessions = isset($db_tables['learning_sessions']) ? "`" . $db_tables['learning_sessions'] . "`" : "`learning_sessions`";
-        $tbl_quiz     = isset($db_tables['quiz_results']) ? "`" . $db_tables['quiz_results'] . "`" : "`quiz_results`";
-
-        // Lấy số từ còn cần ôn tập hôm nay (đến hạn next_review_date)
-        if (isset($db_tables['user_vocab_progress'])) {
-            $stmt = @mysqli_prepare($link, "SELECT COUNT(*) AS total FROM $tbl_progress WHERE user_id = ? AND next_review_date <= CURDATE()");
-            if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "i", $user_id);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                if ($row = mysqli_fetch_assoc($res)) {
-                    $tu_can_on_tap = (int)($row['total'] ?? 0);
-                }
-                mysqli_stmt_close($stmt);
-            }
-        }
-
-        // Lấy số từ đã ôn tập / học trong ngày hôm nay
-        if (isset($db_tables['learning_sessions'])) {
-            $stmt = @mysqli_prepare($link, "SELECT SUM(words_studied) AS total FROM $tbl_sessions WHERE user_id = ? AND session_date = CURDATE()");
-            if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "i", $user_id);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                if ($row = mysqli_fetch_assoc($res)) {
-                    $tu_da_hoc = (int)($row['total'] ?? 0);
-                }
-                mysqli_stmt_close($stmt);
-            }
-        }
-
-        // Nếu bảng learning_sessions hôm nay chưa có, kiểm tra tiến độ review trong ngày
-        if ($tu_da_hoc === 0 && isset($db_tables['user_vocab_progress'])) {
-            $stmt = @mysqli_prepare($link, "SELECT COUNT(*) AS total FROM $tbl_progress WHERE user_id = ? AND DATE(last_reviewed_at) = CURDATE()");
-            if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "i", $user_id);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                if ($row = mysqli_fetch_assoc($res)) {
-                    $tu_da_hoc = (int)($row['total'] ?? 0);
-                }
-                mysqli_stmt_close($stmt);
-            }
-        }
-
-        // Lấy số bài Quiz đã hoàn thành trong ngày hôm nay
-        if (isset($db_tables['quiz_results'])) {
-            $stmt = @mysqli_prepare($link, "SELECT COUNT(*) AS total FROM $tbl_quiz WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURDATE()");
-            if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "i", $user_id);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                if ($row = mysqli_fetch_assoc($res)) {
-                    $quiz_da_lam = (int)($row['total'] ?? 0);
-                }
-                mysqli_stmt_close($stmt);
-            }
-        }
+    $studyRows = dbSelectView(
+        $link,
+        'SELECT COALESCE(SUM(words_studied), 0) AS total FROM vw_learning_sessions WHERE user_id = ? AND session_date = CURRENT_DATE',
+        'i',
+        [$user_id]
+    );
+    $tu_da_hoc = (int) ($studyRows[0]['total'] ?? 0);
+    if ($tu_da_hoc === 0) {
+        $reviewRows = dbSelectView(
+            $link,
+            'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND DATE(last_reviewed_at) = CURRENT_DATE',
+            'i',
+            [$user_id]
+        );
+        $tu_da_hoc = (int) ($reviewRows[0]['total'] ?? 0);
     }
-} catch (\Throwable $e) {
-    error_log("Lỗi Ôn tập hôm nay: " . $e->getMessage());
+
+    $quizRows = dbSelectView(
+        $link,
+        'SELECT COUNT(*) AS total FROM vw_quiz_results
+         WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURRENT_DATE',
+        'i',
+        [$user_id]
+    );
+    $quiz_da_lam = (int) ($quizRows[0]['total'] ?? 0);
+} catch (Throwable $error) {
+    error_log('Lỗi Ôn tập hôm nay: ' . $error->getMessage());
 }
 
 $tong_tu_on_tap = $tu_da_hoc + $tu_can_on_tap;
-
-// Tính % tiến độ bước 1 (FlashCard)
-if ($tong_tu_on_tap > 0) {
-    $phan_tram_b1 = min(100, round(($tu_da_hoc / $tong_tu_on_tap) * 100));
-} else {
-    // Nếu hôm nay không có từ nào cần ôn, coi như đã đạt 100%
-    $phan_tram_b1 = 100;
-}
-
-// Mở khóa bước 2 (Quiz) khi đã hoàn thành 100% từ vựng hoặc không có từ tồn đọng
-$is_bước2_unlocked = ($tong_tu_on_tap === 0 || $tu_da_hoc >= $tong_tu_on_tap);
-$is_buoc2_unlocked = $is_bước2_unlocked;
+$phan_tram_b1 = $tong_tu_on_tap > 0
+    ? min(100, round($tu_da_hoc * 100 / $tong_tu_on_tap))
+    : 100;
+$is_bước2_unlocked = $tong_tu_on_tap === 0 || $tu_da_hoc >= $tong_tu_on_tap;
 ?>
 
 <!DOCTYPE html>

@@ -1,40 +1,17 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-// ---- B5: SELECT du lieu tong quan (khong co form nen khong can B1-B4) ----
-$soNguoiDung = mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(*) AS soLuong FROM Users"))["soLuong"];
-$soChuDe     = mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(*) AS soLuong FROM Topics"))["soLuong"];
-$soTuVung    = mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(*) AS soLuong FROM vocabulary"))["soLuong"];
-$soQuizXong  = mysqli_fetch_assoc(mysqli_query(
-    $link,
-    "SELECT COUNT(*) AS soLuong FROM quiz_results WHERE finished_at IS NOT NULL"
-))["soLuong"];
-
-// Hoat dong theo 7 ngay gan nhat (tong so tu da hoc moi ngay tu learning_sessions)
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$soNguoiDung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_users')[0]['value'] ?? 0);
+$soChuDe = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_topic_catalog')[0]['value'] ?? 0);
+$soTuVung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_vocabulary_catalog')[0]['value'] ?? 0);
+$soQuizXong = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_quiz_results WHERE finished_at IS NOT NULL')[0]['value'] ?? 0);
 $hoatDongTuan = [];
 for ($i = 6; $i >= 0; $i--) {
-    $ngay = date("Y-m-d", strtotime("-$i day"));
-    $stmt = mysqli_prepare($link, "SELECT COALESCE(SUM(words_studied), 0) AS tong FROM learning_sessions WHERE session_date = ?");
-    mysqli_stmt_bind_param($stmt, "s", $ngay);
-    mysqli_stmt_execute($stmt);
-    $tong = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt))["tong"];
-    $hoatDongTuan[] = (int) $tong;
-    mysqli_stmt_close($stmt);
+    $date = date('Y-m-d', strtotime("-$i day"));
+    $rows = dbSelectView($link, 'SELECT COALESCE(SUM(words_studied), 0) AS value FROM vw_learning_sessions WHERE session_date = ?', 's', [$date]);
+    $hoatDongTuan[] = (int) ($rows[0]['value'] ?? 0);
 }
-$dinhCao = max(max($hoatDongTuan), 1); // tranh chia cho 0
-
-// Hoat dong gan day: gop nguoi dung moi + chu de moi, sap xep theo thoi gian
-$sqlHoatDong = "
-    (SELECT CONCAT('Người dùng mới đăng ký: ', full_name) AS noiDung, created_at AS thoiGian FROM Users)
-    UNION ALL
-    (SELECT CONCAT('Chủ đề \"', topicName, '\" được thêm') AS noiDung, topicCreated_at AS thoiGian FROM Topics)
-    ORDER BY thoiGian DESC
-    LIMIT 5
-";
-$ketQuaHoatDong = mysqli_query($link, $sqlHoatDong);
+$dinhCao = max(max($hoatDongTuan), 1);
+$ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_recent_activity ORDER BY thoiGian DESC LIMIT 5');
 ?>
 <!doctype html>
 <html lang="vi">
@@ -131,17 +108,17 @@ $ketQuaHoatDong = mysqli_query($link, $sqlHoatDong);
 
           <p class="D_Dashboard_admin_TieuDeMuc">Hoạt động gần đây</p>
           <div class="D_Dashboard_admin_DanhSachHoatDong">
-            <?php if (mysqli_num_rows($ketQuaHoatDong) === 0): ?>
+            <?php if (count($ketQuaHoatDong) === 0): ?>
               <div class="D_Dashboard_admin_DongHoatDong">
                 <span>Chưa có hoạt động nào.</span>
               </div>
             <?php else: ?>
-              <?php while ($hd = mysqli_fetch_assoc($ketQuaHoatDong)): ?>
+              <?php foreach ($ketQuaHoatDong as $hd): ?>
                 <div class="D_Dashboard_admin_DongHoatDong">
                   <span><?php echo htmlspecialchars($hd["noiDung"]); ?></span>
                   <span class="D_Dashboard_admin_ThoiGian"><?php echo date("d/m/Y H:i", strtotime($hd["thoiGian"])); ?></span>
                 </div>
-              <?php endwhile; ?>
+              <?php endforeach; ?>
             <?php endif; ?>
           </div>
         </main>

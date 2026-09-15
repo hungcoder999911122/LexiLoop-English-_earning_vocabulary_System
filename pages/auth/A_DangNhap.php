@@ -1,6 +1,7 @@
 <?php
 // MỚI - phương thức phù hợp và tránh được vài trường hợp có thể cải thiện thêm !!!
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 session_start();
 
 $loi = "";
@@ -14,25 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 	{
 		$loi = "Vui lòng nhập đầy đủ thông tin đăng nhập.";
 	} else {
-		$sql = "
-            SELECT userID, password_hash, full_name
-            FROM Users
-            WHERE email = ?
-            AND status = 'active'
-        ";
+		$accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_email(?)', 's', [strtolower($email)]);
+		$row = $accounts[0] ?? null;
 
-		$stmt = mysqli_prepare($link, $sql);
-		mysqli_stmt_bind_param($stmt, "s", $email);
-		mysqli_stmt_execute($stmt);
-		$result = mysqli_stmt_get_result($stmt);
-
-		if (mysqli_num_rows($result) == 0) 
+		if (!$row || $row['status'] !== 'active')
 		{
 			$loi = "Email hoặc mật khẩu không chính xác.";
 		} else 
 		{
-			$row = mysqli_fetch_assoc($result);
-
 			if (!password_verify($password, $row['password_hash'])) {
 				$loi = "Email hoặc mật khẩu không chính xác.";
 			} else {
@@ -41,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 				$_SESSION['user_id']   = $row['userID'];
 				$_SESSION['full_name'] = $row['full_name'];
+				$_SESSION['role']      = $row['role'];
 
 				// Chuyển đến Dashboard
 				header("Location: ../user/C_Dashboard_user.php?login=success");
@@ -48,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 			}
 		}
 
-		mysqli_stmt_close($stmt);
 		mysqli_close($link);
 	}
 }

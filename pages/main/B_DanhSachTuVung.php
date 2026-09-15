@@ -1,5 +1,6 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 
 // KIỂM TRA PHIÊN NGƯỜI DÙNG
 session_start();
@@ -24,32 +25,8 @@ if ($topic_id <= 0) {
 // 2. LẤY THÔNG TIN TOPIC
 // ==========================================
 
-$sql_topic = "
-    SELECT
-        topicID,
-        topicName,
-        topicDescription
-    FROM Topics
-    WHERE topicID = ?
-";
-
-$stmt_topic = mysqli_prepare($link, $sql_topic);
-
-if (!$stmt_topic) {
-    die("Lỗi chuẩn bị truy vấn Topic: " . mysqli_error($link));
-}
-
-mysqli_stmt_bind_param(
-    $stmt_topic,
-    "i",
-    $topic_id
-);
-
-mysqli_stmt_execute($stmt_topic);
-
-$result_topic = mysqli_stmt_get_result($stmt_topic);
-
-$topic = mysqli_fetch_assoc($result_topic);
+$topicRows = dbSelectView($link, 'SELECT * FROM vw_topic_catalog WHERE topicID = ? LIMIT 1', 'i', [$topic_id]);
+$topic = $topicRows[0] ?? null;
 
 if (!$topic) {
     die("Không tìm thấy chủ đề.");
@@ -60,66 +37,20 @@ if (!$topic) {
 // 3. ĐẾM SỐ LƯỢNG TỪ VỰNG
 // ==========================================
 
-$sql_count = "
-    SELECT COUNT(*) AS word_count
-    FROM vocabulary
-    WHERE topic_id = ?
-";
-
-$stmt_count = mysqli_prepare($link, $sql_count);
-
-if (!$stmt_count) {
-    die("Lỗi chuẩn bị truy vấn số lượng: " . mysqli_error($link));
-}
-
-mysqli_stmt_bind_param(
-    $stmt_count,
-    "i",
-    $topic_id
-);
-
-mysqli_stmt_execute($stmt_count);
-
-$result_count = mysqli_stmt_get_result($stmt_count);
-
-$count_data = mysqli_fetch_assoc($result_count);
-
-$word_count = $count_data['word_count'];
+$word_count = (int) $topic['word_count'];
 
 
 // ==========================================
 // 4. LẤY DANH SÁCH VOCABULARY
 // ==========================================
 
-$sql_vocab = "
-    SELECT
-        id,
-        word,
-        pronunciation,
-        part_of_speech,
-        meaning,
-        example_sentence,
-        audio_url
-    FROM vocabulary
-    WHERE topic_id = ?
-    ORDER BY id ASC
-";
-
-$stmt_vocab = mysqli_prepare($link, $sql_vocab);
-
-if (!$stmt_vocab) {
-    die("Lỗi chuẩn bị truy vấn vocabulary: " . mysqli_error($link));
-}
-
-mysqli_stmt_bind_param(
-    $stmt_vocab,
-    "i",
-    $topic_id
+$vocab_result = dbSelectView(
+    $link,
+    'SELECT id, word, pronunciation, part_of_speech, meaning, example_sentence, audio_url
+     FROM vw_vocabulary_catalog WHERE topic_id = ? ORDER BY id',
+    'i',
+    [$topic_id]
 );
-
-mysqli_stmt_execute($stmt_vocab);
-
-$vocab_result = mysqli_stmt_get_result($stmt_vocab);
 
 ?>
 
@@ -229,9 +160,9 @@ $vocab_result = mysqli_stmt_get_result($stmt_vocab);
                         <tbody id="vocab-data-body" class="vocab-data">
 
                             <!-- SỬ DỤNG PHP ĐỔ DỮ LIỆU TỪ DATABASE VÀO -->
-                            <?php if (mysqli_num_rows($vocab_result) > 0): ?>
+                            <?php if ($vocab_result): ?>
 
-                                <?php while ($vocab = mysqli_fetch_assoc($vocab_result)): ?>
+                                <?php foreach ($vocab_result as $vocab): ?>
 
                                     <tr>
 
@@ -282,7 +213,7 @@ $vocab_result = mysqli_stmt_get_result($stmt_vocab);
 
                                     </tr>
 
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
 
                             <?php else: ?>
 

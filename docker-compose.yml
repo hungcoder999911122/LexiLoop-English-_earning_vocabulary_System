@@ -16,6 +16,8 @@ services:
     image: mysql:8.0
     container_name: web_db_1
     restart: always
+    # Bật quyền tạo Function/Trigger
+    command: --log_bin_trust_function_creators=1
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: db_LexiLoop
@@ -26,6 +28,10 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./data/db_LexiLoop.sql:/docker-entrypoint-initdb.d/init.sql
+
+      # Chạy sau init.sql để tạo View/Function/Trigger/Stored Procedure.
+      - ./data/db_objects.sql:/docker-entrypoint-initdb.d/zz_db_objects.sql
+      
   # phpMyAdmin - giao diện quản lý MySQL qua web (không bắt buộc, nhưng rất tiện)
   phpmyadmin:
     image: phpmyadmin/phpmyadmin

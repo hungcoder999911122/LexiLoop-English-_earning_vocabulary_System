@@ -33,102 +33,53 @@ if (!function_exists('dinhDangThoiGianLam')) {
 }
 
 try {
-    if (isset($link) && $link) {
-        // Quét danh sách bảng thực tế tránh lỗi phân biệt hoa/thường trên Linux
-        $tables_res = @mysqli_query($link, "SHOW TABLES");
-        $db_tables = [];
-        if ($tables_res) {
-            while ($tbl_row = mysqli_fetch_array($tables_res)) {
-                $db_tables[strtolower($tbl_row[0])] = $tbl_row[0];
-            }
-        }
+    require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
-        $tbl_quiz   = isset($db_tables['quiz_results']) ? "`" . $db_tables['quiz_results'] . "`" : "`quiz_results`";
-        $tbl_topics = isset($db_tables['topics']) ? "`" . $db_tables['topics'] . "`" : "`Topics`";
+    $summarySql = $quiz_result_id > 0
+        ? 'SELECT * FROM vw_quiz_result_summary WHERE quiz_result_id = ? AND user_id = ? LIMIT 1'
+        : 'SELECT * FROM vw_quiz_result_summary WHERE user_id = ? ORDER BY COALESCE(finished_at, started_at) DESC, quiz_result_id DESC LIMIT 1';
+    $summaryRows = $quiz_result_id > 0
+        ? dbSelectView($link, $summarySql, 'ii', [$quiz_result_id, $user_id])
+        : dbSelectView($link, $summarySql, 'i', [$user_id]);
 
-        // --- TRUY VẤN KẾT QUẢ BÀI QUIZ TỪ CSDL ---
-        if (isset($db_tables['quiz_results'])) {
-            if ($quiz_result_id > 0) {
-                // Truy vấn theo ID cụ thể
-                $sql_get = "
-                    SELECT 
-                        correct_answers, 
-                        total_questions, 
-                        topic_id,
-                        vocabulary_set_id,
-                        TIMESTAMPDIFF(SECOND, started_at, finished_at) AS thoi_gian_giay 
-                    FROM $tbl_quiz 
-                    WHERE id = ? AND user_id = ? 
-                    LIMIT 1
-                ";
-                if ($stmt_get = @mysqli_prepare($link, $sql_get)) {
-                    mysqli_stmt_bind_param($stmt_get, "ii", $quiz_result_id, $user_id);
-                    mysqli_stmt_execute($stmt_get);
-                    $res = mysqli_stmt_get_result($stmt_get);
-                    if ($row = mysqli_fetch_assoc($res)) {
-                        $diem_so   = (int)$row['correct_answers'];
-                        $tong_cau  = (int)$row['total_questions'];
-                        $thoi_gian = dinhDangThoiGianLam($row['thoi_gian_giay'] ?? 180);
-                        if (!empty($row['vocabulary_set_id'])) {
-                            $retry_url = 'C_Quiz.php?' . http_build_query(['source' => 'set', 'id' => (int) $row['vocabulary_set_id'], 'limit' => $retry_limit]);
-                        } elseif (!empty($row['topic_id'])) {
-                            $retry_url = 'C_Quiz.php?' . http_build_query(['source' => 'topic', 'id' => (int) $row['topic_id'], 'limit' => $retry_limit]);
-                        }
-                    }
-                    mysqli_stmt_close($stmt_get);
-                }
-            } else {
-                // Lấy kết quả bài thi gần nhất của người dùng
-                $sql_latest = "
-                    SELECT 
-                        correct_answers, 
-                        total_questions, 
-                        TIMESTAMPDIFF(SECOND, started_at, finished_at) AS thoi_gian_giay 
-                    FROM $tbl_quiz 
-                    WHERE user_id = ? 
-                    ORDER BY COALESCE(finished_at, started_at) DESC, id DESC 
-                    LIMIT 1
-                ";
-                if ($stmt_lat = @mysqli_prepare($link, $sql_latest)) {
-                    mysqli_stmt_bind_param($stmt_lat, "i", $user_id);
-                    mysqli_stmt_execute($stmt_lat);
-                    $res = mysqli_stmt_get_result($stmt_lat);
-                    if ($row = mysqli_fetch_assoc($res)) {
-                        $diem_so   = (int)$row['correct_answers'];
-                        $tong_cau  = (int)$row['total_questions'];
-                        $thoi_gian = dinhDangThoiGianLam($row['thoi_gian_giay'] ?? 180);
-                    }
-                    mysqli_stmt_close($stmt_lat);
-                }
-            }
-        }
-
-        // Câu sai phải đọc từ database, không dùng nội dung mẫu cố định trên giao diện.
-        if ($quiz_result_id > 0 && isset($db_tables['quiz_answer_details'])) {
-            $detailSql = '
-                SELECT qad.question_order, v.word, qad.selected_answer, qad.correct_answer
-                FROM quiz_answer_details qad
-                INNER JOIN quiz_results qr ON qr.id = qad.quiz_result_id AND qr.user_id = ?
-                INNER JOIN vocabulary v ON v.id = qad.vocabulary_id
-                WHERE qad.quiz_result_id = ? AND qad.is_correct = 0
-                ORDER BY qad.question_order ASC';
-            $detailStmt = mysqli_prepare($link, $detailSql);
-            mysqli_stmt_bind_param($detailStmt, 'ii', $user_id, $quiz_result_id);
-            mysqli_stmt_execute($detailStmt);
-            $detailResult = mysqli_stmt_get_result($detailStmt);
-            while ($detail = mysqli_fetch_assoc($detailResult)) {
-                $cau_sai[] = [
-                    'cau' => (int) $detail['question_order'],
-                    'tu' => $detail['word'],
-                    'da_chon' => $detail['selected_answer'] ?: 'Chưa trả lời',
-                    'nghia_dung' => $detail['correct_answer']
-                ];
-            }
-            mysqli_stmt_close($detailStmt);
+    if ($summaryRows) {
+        $row = $summaryRows[0];
+        $quiz_result_id = (int) $row['quiz_result_id'];
+        $diem_so = (int) $row['correct_answers'];
+        $tong_cau = (int) $row['total_questions'];
+        $thoi_gian = dinhDangThoiGianLam($row['duration_seconds'] ?? 0);
+        if (!empty($row['vocabulary_set_id'])) {
+            $retry_url = 'C_Quiz.php?' . http_build_query([
+                'source' => 'set', 'id' => (int) $row['vocabulary_set_id'], 'limit' => $retry_limit,
+            ]);
+        } elseif (!empty($row['topic_id'])) {
+            $retry_url = 'C_Quiz.php?' . http_build_query([
+                'source' => 'topic', 'id' => (int) $row['topic_id'], 'limit' => $retry_limit,
+            ]);
         }
     }
-} catch (\Throwable $e) {
-    error_log("Lỗi Kết quả Quiz: " . $e->getMessage());
+
+    if ($quiz_result_id > 0) {
+        $detailRows = dbSelectView(
+            $link,
+            'SELECT question_order, word, selected_answer, correct_answer
+             FROM vw_quiz_incorrect_answers
+             WHERE user_id = ? AND quiz_result_id = ?
+             ORDER BY question_order',
+            'ii',
+            [$user_id, $quiz_result_id]
+        );
+        foreach ($detailRows as $detail) {
+            $cau_sai[] = [
+                'cau' => (int) $detail['question_order'],
+                'tu' => $detail['word'],
+                'da_chon' => $detail['selected_answer'] ?: 'Chưa trả lời',
+                'nghia_dung' => $detail['correct_answer'],
+            ];
+        }
+    }
+} catch (Throwable $error) {
+    error_log('Lỗi Kết quả Quiz: ' . $error->getMessage());
 }
 
 // --- TÍNH TOÁN TỶ LỆ VÀ XẾP LOẠI ---

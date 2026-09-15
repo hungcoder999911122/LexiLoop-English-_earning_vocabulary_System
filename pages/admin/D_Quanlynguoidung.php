@@ -1,47 +1,21 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-$thongBao = "";
-$loaiThongBao = "";
-
-// ============================================================
-// 4. Quy trinh lam PHP
-// ============================================================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
-    // ---- B1: Gan bien PHP voi name trong html (dung ten cot DB) ----
-    $hanhDong    = $_POST["hanhdong"] ?? "";
-    $userID      = isset($_POST["userID"]) ? (int) $_POST["userID"] : 0;
-    $trangThaiHT = $_POST["status"] ?? "";
-
-    if ($hanhDong === "doitrangthai" && $userID > 0) {
-
-        // ---- B2: Kiem tra du lieu hop le ----
-        $trangThaiMoi = ($trangThaiHT === "active") ? "locked" : "active";
-
-        // ---- B5: Thao tac update database ----
-        $sql = "UPDATE Users SET status = ? WHERE userID = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "si", $trangThaiMoi, $userID);
-
-        // ---- B6: Thanh cong -> tiep tuc, that bai -> tam dung ----
-        if (mysqli_stmt_execute($stmt)) {
-            $thongBao = $trangThaiMoi === "locked" ? "Đã khóa tài khoản." : "Đã mở khóa tài khoản.";
-            $loaiThongBao = "thanhcong";
-        } else {
-            $thongBao = "Có lỗi xảy ra: " . mysqli_error($link);
-            $loaiThongBao = "loi";
-        }
-        mysqli_stmt_close($stmt);
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$thongBao = '';
+$loaiThongBao = '';
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['hanhdong'] ?? '') === 'doitrangthai') {
+        $userId = (int) ($_POST['userID'] ?? 0);
+        $newStatus = ($_POST['status'] ?? '') === 'active' ? 'locked' : 'active';
+        dbCallProcedure($link, 'CALL sp_admin_change_user_status(?, ?, ?)', 'iis', [$adminUserId, $userId, $newStatus]);
+        $thongBao = $newStatus === 'locked' ? 'Đã khóa tài khoản.' : 'Đã mở khóa tài khoản.';
+        $loaiThongBao = 'thanhcong';
     }
+} catch (Throwable $error) {
+    error_log('Admin user error: ' . $error->getMessage());
+    $thongBao = 'Không thể cập nhật tài khoản.';
+    $loaiThongBao = 'loi';
 }
-
-// ---- B5: SELECT du lieu de hien thi ra bang ----
-$sqlDanhSach = "SELECT userID, full_name, email, role, status FROM Users ORDER BY created_at DESC";
-$ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
+$ketQuaDanhSach = dbSelectView($link, 'SELECT userID, full_name, email, role, status FROM vw_users ORDER BY created_at DESC');
 ?>
 <!doctype html>
 <html lang="vi">
@@ -146,7 +120,7 @@ $ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
               </tr>
             </thead>
             <tbody id="D_Quanlynguoidung_ThanBang">
-              <?php while ($hang = mysqli_fetch_assoc($ketQuaDanhSach)):
+              <?php foreach ($ketQuaDanhSach as $hang):
                   $trangThaiData = $hang["status"] === "active" ? "hoat_dong" : "da_khoa";
                   $trangThaiHienThi = $hang["status"] === "active" ? "Hoạt động" : "Đã khóa";
                   $textNut = $hang["status"] === "active" ? "Khóa" : "Mở khóa";
@@ -167,7 +141,7 @@ $ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
                     </form>
                   </td>
                 </tr>
-              <?php endwhile; ?>
+              <?php endforeach; ?>
             </tbody>
           </table>
 

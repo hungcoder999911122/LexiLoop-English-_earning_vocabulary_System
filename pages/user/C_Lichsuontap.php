@@ -1,546 +1,98 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-
-/* =========================================================
-   1. XÁC ĐỊNH TRẠNG THÁI ĐĂNG NHẬP
-   ========================================================= */
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 $isLoggedIn = isset($_SESSION['user_id']);
 $user_id = $isLoggedIn ? (int) $_SESSION['user_id'] : null;
-
-/* =========================================================
-   2. NHẬN VÀ KIỂM TRA FILTER TỪ URL
-   Ví dụ:
-   - C_Lichsuontap.php?range=7
-   - C_Lichsuontap.php?range=30
-   - C_Lichsuontap.php?range=all
-   ========================================================= */
-$selectedRange = $_GET['range'] ?? '7';
+$selectedRange = (string) ($_GET['range'] ?? '7');
+if (!in_array($selectedRange, ['7', '30', 'all'], true)) { $selectedRange = '7'; }
 $historyPage = max(1, filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
 $historyPerPage = 10;
-$historyTotalItems = 0;
-$historyTotalPages = 1;
-
-$allowedRanges = ['7', '30', 'all'];
-
-if (!in_array($selectedRange, $allowedRanges, true)) {
-    $selectedRange = '7';
-}
-
-/* =========================================================
-   3. HÀM ĐỊNH DẠNG THỜI GIAN HIỂN THỊ TRONG BẢNG
-   ========================================================= */
-if (!function_exists('dinhDangThoiGian')) {
-    function dinhDangThoiGian($datetime_str)
-    {
-        if (!$datetime_str) {
-            return '';
-        }
-
-        $time = strtotime($datetime_str);
-        return date('H:i, d/m/Y', $time);
-    }
-}
-
-if (!function_exists('dinhDangThoiLuong')) {
-    function dinhDangThoiLuong(int $seconds): string
-    {
-        $seconds = max(0, $seconds);
-        if ($seconds < 60) return $seconds . ' giây';
-        $minutes = intdiv($seconds, 60);
-        $remainingSeconds = $seconds % 60;
-        return $remainingSeconds > 0
-            ? $minutes . ' phút ' . $remainingSeconds . ' giây'
-            : $minutes . ' phút';
-    }
-}
-
-/* =========================================================
-   4. HÀM TẠO KHUNG BIỂU ĐỒ THEO NGÀY
-   Ngày chưa học vẫn có cột 0 để biểu đồ không bị thiếu ngày.
-   ========================================================= */
-if (!function_exists('taoDuLieuBieuDoTheoNgay')) {
-    function taoDuLieuBieuDoTheoNgay(
-        string $startDate,
-        int $numberOfDays
-    ): array {
-        $chartData = [];
-
-        for ($index = 0; $index < $numberOfDays; $index++) {
-            $date = date(
-                'Y-m-d',
-                strtotime(
-                    '+' . $index . ' days',
-                    strtotime($startDate)
-                )
-            );
-
-            $dayOfWeek = (int) date('w', strtotime($date));
-
-            $chartData[] = [
-                'key' => $date,
-
-                /*
-                 * 7 ngày: hiển thị Thứ.
-                 * 30 ngày: hiển thị ngày/tháng.
-                 */
-                'label' => $numberOfDays === 7
-                    ? ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][$dayOfWeek]
-                    : date('d/m', strtotime($date)),
-
-                'so_tu' => 0,
-                'chieu_cao' => '0%'
-            ];
-        }
-
-        return $chartData;
-    }
-}
-
-/* =========================================================
-   5. KHỞI TẠO DỮ LIỆU MẶC ĐỊNH
-   Guest dùng dữ liệu 0, user sẽ được thay bằng dữ liệu thật.
-   ========================================================= */
 $chartEndDate = date('Y-m-d');
 $chartStartDate = null;
-$chartTitle = '';
+$chartTitle = $selectedRange === 'all' ? 'Số từ ôn tập theo tháng' : 'Số từ ôn tập trong ' . $selectedRange . ' ngày qua';
 $du_lieu_bieu_do = [];
 $danh_sach_lich_su = [];
-$tong_tu_tuan = 0;
 
-if ($selectedRange === '7' || $selectedRange === '30') {
-    $numberOfDays = (int) $selectedRange;
-
-    $chartStartDate = date(
-        'Y-m-d',
-        strtotime('-' . ($numberOfDays - 1) . ' days')
-    );
-
-    $chartTitle = 'Số từ ôn tập trong ' . $numberOfDays . ' ngày qua';
-
-    /*
-     * Guest cũng có dữ liệu khung đúng cấu trúc.
-     * Vì vậy HTML không bị lỗi $item['label'].
-     */
-    $du_lieu_bieu_do = taoDuLieuBieuDoTheoNgay(
-        $chartStartDate,
-        $numberOfDays
-    );
-} else {
-    $chartTitle = 'Số từ ôn tập theo tháng';
-
-    /*
-     * Trạng thái mặc định cho guest hoặc user chưa có lịch sử.
-     */
-    $du_lieu_bieu_do = [
-        [
-            'key' => 'empty',
-            'label' => 'Chưa có dữ liệu',
-            'so_tu' => 0,
-            'chieu_cao' => '0%'
-        ]
-    ];
+function dinhDangThoiGian($value): string { return $value ? date('H:i, d/m/Y', strtotime($value)) : ''; }
+function dinhDangThoiLuong(int $seconds): string {
+    $seconds = max(0, $seconds);
+    if ($seconds < 60) { return $seconds . ' giây'; }
+    $minutes = intdiv($seconds, 60);
+    return $seconds % 60 ? $minutes . ' phút ' . ($seconds % 60) . ' giây' : $minutes . ' phút';
+}
+function taoDuLieuBieuDoTheoNgay(string $startDate, int $days): array {
+    $items = [];
+    for ($i = 0; $i < $days; $i++) {
+        $date = date('Y-m-d', strtotime("+$i days", strtotime($startDate)));
+        $weekday = (int) date('w', strtotime($date));
+        $items[$date] = ['key' => $date, 'label' => $days === 7 ? ['CN','T2','T3','T4','T5','T6','T7'][$weekday] : date('d/m', strtotime($date)), 'so_tu' => 0, 'chieu_cao' => '0%'];
+    }
+    return $items;
 }
 
-/* =========================================================
-   6. CHỈ USER ĐÃ ĐĂNG NHẬP MỚI TRUY VẤN DỮ LIỆU CÁ NHÂN
-   ========================================================= */
-if ($isLoggedIn && isset($link) && $link) {
+if ($selectedRange !== 'all') {
+    $days = (int) $selectedRange;
+    $chartStartDate = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+    $du_lieu_bieu_do = taoDuLieuBieuDoTheoNgay($chartStartDate, $days);
+} else {
+    $du_lieu_bieu_do = ['empty' => ['key' => 'empty', 'label' => 'Chưa có dữ liệu', 'so_tu' => 0, 'chieu_cao' => '0%']];
+}
+
+if ($isLoggedIn && isset($link) && $link instanceof mysqli) {
     try {
-        $tables_res = mysqli_query($link, 'SHOW TABLES');
-        $db_tables = [];
-
-        if ($tables_res) {
-            while ($tbl_row = mysqli_fetch_array($tables_res)) {
-                $db_tables[strtolower($tbl_row[0])] = $tbl_row[0];
-            }
+        $where = 'user_id = ?';
+        $types = 'i';
+        $params = [$user_id];
+        if ($selectedRange !== 'all') {
+            $where .= ' AND DATE(activity_time) BETWEEN ? AND ?';
+            $types .= 'ss';
+            $params[] = $chartStartDate;
+            $params[] = $chartEndDate;
         }
-
-        $tbl_sessions = isset($db_tables['learning_sessions'])
-            ? '`' . $db_tables['learning_sessions'] . '`'
-            : '`learning_sessions`';
-
-        $tbl_quiz = isset($db_tables['quiz_results'])
-            ? '`' . $db_tables['quiz_results'] . '`'
-            : '`quiz_results`';
-
-        $tbl_topics = isset($db_tables['topics'])
-            ? '`' . $db_tables['topics'] . '`'
-            : '`Topics`';
-
-        $tbl_sets = isset($db_tables['vocabulary_sets'])
-            ? '`' . $db_tables['vocabulary_sets'] . '`'
-            : '`vocabulary_sets`';
-
-        /* =================================================
-           6.1. LẤY DỮ LIỆU BIỂU ĐỒ 7 HOẶC 30 NGÀY
-           ================================================= */
-        if (
-            ($selectedRange === '7' || $selectedRange === '30') &&
-            isset($db_tables['learning_sessions']) &&
-            isset($db_tables['quiz_results'])
-        ) {
-            /*
-             * Chuyển mảng thành map để cập nhật đúng từng ngày.
-             */
-            $chartDataMap = [];
-
-            foreach ($du_lieu_bieu_do as $item) {
-                $chartDataMap[$item['key']] = $item;
-            }
-
-            $sqlChart = "
-                SELECT
-                    activity_date AS session_date,
-                    SUM(words_count) AS total_words
-                FROM (
-                    SELECT session_date AS activity_date, words_studied AS words_count
-                    FROM $tbl_sessions
-                    WHERE user_id = ? AND words_studied > 0
-
-                    UNION ALL
-
-                    SELECT DATE(COALESCE(finished_at, started_at)) AS activity_date,
-                           total_questions AS words_count
-                    FROM $tbl_quiz
-                    WHERE user_id = ?
-                ) learning_activity
-                WHERE activity_date BETWEEN ? AND ?
-                GROUP BY activity_date
-                ORDER BY activity_date ASC
-            ";
-
-            if ($stmt = mysqli_prepare($link, $sqlChart)) {
-                mysqli_stmt_bind_param(
-                    $stmt,
-                    'iiss',
-                    $user_id,
-                    $user_id,
-                    $chartStartDate,
-                    $chartEndDate
-                );
-
-                mysqli_stmt_execute($stmt);
-
-                $result = mysqli_stmt_get_result($stmt);
-
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $date = $row['session_date'];
-
-                    if (isset($chartDataMap[$date])) {
-                        $chartDataMap[$date]['so_tu'] =
-                            (int) $row['total_words'];
-                    }
-                }
-
-                mysqli_stmt_close($stmt);
-            }
-
-            $du_lieu_bieu_do = array_values($chartDataMap);
+        $activities = dbSelectView($link, "SELECT * FROM vw_user_recent_activity WHERE $where ORDER BY activity_time DESC, id DESC", $types, $params);
+        if ($selectedRange === 'all') {
+            $du_lieu_bieu_do = [];
         }
-
-        /* =================================================
-           6.2. LẤY DỮ LIỆU BIỂU ĐỒ TẤT CẢ THỜI GIAN
-           Gộp theo tháng để không tạo quá nhiều cột.
-           ================================================= */
-        if (
-            $selectedRange === 'all' &&
-            isset($db_tables['learning_sessions']) &&
-            isset($db_tables['quiz_results'])
-        ) {
-            $sqlChart = "
-                SELECT
-                    DATE_FORMAT(activity_date, '%Y-%m') AS period_key,
-                    DATE_FORMAT(activity_date, '%m/%Y') AS period_label,
-                    SUM(words_count) AS total_words
-                FROM (
-                    SELECT session_date AS activity_date, words_studied AS words_count
-                    FROM $tbl_sessions
-                    WHERE user_id = ? AND words_studied > 0
-
-                    UNION ALL
-
-                    SELECT DATE(COALESCE(finished_at, started_at)) AS activity_date,
-                           total_questions AS words_count
-                    FROM $tbl_quiz
-                    WHERE user_id = ?
-                ) learning_activity
-                GROUP BY
-                    DATE_FORMAT(activity_date, '%Y-%m'),
-                    DATE_FORMAT(activity_date, '%m/%Y')
-                ORDER BY period_key ASC
-            ";
-
-            if ($stmt = mysqli_prepare($link, $sqlChart)) {
-                mysqli_stmt_bind_param($stmt, 'ii', $user_id, $user_id);
-
-                mysqli_stmt_execute($stmt);
-
-                $result = mysqli_stmt_get_result($stmt);
-                $allTimeChartData = [];
-
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $allTimeChartData[] = [
-                        'key' => $row['period_key'],
-                        'label' => $row['period_label'],
-                        'so_tu' => (int) $row['total_words'],
-                        'chieu_cao' => '0%'
-                    ];
-                }
-
-                mysqli_stmt_close($stmt);
-
-                if (!empty($allTimeChartData)) {
-                    $du_lieu_bieu_do = $allTimeChartData;
-                }
+        foreach ($activities as $row) {
+            $date = date('Y-m-d', strtotime($row['activity_time']));
+            $words = $row['activity_type'] === 'quiz' ? (int) $row['total_questions'] : (int) $row['words_studied'];
+            $key = $selectedRange === 'all' ? date('Y-m', strtotime($date)) : $date;
+            if ($selectedRange === 'all' && !isset($du_lieu_bieu_do[$key])) {
+                $du_lieu_bieu_do[$key] = ['key' => $key, 'label' => date('m/Y', strtotime($date)), 'so_tu' => 0, 'chieu_cao' => '0%'];
             }
+            if (isset($du_lieu_bieu_do[$key])) { $du_lieu_bieu_do[$key]['so_tu'] += $words; }
+            $time = dinhDangThoiGian($row['activity_time']);
+            if (!(int) $row['has_exact_time']) { $time = 'Ngày ' . date('d/m/Y', strtotime($row['activity_time'])) . ' · chưa lưu giờ'; }
+            $danh_sach_lich_su[] = [
+                'loai' => $row['activity_type'],
+                'hoat_dong' => ($row['activity_type'] === 'quiz' ? 'Quiz · ' : 'Flashcard · ') . $row['source_name'],
+                'ket_qua' => $row['activity_type'] === 'quiz'
+                    ? 'Đúng ' . (int) $row['correct_answers'] . '/' . (int) $row['total_questions']
+                    : 'Đã học ' . (int) $row['words_studied'] . ' từ',
+                'thoi_gian' => $time,
+                'thoi_luong' => dinhDangThoiLuong((int) $row['duration_seconds']),
+            ];
         }
-
-        /* =================================================
-           6.3. LỌC BẢNG NHẬT KÝ CÙNG KHOẢNG VỚI BIỂU ĐỒ
-           ================================================= */
-        if (
-            isset($db_tables['quiz_results']) &&
-            isset($db_tables['learning_sessions'])
-        ) {
-            if ($selectedRange === 'all') {
-                $sqlHistory = "
-                    (
-                        SELECT
-                            q.id,
-                            CONCAT(
-                                'Quiz - ',
-                                COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp')
-                            ) AS hoat_dong,
-                            'quiz' AS loai,
-                            CONCAT(
-                                q.correct_answers,
-                                '/',
-                                q.total_questions
-                            ) AS ket_qua,
-                            COALESCE(
-                                q.finished_at,
-                                q.started_at
-                            ) AS thoi_gian_raw,
-                            GREATEST(0, TIMESTAMPDIFF(SECOND, q.started_at, q.finished_at)) AS thoi_luong_giay,
-                            1 AS co_gio_chinh_xac
-                        FROM $tbl_quiz q
-                        LEFT JOIN $tbl_topics t
-                            ON q.topic_id = t.topicID
-                        LEFT JOIN $tbl_sets vs
-                            ON q.vocabulary_set_id = vs.id
-                        WHERE q.user_id = ?
-                    )
-
-                    UNION ALL
-
-                    (
-                        SELECT
-                            s.id,
-                            CONCAT(
-                                'Flashcard - ',
-                                COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp')
-                            ) AS hoat_dong,
-                            'flashcard' AS loai,
-                            CONCAT(s.words_studied, ' thẻ') AS ket_qua,
-                            COALESCE(
-                                s.finished_at,
-                                s.started_at,
-                                CAST(CONCAT(s.session_date, ' 12:00:00') AS DATETIME)
-                            ) AS thoi_gian_raw,
-                            COALESCE(s.duration_seconds, 0) AS thoi_luong_giay,
-                            IF(s.finished_at IS NULL AND s.started_at IS NULL, 0, 1) AS co_gio_chinh_xac
-                        FROM $tbl_sessions s
-                        LEFT JOIN $tbl_topics t
-                            ON s.topic_id = t.topicID
-                        LEFT JOIN $tbl_sets vs
-                            ON s.vocabulary_set_id = vs.id
-                        WHERE s.user_id = ?
-                          AND s.words_studied > 0
-                    )
-
-                    ORDER BY thoi_gian_raw DESC
-                ";
-
-                if ($stmt = mysqli_prepare($link, $sqlHistory)) {
-                    mysqli_stmt_bind_param(
-                        $stmt,
-                        'ii',
-                        $user_id,
-                        $user_id
-                    );
-
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        $danh_sach_lich_su[] = $row;
-                    }
-
-                    mysqli_stmt_close($stmt);
-                }
-            } else {
-                $sqlHistory = "
-                    (
-                        SELECT
-                            q.id,
-                            CONCAT(
-                                'Quiz - ',
-                                COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp')
-                            ) AS hoat_dong,
-                            'quiz' AS loai,
-                            CONCAT(
-                                q.correct_answers,
-                                '/',
-                                q.total_questions
-                            ) AS ket_qua,
-                            COALESCE(
-                                q.finished_at,
-                                q.started_at
-                            ) AS thoi_gian_raw,
-                            GREATEST(0, TIMESTAMPDIFF(SECOND, q.started_at, q.finished_at)) AS thoi_luong_giay,
-                            1 AS co_gio_chinh_xac
-                        FROM $tbl_quiz q
-                        LEFT JOIN $tbl_topics t
-                            ON q.topic_id = t.topicID
-                        LEFT JOIN $tbl_sets vs
-                            ON q.vocabulary_set_id = vs.id
-                        WHERE q.user_id = ?
-                          AND DATE(
-                              COALESCE(
-                                  q.finished_at,
-                                  q.started_at
-                              )
-                          ) BETWEEN ? AND ?
-                    )
-
-                    UNION ALL
-
-                    (
-                        SELECT
-                            s.id,
-                            CONCAT(
-                                'Flashcard - ',
-                                COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp')
-                            ) AS hoat_dong,
-                            'flashcard' AS loai,
-                            CONCAT(s.words_studied, ' thẻ') AS ket_qua,
-                            COALESCE(
-                                s.finished_at,
-                                s.started_at,
-                                CAST(CONCAT(s.session_date, ' 12:00:00') AS DATETIME)
-                            ) AS thoi_gian_raw,
-                            COALESCE(s.duration_seconds, 0) AS thoi_luong_giay,
-                            IF(s.finished_at IS NULL AND s.started_at IS NULL, 0, 1) AS co_gio_chinh_xac
-                        FROM $tbl_sessions s
-                        LEFT JOIN $tbl_topics t
-                            ON s.topic_id = t.topicID
-                        LEFT JOIN $tbl_sets vs
-                            ON s.vocabulary_set_id = vs.id
-                        WHERE s.user_id = ?
-                          AND s.session_date BETWEEN ? AND ?
-                          AND s.words_studied > 0
-                    )
-
-                    ORDER BY thoi_gian_raw DESC
-                ";
-
-                if ($stmt = mysqli_prepare($link, $sqlHistory)) {
-                    mysqli_stmt_bind_param(
-                        $stmt,
-                        'ississ',
-                        $user_id,
-                        $chartStartDate,
-                        $chartEndDate,
-                        $user_id,
-                        $chartStartDate,
-                        $chartEndDate
-                    );
-
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        $danh_sach_lich_su[] = $row;
-                    }
-
-                    mysqli_stmt_close($stmt);
-                }
-            }
-
-            /*
-             * Thêm id hiển thị và định dạng thời gian sau khi query.
-             */
-            foreach ($danh_sach_lich_su as $index => &$row) {
-                $row['id'] = $index + 1;
-                $row['thoi_gian'] = dinhDangThoiGian(
-                    $row['thoi_gian_raw']
-                );
-                if (!(int) ($row['co_gio_chinh_xac'] ?? 0)) {
-                    $row['thoi_gian'] = 'Ngày ' . date('d/m/Y', strtotime($row['thoi_gian_raw']))
-                        . ' (dữ liệu cũ chưa lưu giờ)';
-                }
-                $row['thoi_luong'] = dinhDangThoiLuong((int) ($row['thoi_luong_giay'] ?? 0));
-
-                if ($row['loai'] === 'quiz') {
-                    [$correct, $total] = array_pad(explode('/', $row['ket_qua'], 2), 2, 0);
-                    $correct = (int) $correct;
-                    $total = (int) $total;
-                    $percent = $total > 0 ? (int) round(($correct / $total) * 100) : 0;
-                    $row['ket_qua'] = "Đúng $correct/$total";
-                    // $percent%
-                } else {
-                    $wordTotal = (int) $row['ket_qua'];
-                    $row['ket_qua'] = "Đã học $wordTotal từ";
-                }
-            }
-
-            unset($row);
+        if (!$du_lieu_bieu_do) {
+            $du_lieu_bieu_do = ['empty' => ['key' => 'empty', 'label' => 'Chưa có dữ liệu', 'so_tu' => 0, 'chieu_cao' => '0%']];
         }
-    } catch (Throwable $e) {
-        error_log('Lỗi Lịch sử ôn tập: ' . $e->getMessage());
+    } catch (Throwable $error) {
+        error_log('Lỗi Lịch sử ôn tập: ' . $error->getMessage());
     }
 }
-
-// Phân trang sau khi hợp nhất Quiz và Flashcard để giữ đúng thứ tự thời gian.
+$du_lieu_bieu_do = array_values($du_lieu_bieu_do);
 $historyTotalItems = count($danh_sach_lich_su);
 $historyTotalPages = max(1, (int) ceil($historyTotalItems / $historyPerPage));
 $historyPage = min($historyPage, $historyTotalPages);
-$historyOffset = ($historyPage - 1) * $historyPerPage;
-$danh_sach_lich_su = array_slice($danh_sach_lich_su, $historyOffset, $historyPerPage);
+$danh_sach_lich_su = array_slice($danh_sach_lich_su, ($historyPage - 1) * $historyPerPage, $historyPerPage);
 $historyFirstVisiblePage = max(1, min($historyPage - 1, $historyTotalPages - 2));
 $historyLastVisiblePage = min($historyTotalPages, $historyFirstVisiblePage + 2);
-
-/* =========================================================
-   7. TÍNH TỔNG VÀ CHIỀU CAO CỘT BIỂU ĐỒ
-   ========================================================= */
-$tong_tu_tuan = array_sum(
-    array_column($du_lieu_bieu_do, 'so_tu')
-);
-
-$maxWords = max(
-    array_column($du_lieu_bieu_do, 'so_tu') ?: [0]
-);
-
+$tong_tu_tuan = array_sum(array_column($du_lieu_bieu_do, 'so_tu'));
+$maxWords = max(array_column($du_lieu_bieu_do, 'so_tu') ?: [0]);
 foreach ($du_lieu_bieu_do as &$item) {
-    if ($maxWords > 0 && $item['so_tu'] > 0) {
-        $percent = round(
-            ($item['so_tu'] / $maxWords) * 100
-        );
-
-        /*
-         * Cột có dữ liệu thấp vẫn hiển thị tối thiểu 15%.
-         */
-        $item['chieu_cao'] = max(
-            15,
-            min(100, $percent)
-        ) . '%';
-    }
+    $item['chieu_cao'] = $maxWords > 0 && $item['so_tu'] > 0 ? max(8, min(100, round($item['so_tu'] * 100 / $maxWords))) . '%' : '0%';
 }
-
 unset($item);
 ?>
 

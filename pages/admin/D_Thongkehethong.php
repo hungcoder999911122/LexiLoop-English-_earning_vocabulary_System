@@ -1,56 +1,18 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-// ---- B5: SELECT du lieu thong ke tu CSDL ----
-
-// The so 1: nguoi dung dang hoat dong
-$nguoiDungHoatDong = mysqli_fetch_assoc(mysqli_query(
-    $link,
-    "SELECT COUNT(*) AS soLuong FROM Users WHERE status = 'active'"
-))["soLuong"];
-
-// The so 2: ty le hoan thanh quiz (so quiz da finished / tong so quiz da bat dau)
-$tongQuiz = mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(*) AS tong FROM quiz_results"))["tong"];
-$quizXong = mysqli_fetch_assoc(mysqli_query(
-    $link,
-    "SELECT COUNT(*) AS tong FROM quiz_results WHERE finished_at IS NOT NULL"
-))["tong"];
-$tyLeHoanThanh = $tongQuiz > 0 ? round(($quizXong / $tongQuiz) * 100) : 0;
-
-// The so 3: trung binh so tu on tap moi ngay (trung binh words_studied theo ngay)
-$trungBinhTu = mysqli_fetch_assoc(mysqli_query(
-    $link,
-    "SELECT COALESCE(ROUND(AVG(words_studied)), 0) AS trungBinh FROM learning_sessions"
-))["trungBinh"];
-
-// Bieu do 1: nguoi dung moi theo thang (6 thang gan nhat)
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$nguoiDungHoatDong = (int) (dbSelectView($link, "SELECT COUNT(*) AS value FROM vw_users WHERE status = 'active'")[0]['value'] ?? 0);
+$tongQuiz = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_quiz_results')[0]['value'] ?? 0);
+$quizXong = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_quiz_results WHERE finished_at IS NOT NULL')[0]['value'] ?? 0);
+$tyLeHoanThanh = $tongQuiz > 0 ? round($quizXong * 100 / $tongQuiz) : 0;
+$trungBinhTu = (int) (dbSelectView($link, 'SELECT COALESCE(ROUND(AVG(words_studied)), 0) AS value FROM vw_learning_sessions')[0]['value'] ?? 0);
 $nguoiDungTheoThang = [];
 for ($i = 5; $i >= 0; $i--) {
-    $thang = date("Y-m", strtotime("-$i month"));
-    $stmt = mysqli_prepare($link, "SELECT COUNT(*) AS soLuong FROM Users WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
-    mysqli_stmt_bind_param($stmt, "s", $thang);
-    mysqli_stmt_execute($stmt);
-    $soLuong = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt))["soLuong"];
-    $nguoiDungTheoThang[] = (int) $soLuong;
-    mysqli_stmt_close($stmt);
+    $month = date('Y-m', strtotime("-$i month"));
+    $rows = dbSelectView($link, "SELECT COUNT(*) AS value FROM vw_users WHERE DATE_FORMAT(created_at, '%Y-%m') = ?", 's', [$month]);
+    $nguoiDungTheoThang[] = (int) ($rows[0]['value'] ?? 0);
 }
 $dinhCaoThang = max(max($nguoiDungTheoThang), 1);
-
-// Bieu do 2 + bang: chu de duoc hoc nhieu nhat (dua theo user_vocab_progress)
-$sqlChuDeHocNhieu = "
-    SELECT t.topicName, COUNT(*) AS soLuot
-    FROM user_vocab_progress p
-    JOIN vocabulary v ON p.vocabulary_id = v.id
-    JOIN Topics t ON v.topic_id = t.topicID
-    GROUP BY t.topicID, t.topicName
-    ORDER BY soLuot DESC
-    LIMIT 5
-";
-$ketQuaChuDeHocNhieu = mysqli_query($link, $sqlChuDeHocNhieu);
-$dsChuDeHocNhieu = mysqli_fetch_all($ketQuaChuDeHocNhieu, MYSQLI_ASSOC);
+$dsChuDeHocNhieu = dbSelectView($link, 'SELECT topic_name AS topicName, COUNT(*) AS soLuot FROM vw_user_progress WHERE topic_id IS NOT NULL GROUP BY topic_id, topic_name ORDER BY soLuot DESC LIMIT 5');
 ?>
 <!doctype html>
 <html lang="vi">

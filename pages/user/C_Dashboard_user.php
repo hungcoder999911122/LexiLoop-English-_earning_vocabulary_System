@@ -1,270 +1,43 @@
 <?php
-
-// =====================================================
-// 1. KẾT NỐI DATABASE
-// =====================================================
-// =====================================================
-// 2. KHỞI ĐỘNG SESSION
-// =====================================================
-// =====================================================
-// 3. KIỂM TRA ĐĂNG NHẬP
-// =====================================================
-
 require_once '../../includes/auth_guard.php';
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-
-// auth_guard.php đã chắc chắn user_id tồn tại.
-// Ép kiểu int giúp dữ liệu truyền vào truy vấn nhất quán.
+require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 $userId = (int) $_SESSION['user_id'];
 
-// =====================================================
-// LẤY THÔNG TIN USER
-// =====================================================
-$sqlUser = "
-    SELECT
-        userID,
-        full_name,
-        avatar_url,
-        daily_target_words
-    FROM Users
-    WHERE userID = ?
-";
-
-$stmtUser = mysqli_prepare($link, $sqlUser);
-
-mysqli_stmt_bind_param($stmtUser, "i", $userId);
-
-mysqli_stmt_execute($stmtUser);
-
-$resultUser = mysqli_stmt_get_result($stmtUser);
-
-$user = mysqli_fetch_assoc($resultUser);
-
-if (!$user) {
-    die("Không tìm thấy thông tin người dùng.");
-}
-
-
-// =====================================================
-// 6. THÔNG TIN HIỂN THỊ
-// =====================================================
+$userRows = dbSelectView($link, 'SELECT userID, full_name, avatar_url, daily_target_words FROM vw_users WHERE userID = ? LIMIT 1', 'i', [$userId]);
+if (!$userRows) { exit('Không tìm thấy thông tin người dùng.'); }
+$user = $userRows[0];
 $fullName = $user['full_name'];
-
-$dailyTarget = (int)$user['daily_target_words'];
-
-// =====================================================
-// 7. LẤY CHUỖI HỌC GẦN NHẤT
-// =====================================================
-
-$sqlStreak = "
-    SELECT streak_count
-    FROM learning_sessions
-    WHERE user_id = ?
-    ORDER BY session_date DESC, id DESC
-    LIMIT 1
-";
-
-$stmtStreak = mysqli_prepare($link, $sqlStreak);
-
-mysqli_stmt_bind_param($stmtStreak, "i", $userId);
-
-mysqli_stmt_execute($stmtStreak);
-
-$resultStreak = mysqli_stmt_get_result($stmtStreak);
-
-$rowStreak = mysqli_fetch_assoc($resultStreak);
-
-$streak = $rowStreak ? (int)$rowStreak['streak_count'] : 0;
-
-// =====================================================
-// 8. SỐ TỪ ĐANG HỌC
-// =====================================================
-
-$sqlLearning = "
-    SELECT COUNT(*) AS total
-    FROM user_vocab_progress
-    WHERE user_id = ?
-      AND status = 'learning'
-";
-
-$stmtLearning = mysqli_prepare($link, $sqlLearning);
-
-mysqli_stmt_bind_param($stmtLearning, "i", $userId);
-
-mysqli_stmt_execute($stmtLearning);
-
-$resultLearning = mysqli_stmt_get_result($stmtLearning);
-
-$rowLearning = mysqli_fetch_assoc($resultLearning);
-
-$learningWords = (int)$rowLearning['total'];
-
-// =====================================================
-// 9. SỐ TỪ ĐÃ THUỘC
-// =====================================================
-
-$sqlMastered = "
-    SELECT COUNT(*) AS total
-    FROM user_vocab_progress
-    WHERE user_id = ?
-      AND status = 'mastered'
-";
-
-$stmtMastered = mysqli_prepare($link, $sqlMastered);
-
-mysqli_stmt_bind_param($stmtMastered, "i", $userId);
-
-mysqli_stmt_execute($stmtMastered);
-
-$resultMastered = mysqli_stmt_get_result($stmtMastered);
-
-$rowMastered = mysqli_fetch_assoc($resultMastered);
-
-$masteredWords = (int)$rowMastered['total'];
-
-// =====================================================
-// 10. TIẾN ĐỘ GHI NHỚ TỔNG THỂ
-// =====================================================
+$dailyTarget = (int) $user['daily_target_words'];
+$streakRows = dbSelectView($link, 'SELECT fn_get_current_streak(?) AS value', 'i', [$userId]);
+$streak = (int) ($streakRows[0]['value'] ?? 0);
+$learningRows = dbSelectView($link, "SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND status = 'learning'", 'i', [$userId]);
+$learningWords = (int) ($learningRows[0]['total'] ?? 0);
+$masteredRows = dbSelectView($link, "SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND status = 'mastered'", 'i', [$userId]);
+$masteredWords = (int) ($masteredRows[0]['total'] ?? 0);
 $trackedWords = $learningWords + $masteredWords;
-$learningProgressPercent = $trackedWords > 0
-    ? min(100, (int) round(($masteredWords / $trackedWords) * 100))
-    : 0;
-
-// =====================================================
-// 11. SỐ TỪ CẦN ÔN HÔM NAY
-// =====================================================
-
-$sqlReviewToday = "
-    SELECT COUNT(*) AS total
-    FROM user_vocab_progress
-    WHERE user_id = ?
-      AND next_review_date <= CURDATE()
-";
-
-$stmtReviewToday = mysqli_prepare($link, $sqlReviewToday);
-
-mysqli_stmt_bind_param($stmtReviewToday, "i", $userId);
-
-mysqli_stmt_execute($stmtReviewToday);
-
-$resultReviewToday = mysqli_stmt_get_result($stmtReviewToday);
-
-$rowReviewToday = mysqli_fetch_assoc($resultReviewToday);
-
-$reviewToday = (int)$rowReviewToday['total'];
-
-// =====================================================
-// 12. SỐ TỪ ĐÃ HỌC HÔM NAY
-// =====================================================
-
-$sqlTodayWords = "
-    SELECT COALESCE(SUM(words_count), 0) AS total
-    FROM (
-        SELECT words_studied AS words_count
-        FROM learning_sessions
-        WHERE user_id = ? AND session_date = CURDATE()
-
-        UNION ALL
-
-        SELECT total_questions AS words_count
-        FROM quiz_results
-        WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURDATE()
-    ) today_activity
-";
-
-$stmtTodayWords = mysqli_prepare($link, $sqlTodayWords);
-
-mysqli_stmt_bind_param($stmtTodayWords, "ii", $userId, $userId);
-
-mysqli_stmt_execute($stmtTodayWords);
-
-$resultTodayWords = mysqli_stmt_get_result($stmtTodayWords);
-
-$rowTodayWords = mysqli_fetch_assoc($resultTodayWords);
-
-$todayWords = (int)$rowTodayWords['total'];
-
-// =====================================================
-// 13. TÍNH TIẾN ĐỘ MỤC TIÊU
-// =====================================================
-
-if ($dailyTarget > 0) {
-    $targetPercent = ($todayWords / $dailyTarget) * 100;
-    $targetPercent = min($targetPercent, 100);
-} else {
-    $targetPercent = 0;
-}
-
+$learningProgressPercent = $trackedWords > 0 ? min(100, (int) round($masteredWords * 100 / $trackedWords)) : 0;
+$reviewRows = dbSelectView($link, 'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE', 'i', [$userId]);
+$reviewToday = (int) ($reviewRows[0]['total'] ?? 0);
+$sessionRows = dbSelectView($link, 'SELECT COALESCE(SUM(words_studied), 0) AS total FROM vw_learning_sessions WHERE user_id = ? AND session_date = CURRENT_DATE', 'i', [$userId]);
+$quizRows = dbSelectView($link, 'SELECT COALESCE(SUM(total_questions), 0) AS total FROM vw_quiz_results WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURRENT_DATE', 'i', [$userId]);
+$todayWords = (int) ($sessionRows[0]['total'] ?? 0) + (int) ($quizRows[0]['total'] ?? 0);
+$targetPercent = $dailyTarget > 0 ? min(100, $todayWords * 100 / $dailyTarget) : 0;
 $remainingWords = max($dailyTarget - $todayWords, 0);
 
-// =====================================================
-// 14. HOẠT ĐỘNG FLASHCARD VÀ QUIZ GẦN ĐÂY
-// =====================================================
-
-$sqlRecentActivity = "
-    SELECT *
-    FROM (
-        SELECT
-            qr.id,
-            'quiz' AS activity_type,
-            COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp') AS source_name,
-            qr.correct_answers,
-            qr.total_questions,
-            NULL AS words_studied,
-            COALESCE(qr.finished_at, qr.started_at) AS activity_time,
-            GREATEST(0, TIMESTAMPDIFF(SECOND, qr.started_at, qr.finished_at)) AS duration_seconds,
-            1 AS has_exact_time
-        FROM quiz_results qr
-        LEFT JOIN Topics t ON qr.topic_id = t.topicID
-        LEFT JOIN vocabulary_sets vs ON qr.vocabulary_set_id = vs.id
-        WHERE qr.user_id = ?
-
-        UNION ALL
-
-        SELECT
-            ls.id,
-            'flashcard' AS activity_type,
-            COALESCE(t.topicName, vs.name, 'Ôn tập tổng hợp') AS source_name,
-            NULL AS correct_answers,
-            NULL AS total_questions,
-            ls.words_studied,
-            COALESCE(ls.finished_at, ls.started_at, CAST(CONCAT(ls.session_date, ' 00:00:00') AS DATETIME)) AS activity_time,
-            COALESCE(ls.duration_seconds, 0) AS duration_seconds,
-            IF(ls.finished_at IS NULL AND ls.started_at IS NULL, 0, 1) AS has_exact_time
-        FROM learning_sessions ls
-        LEFT JOIN Topics t ON ls.topic_id = t.topicID
-        LEFT JOIN vocabulary_sets vs ON ls.vocabulary_set_id = vs.id
-        WHERE ls.user_id = ? AND ls.words_studied > 0
-    ) recent_activity
-    ORDER BY activity_time DESC, id DESC
-    LIMIT 5
-";
-
-$stmtRecentActivity = mysqli_prepare($link, $sqlRecentActivity);
-mysqli_stmt_bind_param($stmtRecentActivity, "ii", $userId, $userId);
-mysqli_stmt_execute($stmtRecentActivity);
-$resultRecentActivity = mysqli_stmt_get_result($stmtRecentActivity);
-$recentActivities = [];
-
-while ($row = mysqli_fetch_assoc($resultRecentActivity)) {
-    $row['display_time'] = $row['activity_time']
-        ? date('H:i, d/m/Y', strtotime($row['activity_time']))
-        : 'Chưa ghi nhận thời gian';
+$recentActivities = dbSelectView($link, 'SELECT * FROM vw_user_recent_activity WHERE user_id = ? ORDER BY activity_time DESC, id DESC LIMIT 5', 'i', [$userId]);
+foreach ($recentActivities as &$row) {
+    $row['display_time'] = $row['activity_time'] ? date('H:i, d/m/Y', strtotime($row['activity_time'])) : 'Chưa ghi nhận thời gian';
     if (!(int) $row['has_exact_time'] && $row['activity_time']) {
         $row['display_time'] = 'Ngày ' . date('d/m/Y', strtotime($row['activity_time'])) . ' · chưa lưu giờ';
     }
-    $durationSeconds = max(0, (int) $row['duration_seconds']);
-    $row['duration_text'] = $durationSeconds >= 60
-        ? intdiv($durationSeconds, 60) . ' phút'
-        : $durationSeconds . ' giây';
+    $seconds = max(0, (int) $row['duration_seconds']);
+    $row['duration_text'] = $seconds >= 60 ? intdiv($seconds, 60) . ' phút' : $seconds . ' giây';
     if ($row['activity_type'] === 'quiz') {
-        $row['score_percent'] = (int) $row['total_questions'] > 0
-            ? (int) round(((int) $row['correct_answers'] / (int) $row['total_questions']) * 100)
-            : 0;
+        $row['score_percent'] = (int) $row['total_questions'] > 0 ? (int) round((int) $row['correct_answers'] * 100 / (int) $row['total_questions']) : 0;
     }
-    $recentActivities[] = $row;
 }
-mysqli_stmt_close($stmtRecentActivity);
+unset($row);
 ?>
 
 <!DOCTYPE html>

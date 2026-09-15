@@ -1,20 +1,17 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $isLoggedIn ? (int) $_SESSION['user_id'] : null;
 $flash = $isLoggedIn ? ($_SESSION['C_Botuvung_flash'] ?? null) : null;
 if ($isLoggedIn) unset($_SESSION['C_Botuvung_flash']);
-
 if ($isLoggedIn && empty($_SESSION['C_Botuvung_csrf'])) {
     $_SESSION['C_Botuvung_csrf'] = bin2hex(random_bytes(32));
 }
 $csrfToken = $isLoggedIn ? $_SESSION['C_Botuvung_csrf'] : '';
 
-/** Chuyển hướng theo PRG để refresh không gửi lại thao tác CRUD. */
 function redirectVocabularySets(string $message, string $type = 'success'): void
 {
     $_SESSION['C_Botuvung_flash'] = ['message' => $message, 'type' => $type];
@@ -22,130 +19,74 @@ function redirectVocabularySets(string $message, string $type = 'success'): void
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isLoggedIn) {
-    header('Location: ../auth/A_DangNhap.php');
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$isLoggedIn) {
+        header('Location: ../auth/A_DangNhap.php');
+        exit;
+    }
     $postedToken = $_POST['C_Botuvung_csrf'] ?? '';
     if (!is_string($postedToken) || !hash_equals($csrfToken, $postedToken)) {
         redirectVocabularySets('Yêu cầu không hợp lệ. Vui lòng tải lại trang.', 'error');
     }
-
     $action = $_POST['C_Botuvung_action'] ?? '';
     $setId = filter_var($_POST['C_Botuvung_setId'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
-
-    if ($action === 'create' || $action === 'update') {
-        $name = trim($_POST['C_Botuvung_name'] ?? '');
-        $description = trim($_POST['C_Botuvung_description'] ?? '');
-
-        if ($name === '' || mb_strlen($name) > 100) {
-            redirectVocabularySets('Tên bộ từ là bắt buộc và không quá 100 ký tự.', 'error');
-        }
-        if (mb_strlen($description) > 255) {
-            redirectVocabularySets('Mô tả không được vượt quá 255 ký tự.', 'error');
-        }
-        if ($action === 'update' && $setId <= 0) {
-            redirectVocabularySets('Bộ từ cần sửa không hợp lệ.', 'error');
-        }
-
-        if ($action === 'update') {
-            $ownerStmt = mysqli_prepare($link, 'SELECT id FROM vocabulary_sets WHERE id = ? AND user_id = ? LIMIT 1');
-            mysqli_stmt_bind_param($ownerStmt, 'ii', $setId, $userId);
-            mysqli_stmt_execute($ownerStmt);
-            $isOwner = mysqli_num_rows(mysqli_stmt_get_result($ownerStmt)) === 1;
-            mysqli_stmt_close($ownerStmt);
-            if (!$isOwner) {
-                redirectVocabularySets('Không tìm thấy bộ từ hoặc bạn không có quyền sửa.', 'error');
+    try {
+        if (in_array($action, ['create', 'update'], true)) {
+            $name = trim($_POST['C_Botuvung_name'] ?? '');
+            $description = trim($_POST['C_Botuvung_description'] ?? '');
+            if ($name === '' || mb_strlen($name) > 100 || mb_strlen($description) > 255) {
+                throw new InvalidArgumentException('Tên hoặc mô tả bộ từ không hợp lệ.');
             }
+            if ($action === 'update' && $setId <= 0) {
+                throw new InvalidArgumentException('Bộ từ cần sửa không hợp lệ.');
+            }
+            dbCallProcedure(
+                $link,
+                'CALL sp_save_vocabulary_set(?, ?, ?, ?)',
+                'iiss',
+                [$userId, $action === 'create' ? null : $setId, $name, $description]
+            );
+            redirectVocabularySets($action === 'create' ? 'Đã tạo bộ từ mới.' : 'Đã cập nhật bộ từ.');
         }
-
-        // Schema chưa có UNIQUE(user_id, name), do đó kiểm tra trùng tại server.
-        $duplicateSql = 'SELECT id FROM vocabulary_sets WHERE user_id = ? AND LOWER(name) = LOWER(?) AND id <> ? LIMIT 1';
-        $duplicateStmt = mysqli_prepare($link, $duplicateSql);
-        mysqli_stmt_bind_param($duplicateStmt, 'isi', $userId, $name, $setId);
-        mysqli_stmt_execute($duplicateStmt);
-        $isDuplicate = mysqli_num_rows(mysqli_stmt_get_result($duplicateStmt)) > 0;
-        mysqli_stmt_close($duplicateStmt);
-
-        if ($isDuplicate) {
-            redirectVocabularySets('Bạn đã có một bộ từ trùng tên.', 'error');
+        if ($action === 'delete' && $setId > 0) {
+            dbCallProcedure($link, 'CALL sp_delete_vocabulary_set(?, ?)', 'ii', [$userId, $setId]);
+            redirectVocabularySets('Đã xóa bộ từ.');
         }
-
-        if ($action === 'create') {
-            $stmt = mysqli_prepare($link, 'INSERT INTO vocabulary_sets (user_id, name, description) VALUES (?, ?, ?)');
-            mysqli_stmt_bind_param($stmt, 'iss', $userId, $name, $description);
-            $ok = mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-            redirectVocabularySets($ok ? 'Đã tạo bộ từ mới.' : 'Không thể tạo bộ từ.', $ok ? 'success' : 'error');
-        }
-
-        // Điều kiện user_id ngăn sửa bộ từ của tài khoản khác dù ID bị thay đổi.
-        $stmt = mysqli_prepare($link, 'UPDATE vocabulary_sets SET name = ?, description = ? WHERE id = ? AND user_id = ?');
-        mysqli_stmt_bind_param($stmt, 'ssii', $name, $description, $setId, $userId);
-        $ok = mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
-        redirectVocabularySets($ok ? 'Đã cập nhật bộ từ.' : 'Không thể cập nhật bộ từ.', $ok ? 'success' : 'error');
-    }
-
-    if ($action === 'delete') {
-        if ($setId <= 0) {
-            redirectVocabularySets('Bộ từ cần xóa không hợp lệ.', 'error');
-        }
-
-        // ON DELETE CASCADE chỉ xóa liên kết vocabulary_set_items, không xóa vocabulary.
-        $stmt = mysqli_prepare($link, 'DELETE FROM vocabulary_sets WHERE id = ? AND user_id = ?');
-        mysqli_stmt_bind_param($stmt, 'ii', $setId, $userId);
-        $ok = mysqli_stmt_execute($stmt);
-        $deletedRows = mysqli_stmt_affected_rows($stmt);
-        mysqli_stmt_close($stmt);
+        throw new InvalidArgumentException('Thao tác không được hỗ trợ.');
+    } catch (Throwable $error) {
+        error_log('Lỗi bộ từ: ' . $error->getMessage());
         redirectVocabularySets(
-            $ok && $deletedRows === 1 ? 'Đã xóa bộ từ.' : 'Không tìm thấy bộ từ hoặc bạn không có quyền xóa.',
-            $ok && $deletedRows === 1 ? 'success' : 'error'
+            $error instanceof InvalidArgumentException ? $error->getMessage() : 'Không thể xử lý bộ từ.',
+            'error'
         );
     }
-
-    redirectVocabularySets('Thao tác không được hỗ trợ.', 'error');
 }
 
 $search = trim($_GET['q'] ?? '');
 $page = max(1, filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
-// Mỗi trang hiển thị đúng 6 bộ để lưới 3 cột luôn tạo thành 2 hàng cân đối.
 $itemsPerPage = 6;
-$searchPattern = '%' . $search . '%';
+$vocabularySets = [];
 $totalItems = 0;
 $totalPages = 1;
-$vocabularySets = [];
-
 if ($isLoggedIn) {
-$countSql = 'SELECT COUNT(*) AS total FROM vocabulary_sets WHERE user_id = ? AND (name LIKE ? OR COALESCE(description, \'\') LIKE ?)';
-$countStmt = mysqli_prepare($link, $countSql);
-mysqli_stmt_bind_param($countStmt, 'iss', $userId, $searchPattern, $searchPattern);
-mysqli_stmt_execute($countStmt);
-$totalItems = (int) mysqli_fetch_assoc(mysqli_stmt_get_result($countStmt))['total'];
-mysqli_stmt_close($countStmt);
-
-$totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
-$page = min($page, $totalPages);
-$offset = ($page - 1) * $itemsPerPage;
-
-$listSql = '
-    SELECT vs.id, vs.name, vs.description, vs.created_at, vs.updated_at, COUNT(vsi.id) AS word_count
-    FROM vocabulary_sets vs
-    LEFT JOIN vocabulary_set_items vsi ON vsi.vocabulary_set_id = vs.id
-    WHERE vs.user_id = ? AND (vs.name LIKE ? OR COALESCE(vs.description, \'\') LIKE ?)
-    GROUP BY vs.id, vs.name, vs.description, vs.created_at, vs.updated_at
-    ORDER BY vs.updated_at DESC, vs.id DESC
-    LIMIT ? OFFSET ?';
-$listStmt = mysqli_prepare($link, $listSql);
-mysqli_stmt_bind_param($listStmt, 'issii', $userId, $searchPattern, $searchPattern, $itemsPerPage, $offset);
-mysqli_stmt_execute($listStmt);
-$result = mysqli_stmt_get_result($listStmt);
-while ($row = mysqli_fetch_assoc($result)) {
-    $vocabularySets[] = $row;
-}
-mysqli_stmt_close($listStmt);
+    $pattern = '%' . $search . '%';
+    $countRows = dbSelectView(
+        $link,
+        "SELECT COUNT(*) AS total FROM vw_vocabulary_sets WHERE user_id = ? AND (name LIKE ? OR COALESCE(description, '') LIKE ?)",
+        'iss',
+        [$userId, $pattern, $pattern]
+    );
+    $totalItems = (int) ($countRows[0]['total'] ?? 0);
+    $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
+    $page = min($page, $totalPages);
+    $offset = ($page - 1) * $itemsPerPage;
+    $vocabularySets = dbSelectView(
+        $link,
+        "SELECT * FROM vw_vocabulary_sets WHERE user_id = ? AND (name LIKE ? OR COALESCE(description, '') LIKE ?)
+         ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
+        'issii',
+        [$userId, $pattern, $pattern, $itemsPerPage, $offset]
+    );
 }
 ?>
 <!DOCTYPE html>

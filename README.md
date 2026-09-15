@@ -386,7 +386,12 @@ Trong tương lai, hệ thống có thể mở rộng thêm:
 Dự án được phát triển phục vụ mục đích học tập, nghiên cứu và thực hành phát triển Website.
 
 ---
-
+# 📄 Bổ sung
+17 View.
+21 Stored Procedure.
+2 Function.
+2 Trigger.
+---
 # ❤️ Lời cảm ơn
 
 Cảm ơn bạn đã quan tâm đến dự án **LexiLoop**.

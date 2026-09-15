@@ -1,5 +1,6 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 ?>
 <?php
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -21,22 +22,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (!$agree) {
         $loi = "Bạn phải đồng ý với điều khoản sử dụng.";
     } else {
-        $sql = "SELECT * FROM Users WHERE email='$email'";
-        $result = mysqli_query($link, $sql);
-        if (mysqli_num_rows($result) > 0) {
-            $loi = "Email đã tồn tại.";
-        } else {
-            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "INSERT INTO Users (full_name, email, password_hash) VALUES ('$fullname', '$email', '$password_hash')";
-            if (mysqli_query($link, $sql)) {
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
+        try {
+            dbCallProcedure(
+                $link,
+                'CALL sp_auth_register_user(?, ?, ?)',
+                'sss',
+                [trim($fullname), strtolower(trim($email)), $password_hash]
+            );
                 header("Location: A_DangNhap.php?register=success");
                 exit();
-            } else {
-                $loi = "Lỗi: " . mysqli_error($link);
-            }
+        } catch (mysqli_sql_exception $error) {
+            $loi = (int) $error->getCode() === 1062
+                ? "Email đã tồn tại."
+                : "Không thể tạo tài khoản lúc này.";
+            error_log('Lỗi đăng ký: ' . $error->getMessage());
         }
         mysqli_close($link);
-    }
+   }
 }
 ?>
 

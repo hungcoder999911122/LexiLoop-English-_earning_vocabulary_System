@@ -1,90 +1,29 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-$thongBao = "";
-$loaiThongBao = ""; // "thanhcong" | "loi"
-
-// ============================================================
-// 4. Quy trinh lam PHP
-// ============================================================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
-    // ---- B1: Gan bien PHP voi name trong html (dung ten cot DB) ----
-    $hanhDong         = $_POST["hanhdong"] ?? "";
-    $topicID          = isset($_POST["topicID"]) ? (int) $_POST["topicID"] : 0;
-    $topicName        = trim($_POST["topicName"] ?? "");
-    $topicDescription = trim($_POST["topicDescription"] ?? "");
-
-    if ($hanhDong === "them" || $hanhDong === "sua") {
-
-        // ---- B2: Kiem tra du lieu hop le (rong? dung dinh dang?) ----
-        if ($topicName === "") {
-            $thongBao = "Vui lòng nhập tên chủ đề.";
-            $loaiThongBao = "loi";
-        } else {
-
-            // ---- B3: Kiem tra database (co trung lap hay khong) ----
-            $sqlTrung = "SELECT topicID FROM Topics WHERE topicName = ? AND topicID <> ?";
-            $stmtTrung = mysqli_prepare($link, $sqlTrung);
-            mysqli_stmt_bind_param($stmtTrung, "si", $topicName, $topicID);
-            mysqli_stmt_execute($stmtTrung);
-            $ketQuaTrung = mysqli_stmt_get_result($stmtTrung);
-
-            if (mysqli_num_rows($ketQuaTrung) > 0) {
-                $thongBao = "Tên chủ đề \"$topicName\" đã tồn tại.";
-                $loaiThongBao = "loi";
-            } else {
-
-                // ---- B5: Thao tac insert / update database ----
-                if ($hanhDong === "them") {
-                    $nguoiTao = $_SESSION["userID"] ?? null;
-                    $sql = "INSERT INTO Topics (topicName, topicDescription, category, created_by)
-                            VALUES (?, ?, 'common', ?)";
-                    $stmt = mysqli_prepare($link, $sql);
-                    mysqli_stmt_bind_param($stmt, "ssi", $topicName, $topicDescription, $nguoiTao);
-                } else {
-                    $sql = "UPDATE Topics SET topicName = ?, topicDescription = ? WHERE topicID = ?";
-                    $stmt = mysqli_prepare($link, $sql);
-                    mysqli_stmt_bind_param($stmt, "ssi", $topicName, $topicDescription, $topicID);
-                }
-
-                // ---- B6: Thanh cong -> tiep tuc, that bai -> tam dung ----
-                if (mysqli_stmt_execute($stmt)) {
-                    $thongBao = $hanhDong === "them" ? "Thêm chủ đề thành công." : "Cập nhật chủ đề thành công.";
-                    $loaiThongBao = "thanhcong";
-                } else {
-                    $thongBao = "Có lỗi xảy ra: " . mysqli_error($link);
-                    $loaiThongBao = "loi";
-                }
-                mysqli_stmt_close($stmt);
-            }
-            mysqli_stmt_close($stmtTrung);
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$thongBao = '';
+$loaiThongBao = '';
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = (string) ($_POST['hanhdong'] ?? '');
+        $topicId = (int) ($_POST['topicID'] ?? 0);
+        if ($action === 'xoa') {
+            dbCallProcedure($link, 'CALL sp_admin_delete_topic(?, ?)', 'ii', [$adminUserId, $topicId]);
+            $thongBao = 'Xóa chủ đề thành công.';
+        } elseif ($action === 'them' || $action === 'sua') {
+            $name = trim((string) ($_POST['topicName'] ?? ''));
+            $description = trim((string) ($_POST['topicDescription'] ?? ''));
+            if ($name === '') { throw new RuntimeException('Vui lòng nhập tên chủ đề.'); }
+            dbCallProcedure($link, 'CALL sp_admin_save_topic(?, ?, ?, ?)', 'iiss', [$adminUserId, $topicId, $name, $description]);
+            $thongBao = $action === 'them' ? 'Thêm chủ đề thành công.' : 'Cập nhật chủ đề thành công.';
         }
-    } elseif ($hanhDong === "xoa") {
-        $sql = "DELETE FROM Topics WHERE topicID = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $topicID);
-
-        if (mysqli_stmt_execute($stmt)) {
-            $thongBao = "Xóa chủ đề thành công.";
-            $loaiThongBao = "thanhcong";
-        } else {
-            $thongBao = "Không thể xóa chủ đề: " . mysqli_error($link);
-            $loaiThongBao = "loi";
-        }
-        mysqli_stmt_close($stmt);
+        $loaiThongBao = 'thanhcong';
     }
+} catch (Throwable $error) {
+    error_log('Admin topic error: ' . $error->getMessage());
+    $thongBao = $error instanceof RuntimeException ? $error->getMessage() : 'Không thể xử lý chủ đề.';
+    $loaiThongBao = 'loi';
 }
-
-// ---- B5: SELECT du lieu de hien thi ra bang ----
-$sqlDanhSach = "SELECT t.topicID, t.topicName, t.topicDescription, t.topicCreated_at,
-                       (SELECT COUNT(*) FROM vocabulary v WHERE v.topic_id = t.topicID) AS soTuVung
-                FROM Topics t
-                ORDER BY t.topicCreated_at DESC";
-$ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
+$ketQuaDanhSach = dbSelectView($link, 'SELECT topicID, topicName, topicDescription, topicCreated_at, word_count AS soTuVung FROM vw_topic_catalog ORDER BY topicCreated_at DESC');
 ?>
 <!doctype html>
 <html lang="vi">
@@ -166,7 +105,7 @@ $ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
               </tr>
             </thead>
             <tbody id="D_Quanlychude_ThanBang">
-              <?php while ($hang = mysqli_fetch_assoc($ketQuaDanhSach)): ?>
+              <?php foreach ($ketQuaDanhSach as $hang): ?>
                 <tr
                   data-id="<?php echo (int) $hang["topicID"]; ?>"
                   data-tenchude="<?php echo htmlspecialchars($hang["topicName"]); ?>"
@@ -193,7 +132,7 @@ $ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
                     </form>
                   </td>
                 </tr>
-              <?php endwhile; ?>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </main>

@@ -1,194 +1,104 @@
 <?php
 require_once '../../includes/auth_guard.php';
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
-// auth_guard.php đã xác thực session trước khi trang sử dụng user_id.
 $user_id = (int) $_SESSION['user_id'];
 if (empty($_SESSION['C_learning_csrf'])) {
     $_SESSION['C_learning_csrf'] = bin2hex(random_bytes(32));
 }
+
 $source = $_GET['source'] ?? 'topic';
-$source = in_array($source, ['topic', 'set'], true) ? $source : 'topic';
+$mode = $_GET['mode'] ?? '';
+if ($mode === 'review') {
+    $source = 'review';
+}
+$source = in_array($source, ['topic', 'set', 'review'], true) ? $source : 'topic';
 $source_id = filter_var($_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
 $limit_option = (string) ($_GET['limit'] ?? '10');
 if (!in_array($limit_option, ['5', '10', '20', 'all'], true)) {
     $limit_option = '10';
 }
-
-// Đồng bộ biến kết nối DB
-if (isset($link) && !isset($conn)) {
-    $conn = $link;
-}
-// Nguồn topic/set bắt buộc có ID hợp lệ; không tự ý rơi sang topic mặc định.
-$id_chu_de = $source === 'topic' ? $source_id : 0;
-$mode = $_GET['mode'] ?? ''; // Chế độ: 'review' (ôn tập) hoặc học theo chủ đề
-if ($mode !== 'review' && $source_id <= 0) {
+if ($source !== 'review' && $source_id <= 0) {
     header('Location: C_Gocrenluyen.php');
     exit;
 }
-$ten_chu_de = ($mode === 'review') ? "Từ vựng cần ôn tập" : "Chủ đề học";
+
+$mode = $source === 'review' ? 'review' : '';
+$id_chu_de = $source === 'topic' ? $source_id : 0;
+$ten_chu_de = $source === 'review' ? 'Từ vựng cần ôn tập' : 'Nguồn học';
 $danh_sach_tu = [];
 
 try {
-    if (isset($link) && $link) {
-        // Quét danh sách bảng thực tế tránh lỗi hoa/thường trên Docker
-        $tables_res = @mysqli_query($link, "SHOW TABLES");
-        $db_tables = [];
-        if ($tables_res) {
-            while ($tbl_row = mysqli_fetch_array($tables_res)) {
-                $db_tables[strtolower($tbl_row[0])] = $tbl_row[0];
-            }
+    if ($source !== 'review') {
+        $sourceSql = $source === 'set'
+            ? 'SELECT source_name FROM vw_learning_sources WHERE source_type = ? AND source_id = ? AND owner_user_id = ? LIMIT 1'
+            : 'SELECT source_name FROM vw_learning_sources WHERE source_type = ? AND source_id = ? LIMIT 1';
+        $sourceTypes = $source === 'set' ? 'sii' : 'si';
+        $sourceParams = $source === 'set'
+            ? [$source, $source_id, $user_id]
+            : [$source, $source_id];
+        $sourceRows = dbSelectView($link, $sourceSql, $sourceTypes, $sourceParams);
+        if (!$sourceRows) {
+            header('Location: C_Gocrenluyen.php');
+            exit;
         }
-
-        $tbl_vocab    = isset($db_tables['vocabulary']) ? "`" . $db_tables['vocabulary'] . "`" : "`vocabulary`";
-        $tbl_topics   = isset($db_tables['topics']) ? "`" . $db_tables['topics'] . "`" : "`Topics`";
-        $tbl_progress = isset($db_tables['user_vocab_progress']) ? "`" . $db_tables['user_vocab_progress'] . "`" : "`user_vocab_progress`";
-        $tbl_sets     = isset($db_tables['vocabulary_sets']) ? "`" . $db_tables['vocabulary_sets'] . "`" : "`vocabulary_sets`";
-        $tbl_set_items = isset($db_tables['vocabulary_set_items']) ? "`" . $db_tables['vocabulary_set_items'] . "`" : "`vocabulary_set_items`";
-
-        // Lấy tên chủ đề
-        if ($mode !== 'review' && $source === 'set') {
-            // Bộ từ cá nhân bắt buộc thuộc tài khoản đang đăng nhập.
-            $sql_set = "SELECT name FROM $tbl_sets WHERE id = ? AND user_id = ? LIMIT 1";
-            $stmt = mysqli_prepare($link, $sql_set);
-            mysqli_stmt_bind_param($stmt, 'ii', $source_id, $user_id);
-            mysqli_stmt_execute($stmt);
-            $set_row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-            mysqli_stmt_close($stmt);
-            if (!$set_row) {
-                header('Location: C_Gocrenluyen.php');
-                exit;
-            }
-            $ten_chu_de = $set_row['name'];
-        } elseif ($mode !== 'review' && isset($db_tables['topics'])) {
-            $sql_topic = "SELECT topicName FROM $tbl_topics WHERE topicID = ? LIMIT 1";
-            if ($stmt = @mysqli_prepare($link, $sql_topic)) {
-                mysqli_stmt_bind_param($stmt, "i", $id_chu_de);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                if ($row = mysqli_fetch_assoc($res)) {
-                    $ten_chu_de = $row['topicName'];
-                } else {
-                    mysqli_stmt_close($stmt);
-                    header('Location: C_Gocrenluyen.php');
-                    exit;
-                }
-                mysqli_stmt_close($stmt);
-            }
-        }
-
-        // Lấy danh sách từ vựng theo ID người dùng đang đăng nhập
-        if (isset($db_tables['vocabulary'])) {
-            if ($mode === 'review' && isset($db_tables['user_vocab_progress'])) {
-                // Chế độ ôn tập: Từ vựng đến hạn của người dùng
-                $sql_words = "
-                    SELECT 
-                        v.id,
-                        v.word AS tu_vung,
-                        v.meaning AS nghia,
-                        v.pronunciation AS phien_am,
-                        v.part_of_speech AS loai_tu,
-                        v.example_sentence AS vi_du,
-                        v.audio_url,
-                        p.next_review_date
-                    FROM $tbl_vocab v
-                    INNER JOIN $tbl_progress p ON v.id = p.vocabulary_id
-                    WHERE p.user_id = ? AND p.next_review_date <= CURDATE()
-                    ORDER BY p.next_review_date ASC
-                ";
-                $stmt = @mysqli_prepare($link, $sql_words);
-                if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, "i", $user_id);
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        $danh_sach_tu[] = [
-                            "id"        => (int)$row['id'],
-                            "tu_vung"   => $row['tu_vung'],
-                            "nghia"     => $row['nghia'],
-                            "phien_am"  => $row['phien_am'] ?? '',
-                            "loai_tu"   => $row['loai_tu'] ?? '',
-                            "vi_du"     => $row['vi_du'] ?? '',
-                            "audio_url" => $row['audio_url'] ?? '',
-                            "is_review" => true
-                        ];
-                    }
-                    mysqli_stmt_close($stmt);
-                }
-            } elseif ($source === 'set') {
-                // Chỉ lấy từ thuộc bộ cá nhân đã được kiểm tra quyền sở hữu ở trên.
-                $sql_words = "
-                    SELECT v.id, v.word AS tu_vung, v.meaning AS nghia,
-                           v.pronunciation AS phien_am, v.part_of_speech AS loai_tu,
-                           v.example_sentence AS vi_du, v.audio_url, p.next_review_date
-                    FROM $tbl_set_items vsi
-                    INNER JOIN $tbl_sets vs ON vs.id = vsi.vocabulary_set_id AND vs.user_id = ?
-                    INNER JOIN $tbl_vocab v ON v.id = vsi.vocabulary_id
-                    LEFT JOIN $tbl_progress p ON p.vocabulary_id = v.id AND p.user_id = ?
-                    WHERE vsi.vocabulary_set_id = ?
-                    ORDER BY vsi.display_order ASC, vsi.id ASC
-                ";
-                $stmt = mysqli_prepare($link, $sql_words);
-                mysqli_stmt_bind_param($stmt, 'iii', $user_id, $user_id, $source_id);
-                mysqli_stmt_execute($stmt);
-                $result = mysqli_stmt_get_result($stmt);
-                $today = date('Y-m-d');
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $danh_sach_tu[] = [
-                        'id' => (int) $row['id'],
-                        'tu_vung' => $row['tu_vung'],
-                        'nghia' => $row['nghia'],
-                        'phien_am' => $row['phien_am'] ?? '',
-                        'loai_tu' => $row['loai_tu'] ?? '',
-                        'vi_du' => $row['vi_du'] ?? '',
-                        'audio_url' => $row['audio_url'] ?? '',
-                        'is_review' => !empty($row['next_review_date']) && $row['next_review_date'] <= $today
-                    ];
-                }
-                mysqli_stmt_close($stmt);
-            } else {
-                // Chế độ học từ mới theo Chủ đề
-                $sql_words = "
-                    SELECT 
-                        v.id,
-                        v.word AS tu_vung,
-                        v.meaning AS nghia,
-                        v.pronunciation AS phien_am,
-                        v.part_of_speech AS loai_tu,
-                        v.example_sentence AS vi_du,
-                        v.audio_url,
-                        p.next_review_date
-                    FROM $tbl_vocab v
-                    LEFT JOIN $tbl_progress p ON v.id = p.vocabulary_id AND p.user_id = ?
-                    WHERE v.topic_id = ?
-                    ORDER BY v.id ASC
-                ";
-                $stmt = @mysqli_prepare($link, $sql_words);
-                if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, "ii", $user_id, $id_chu_de);
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-                    $today = date('Y-m-d');
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        $is_review = (!empty($row['next_review_date']) && $row['next_review_date'] <= $today);
-                        $danh_sach_tu[] = [
-                            "id"        => (int)$row['id'],
-                            "tu_vung"   => $row['tu_vung'],
-                            "nghia"     => $row['nghia'],
-                            "phien_am"  => $row['phien_am'] ?? '',
-                            "loai_tu"   => $row['loai_tu'] ?? '',
-                            "vi_du"     => $row['vi_du'] ?? '',
-                            "audio_url" => $row['audio_url'] ?? '',
-                            "is_review" => $is_review
-                        ];
-                    }
-                    mysqli_stmt_close($stmt);
-                }
-            }
-        }
+        $ten_chu_de = $sourceRows[0]['source_name'];
     }
-} catch (\Throwable $e) {
-    error_log("Lỗi Flashcard: " . $e->getMessage());
+
+    if ($source === 'topic') {
+        $itemRows = dbSelectView(
+            $link,
+            'SELECT * FROM vw_learning_items WHERE source_type = ? AND source_id = ? ORDER BY display_order, vocabulary_id',
+            'si',
+            [$source, $source_id]
+        );
+        $progressRows = dbSelectView(
+            $link,
+            'SELECT vocabulary_id, next_review_date FROM vw_user_progress WHERE user_id = ? AND topic_id = ?',
+            'ii',
+            [$user_id, $source_id]
+        );
+        $reviewDates = [];
+        foreach ($progressRows as $progress) {
+            $reviewDates[(int) $progress['vocabulary_id']] = $progress['next_review_date'];
+        }
+        foreach ($itemRows as &$itemRow) {
+            $itemRow['next_review_date'] = $reviewDates[(int) $itemRow['vocabulary_id']] ?? null;
+        }
+        unset($itemRow);
+    } elseif ($source === 'set') {
+        $itemRows = dbSelectView(
+            $link,
+            'SELECT * FROM vw_learning_items WHERE source_type = ? AND source_id = ? AND owner_user_id = ? ORDER BY display_order, vocabulary_id',
+            'sii',
+            [$source, $source_id, $user_id]
+        );
+    } else {
+        $itemRows = dbSelectView(
+            $link,
+            'SELECT * FROM vw_learning_items WHERE source_type = ? AND owner_user_id = ? ORDER BY next_review_date, vocabulary_id',
+            'si',
+            [$source, $user_id]
+        );
+    }
+
+    $today = date('Y-m-d');
+    foreach ($itemRows as $row) {
+        $danh_sach_tu[] = [
+            'id' => (int) $row['vocabulary_id'],
+            'tu_vung' => $row['word'],
+            'nghia' => $row['meaning'],
+            'phien_am' => $row['pronunciation'] ?? '',
+            'loai_tu' => $row['part_of_speech'] ?? '',
+            'vi_du' => $row['example_sentence'] ?? '',
+            'audio_url' => $row['audio_url'] ?? '',
+            'is_review' => $source === 'review'
+                || (!empty($row['next_review_date']) && $row['next_review_date'] <= $today),
+        ];
+    }
+} catch (Throwable $error) {
+    error_log('Lỗi Flashcard: ' . $error->getMessage());
 }
 
 if ($limit_option !== 'all') {

@@ -3,7 +3,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/auth_guard.php");
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 
 // auth_guard.php đã xác thực session trước khi trang sử dụng user_id.
 $isLoggedIn = isset($_SESSION['user_id']);
@@ -31,22 +33,34 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     else {
         // Kiểm tra mật khẩu hiện tại đúng không
-        $user_id = $_SESSION['user_id'];
-        $sql = "SELECT password_hash FROM Users WHERE userID='$user_id'";
-        $result = mysqli_query($link, $sql);
-        $row = mysqli_fetch_assoc($result);
+        $user_id = (int) $_SESSION['user_id'];
+        $accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_id(?)', 'i', [$user_id]);
+        $row = $accounts[0] ?? null;
 
-        if(!password_verify($A_Caidattaikhoan_password, $row['password_hash'])) {
+        if(!$row || !password_verify($A_Caidattaikhoan_password, $row['password_hash'])) {
             $loi = "Mật khẩu hiện tại không đúng.";
         } else {
             // BƯỚC 4-5: Mã hóa mật khẩu mới, UPDATE vào DB
             $new_hash = password_hash($A_Caidattaikhoan_password_new, PASSWORD_DEFAULT);
-            $sql = "UPDATE Users SET password_hash='$new_hash', daily_reminder_enabled='" . ($A_Caidattaikhoan_reminder ? 1 : 0) . "', reminder_time='$hour', daily_target_words='$quantity' WHERE userID='$user_id'";
+            $reminderEnabled = $A_Caidattaikhoan_reminder ? 1 : 0;
+            $normalizedTime = preg_match('/^([01][0-9]|2[0-3])([0-5][0-9])$/', $hour)
+                ? substr($hour, 0, 2) . ':' . substr($hour, 2, 2) . ':00'
+                : '';
+            $dailyTarget = filter_var($quantity, FILTER_VALIDATE_INT);
 
-            if(mysqli_query($link, $sql)) {
+            if ($normalizedTime === '' || $dailyTarget === false) {
+                $loi = "Tùy chọn nhắc nhở không hợp lệ.";
+            } else try {
+                dbCallProcedure(
+                    $link,
+                    'CALL sp_auth_update_account_settings(?, ?, ?, ?, ?)',
+                    'isisi',
+                    [$user_id, $new_hash, $reminderEnabled, $normalizedTime, $dailyTarget]
+                );
                 $loi = "Cập nhật thành công!";
-            } else {
-                $loi = "Lỗi: " . mysqli_error($link);
+            } catch (Throwable $error) {
+                error_log('Lỗi cập nhật cài đặt: ' . $error->getMessage());
+                $loi = "Không thể cập nhật cài đặt lúc này.";
             }
         }
     }

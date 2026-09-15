@@ -1,83 +1,37 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-// Bang system_settings chua co san trong db_LexiLoop.sql -> tao neu chua ton tai
-// (xem file sql/them_bang_system_settings.sql de biet chi tiet)
-mysqli_query($link, "
-    CREATE TABLE IF NOT EXISTS system_settings (
-        setting_key   VARCHAR(50) NOT NULL,
-        setting_value TEXT,
-        updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY (setting_key)
-    )
-");
-
-$thongBao = "";
-$loaiThongBao = "";
-
-$cacTruongEmail = ["smtp_server", "smtp_port", "smtp_security", "notify_email", "reminder_enabled"];
-$cacTruongWeb   = ["site_name", "site_slogan", "site_language", "maintenance_mode"];
-
-// ============================================================
-// 4. Quy trinh lam PHP
-// ============================================================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
-    // ---- B1: Gan bien PHP voi name trong html (dung ten cot DB: setting_key/value) ----
-    $hanhDong = $_POST["hanhdong"] ?? "";
-    $cacTruongCanLuu = $hanhDong === "luu_email" ? $cacTruongEmail : $cacTruongWeb;
-
-    // ---- B2: Kiem tra du lieu hop le ----
-    $hopLe = true;
-    if ($hanhDong === "luu_web" && trim($_POST["site_name"] ?? "") === "") {
-        $thongBao = "Vui lòng nhập tên website.";
-        $loaiThongBao = "loi";
-        $hopLe = false;
-    }
-
-    if ($hopLe && ($hanhDong === "luu_email" || $hanhDong === "luu_web")) {
-        // ---- B5: Thao tac update database (khong can kiem tra trung vi la key-value) ----
-        $thanhCong = true;
-        foreach ($cacTruongCanLuu as $key) {
-            $giaTri = trim($_POST[$key] ?? "");
-            if ($key === "maintenance_mode" || $key === "reminder_enabled") {
-                $giaTri = isset($_POST[$key]) ? "1" : "0";
-            }
-
-            $sql = "INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)";
-            $stmt = mysqli_prepare($link, $sql);
-            mysqli_stmt_bind_param($stmt, "ss", $key, $giaTri);
-            if (!mysqli_stmt_execute($stmt)) {
-                $thanhCong = false;
-            }
-            mysqli_stmt_close($stmt);
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$thongBao = '';
+$loaiThongBao = '';
+$cacTruongEmail = ['smtp_server', 'smtp_port', 'smtp_security', 'notify_email', 'reminder_enabled'];
+$cacTruongWeb = ['site_name', 'site_slogan', 'site_language', 'maintenance_mode'];
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = (string) ($_POST['hanhdong'] ?? '');
+        $fields = $action === 'luu_email' ? $cacTruongEmail : $cacTruongWeb;
+        if ($action === 'luu_web' && trim((string) ($_POST['site_name'] ?? '')) === '') {
+            throw new RuntimeException('Vui lòng nhập tên website.');
         }
-
-        // ---- B6: Thanh cong -> tiep tuc, that bai -> tam dung ----
-        if ($thanhCong) {
-            $thongBao = "Lưu cấu hình thành công.";
-            $loaiThongBao = "thanhcong";
-        } else {
-            $thongBao = "Có lỗi xảy ra khi lưu cấu hình: " . mysqli_error($link);
-            $loaiThongBao = "loi";
+        if ($action === 'luu_email' || $action === 'luu_web') {
+            foreach ($fields as $key) {
+                $value = in_array($key, ['maintenance_mode', 'reminder_enabled'], true)
+                    ? (isset($_POST[$key]) ? '1' : '0')
+                    : trim((string) ($_POST[$key] ?? ''));
+                dbCallProcedure($link, 'CALL sp_save_system_setting(?, ?, ?)', 'iss', [$adminUserId, $key, $value]);
+            }
+            $thongBao = 'Lưu cấu hình thành công.';
+            $loaiThongBao = 'thanhcong';
         }
     }
+} catch (Throwable $error) {
+    error_log('Admin settings error: ' . $error->getMessage());
+    $thongBao = $error instanceof RuntimeException ? $error->getMessage() : 'Không thể lưu cấu hình.';
+    $loaiThongBao = 'loi';
 }
-
-// ---- B5: SELECT du lieu de do vao form ----
 $caiDat = [];
-$ketQua = mysqli_query($link, "SELECT setting_key, setting_value FROM system_settings");
-while ($hang = mysqli_fetch_assoc($ketQua)) {
-    $caiDat[$hang["setting_key"]] = $hang["setting_value"];
+foreach (dbSelectView($link, 'SELECT setting_key, setting_value FROM vw_system_settings') as $row) {
+    $caiDat[$row['setting_key']] = $row['setting_value'];
 }
-function layGiaTri($caiDat, $key, $macDinh = "")
-{
-    return htmlspecialchars($caiDat[$key] ?? $macDinh);
-}
+function layGiaTri($caiDat, $key, $macDinh = '') { return htmlspecialchars($caiDat[$key] ?? $macDinh); }
 ?>
 <!doctype html>
 <html lang="vi">

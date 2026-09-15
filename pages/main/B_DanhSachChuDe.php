@@ -1,33 +1,13 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 
 // KIỂM TRA PHIÊN NGƯỜI DÙNG
 session_start();
 
 $isLoggedIn = isset($_SESSION['user_id']);
 
-$sql = "SELECT 
-        t.topicID,
-        t.topicName,
-        t.topicDescription,
-        t.category,
-        COUNT(v.id) AS word_count
-    FROM Topics t
-    LEFT JOIN vocabulary v
-        ON t.topicID = v.topic_id
-    GROUP BY
-        t.topicID,
-        t.topicName,
-        t.topicDescription,
-        t.category
-    ORDER BY t.topicID ASC
-";
-
-$result = mysqli_query($link, $sql);
-
-if (!$result) {
-    die("Lỗi truy vấn: " . mysqli_error($link));
-}
+$topics = dbSelectView($link, 'SELECT * FROM vw_topic_catalog ORDER BY topicID');
 ?>
 
 <!DOCTYPE html>
@@ -118,7 +98,7 @@ if (!$result) {
 
                 <!-- CÁC TOPIC  -->
                 <!-- SỬ DỤNG PHP ĐỔ DỮ LIỆU DB VÀO -->
-                <?php while ($topic = mysqli_fetch_assoc($result)): ?>
+                <?php foreach ($topics as $topic): ?>
 
                     <article
                         class="topic-card"
@@ -214,7 +194,7 @@ if (!$result) {
 
                     </article>
 
-                <?php endwhile; ?>
+                <?php endforeach; ?>
 
             </div>
 

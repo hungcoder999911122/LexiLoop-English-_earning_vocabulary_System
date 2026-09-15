@@ -1,95 +1,33 @@
 <?php
-// 1. Them code ket noi vao dau file
-session_start();
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
-/** @var mysqli $link Ket noi CSDL duoc tao trong Connect.php */
-
-$thongBao = "";
-$loaiThongBao = "";
-
-// ============================================================
-// 4. Quy trinh lam PHP
-// ============================================================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
-    // ---- B1: Gan bien PHP voi name trong html (dung ten cot DB) ----
-    $hanhDong = $_POST["hanhdong"] ?? "";
-    $id       = isset($_POST["id"]) ? (int) $_POST["id"] : 0;
-    $word     = trim($_POST["word"] ?? "");
-    $meaning  = trim($_POST["meaning"] ?? "");
-    $topic_id = isset($_POST["topic_id"]) ? (int) $_POST["topic_id"] : 0;
-
-    if ($hanhDong === "them" || $hanhDong === "sua") {
-
-        // ---- B2: Kiem tra du lieu hop le ----
-        if ($word === "" || $meaning === "" || $topic_id <= 0) {
-            $thongBao = "Vui lòng nhập đầy đủ từ vựng, nghĩa và chọn chủ đề.";
-            $loaiThongBao = "loi";
-        } else {
-
-            // ---- B3: Kiem tra database (trung tu trong cung 1 chu de) ----
-            $sqlTrung = "SELECT id FROM vocabulary WHERE word = ? AND topic_id = ? AND id <> ?";
-            $stmtTrung = mysqli_prepare($link, $sqlTrung);
-            mysqli_stmt_bind_param($stmtTrung, "sii", $word, $topic_id, $id);
-            mysqli_stmt_execute($stmtTrung);
-            $ketQuaTrung = mysqli_stmt_get_result($stmtTrung);
-
-            if (mysqli_num_rows($ketQuaTrung) > 0) {
-                $thongBao = "Từ \"$word\" đã tồn tại trong chủ đề này.";
-                $loaiThongBao = "loi";
-            } else {
-
-                // ---- B5: Thao tac insert / update database ----
-                if ($hanhDong === "them") {
-                    $nguoiTao = $_SESSION["userID"] ?? null;
-                    $sql = "INSERT INTO vocabulary (topic_id, word, meaning, created_by)
-                            VALUES (?, ?, ?, ?)";
-                    $stmt = mysqli_prepare($link, $sql);
-                    mysqli_stmt_bind_param($stmt, "issi", $topic_id, $word, $meaning, $nguoiTao);
-                } else {
-                    $sql = "UPDATE vocabulary SET word = ?, meaning = ?, topic_id = ? WHERE id = ?";
-                    $stmt = mysqli_prepare($link, $sql);
-                    mysqli_stmt_bind_param($stmt, "ssii", $word, $meaning, $topic_id, $id);
-                }
-
-                // ---- B6: Thanh cong -> tiep tuc, that bai -> tam dung ----
-                if (mysqli_stmt_execute($stmt)) {
-                    $thongBao = $hanhDong === "them" ? "Thêm từ vựng thành công." : "Cập nhật từ vựng thành công.";
-                    $loaiThongBao = "thanhcong";
-                } else {
-                    $thongBao = "Có lỗi xảy ra: " . mysqli_error($link);
-                    $loaiThongBao = "loi";
-                }
-                mysqli_stmt_close($stmt);
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+$thongBao = '';
+$loaiThongBao = '';
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = (string) ($_POST['hanhdong'] ?? '');
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($action === 'xoa') {
+            dbCallProcedure($link, 'CALL sp_admin_delete_vocabulary(?, ?)', 'ii', [$adminUserId, $id]);
+            $thongBao = 'Xóa từ vựng thành công.';
+        } elseif ($action === 'them' || $action === 'sua') {
+            $word = trim((string) ($_POST['word'] ?? ''));
+            $meaning = trim((string) ($_POST['meaning'] ?? ''));
+            $topicId = (int) ($_POST['topic_id'] ?? 0);
+            if ($word === '' || $meaning === '' || $topicId <= 0) {
+                throw new RuntimeException('Vui lòng nhập đầy đủ từ vựng, nghĩa và chọn chủ đề.');
             }
-            mysqli_stmt_close($stmtTrung);
+            dbCallProcedure($link, 'CALL sp_admin_save_vocabulary(?, ?, ?, ?, ?)', 'iiiss', [$adminUserId, $id, $topicId, $word, $meaning]);
+            $thongBao = $action === 'them' ? 'Thêm từ vựng thành công.' : 'Cập nhật từ vựng thành công.';
         }
-    } elseif ($hanhDong === "xoa") {
-        $sql = "DELETE FROM vocabulary WHERE id = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $id);
-
-        if (mysqli_stmt_execute($stmt)) {
-            $thongBao = "Xóa từ vựng thành công.";
-            $loaiThongBao = "thanhcong";
-        } else {
-            $thongBao = "Không thể xóa từ vựng: " . mysqli_error($link);
-            $loaiThongBao = "loi";
-        }
-        mysqli_stmt_close($stmt);
+        $loaiThongBao = 'thanhcong';
     }
+} catch (Throwable $error) {
+    error_log('Admin vocabulary error: ' . $error->getMessage());
+    $thongBao = $error instanceof RuntimeException ? $error->getMessage() : 'Không thể xử lý từ vựng.';
+    $loaiThongBao = 'loi';
 }
-
-// ---- B5: SELECT du lieu de hien thi ra bang (JOIN de lay ten chu de) ----
-$sqlDanhSach = "SELECT v.id, v.word, v.meaning, v.topic_id, t.topicName
-                FROM vocabulary v
-                JOIN Topics t ON v.topic_id = t.topicID
-                ORDER BY v.created_at DESC";
-$ketQuaDanhSach = mysqli_query($link, $sqlDanhSach);
-
-// Danh sach chu de de do vao select (loc + modal them/sua)
-$ketQuaChuDe = mysqli_query($link, "SELECT topicID, topicName FROM Topics ORDER BY topicName");
-$danhSachChuDe = mysqli_fetch_all($ketQuaChuDe, MYSQLI_ASSOC);
+$ketQuaDanhSach = dbSelectView($link, 'SELECT id, word, meaning, topic_id, topicName FROM vw_vocabulary_catalog ORDER BY created_at DESC');
+$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName FROM vw_topic_catalog ORDER BY topicName');
 ?>
 <!doctype html>
 <html lang="vi">
@@ -179,7 +117,7 @@ $danhSachChuDe = mysqli_fetch_all($ketQuaChuDe, MYSQLI_ASSOC);
               </tr>
             </thead>
             <tbody id="D_Quanlytuvung_ThanBang">
-              <?php while ($hang = mysqli_fetch_assoc($ketQuaDanhSach)): ?>
+              <?php foreach ($ketQuaDanhSach as $hang): ?>
                 <tr
                   data-id="<?php echo (int) $hang["id"]; ?>"
                   data-tuvung="<?php echo htmlspecialchars($hang["word"]); ?>"
@@ -208,7 +146,7 @@ $danhSachChuDe = mysqli_fetch_all($ketQuaChuDe, MYSQLI_ASSOC);
                     </form>
                   </td>
                 </tr>
-              <?php endwhile; ?>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </main>

@@ -3,31 +3,26 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $isLoggedIn ? (int) $_SESSION['user_id'] : null;
 $collection = $_GET['collection'] ?? '';
 $source = $_GET['source'] ?? '';
 $sourceId = filter_var($_GET['id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
-
-// Dropdown gửi một giá trị gọn dạng "topic:3" hoặc "set:8".
-if (preg_match('/^(topic|set):(\d+)$/', $collection, $collectionParts)) {
-    $source = $collectionParts[1];
-    $sourceId = (int) $collectionParts[2];
+if (preg_match('/^(topic|set):(\d+)$/', $collection, $parts)) {
+    $source = $parts[1];
+    $sourceId = (int) $parts[2];
 }
-
-// Guest chỉ xem bố cục tổng quát, không nhận dữ liệu nguồn học qua URL.
 if (!$isLoggedIn) {
     $source = '';
     $sourceId = 0;
 }
 
 $limitOption = (string) ($_GET['limit'] ?? '10');
-$allowedLimits = ['5', '10', '20', 'all'];
-if (!in_array($limitOption, $allowedLimits, true)) {
+if (!in_array($limitOption, ['5', '10', '20', 'all'], true)) {
     $limitOption = '10';
 }
-
 $isValidSource = in_array($source, ['topic', 'set'], true) && $sourceId > 0;
 $sourceName = '';
 $sourceDescription = '';
@@ -43,88 +38,147 @@ $topicWords = [];
 $topicWordsPerPage = 10;
 $wordPage = max(1, filter_var($_GET['word_page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
 $topicWordPages = 1;
+$modeProgress = [
+    'flashcard' => ['percent' => 0, 'label' => 'Chưa bắt đầu'],
+    'quiz' => ['percent' => 0, 'label' => 'Chưa bắt đầu'],
+];
 
-// Bộ lọc cá nhân chỉ được truy vấn sau khi đăng nhập.
-if ($isLoggedIn) {
-    $setsStmt = mysqli_prepare($link, 'SELECT id, name FROM vocabulary_sets WHERE user_id = ? ORDER BY name ASC');
-    mysqli_stmt_bind_param($setsStmt, 'i', $userId);
-    mysqli_stmt_execute($setsStmt);
-    $setsResult = mysqli_stmt_get_result($setsStmt);
-    while ($set = mysqli_fetch_assoc($setsResult)) {
-        $personalSets[] = $set;
+try {
+    if ($isLoggedIn) {
+        $setRows = dbSelectView(
+            $link,
+            'SELECT source_id AS id, source_name AS name
+             FROM vw_learning_sources
+             WHERE source_type = ? AND owner_user_id = ?
+             ORDER BY source_name',
+            'si',
+            ['set', $userId]
+        );
+        $personalSets = $setRows;
     }
-    mysqli_stmt_close($setsStmt);
-}
 
-if ($isValidSource && $source === 'topic') {
-    $stmt = mysqli_prepare($link, '
-        SELECT t.topicName, t.topicDescription, COUNT(v.id) AS word_count,
-               COUNT(DISTINCT CASE WHEN uvp.status = \'mastered\' THEN v.id END) AS mastered_count
-        FROM Topics t
-        LEFT JOIN vocabulary v ON v.topic_id = t.topicID
-        LEFT JOIN user_vocab_progress uvp ON uvp.vocabulary_id = v.id AND uvp.user_id = ?
-        WHERE t.topicID = ?
-        GROUP BY t.topicID, t.topicName, t.topicDescription');
-    mysqli_stmt_bind_param($stmt, 'ii', $userId, $sourceId);
-    mysqli_stmt_execute($stmt);
-    $sourceData = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-    mysqli_stmt_close($stmt);
+    $sourceItems = [];
+    if ($isValidSource) {
+        $sourceSql = $source === 'set'
+            ? 'SELECT * FROM vw_learning_sources WHERE source_type = ? AND source_id = ? AND owner_user_id = ? LIMIT 1'
+            : 'SELECT * FROM vw_learning_sources WHERE source_type = ? AND source_id = ? LIMIT 1';
+        $sourceRows = dbSelectView(
+            $link,
+            $sourceSql,
+            $source === 'set' ? 'sii' : 'si',
+            $source === 'set' ? [$source, $sourceId, $userId] : [$source, $sourceId]
+        );
+        if (!$sourceRows) {
+            $sourceError = $source === 'set'
+                ? 'Không tìm thấy bộ từ hoặc bạn không có quyền truy cập.'
+                : 'Không tìm thấy chủ đề hệ thống.';
+        } else {
+            $sourceName = $sourceRows[0]['source_name'];
+            $sourceDescription = $sourceRows[0]['source_description'] ?? '';
+            $itemSql = $source === 'set'
+                ? 'SELECT * FROM vw_learning_items WHERE source_type = ? AND source_id = ? AND owner_user_id = ? ORDER BY display_order, vocabulary_id'
+                : 'SELECT * FROM vw_learning_items WHERE source_type = ? AND source_id = ? ORDER BY display_order, vocabulary_id';
+            $sourceItems = dbSelectView(
+                $link,
+                $itemSql,
+                $source === 'set' ? 'sii' : 'si',
+                $source === 'set' ? [$source, $sourceId, $userId] : [$source, $sourceId]
+            );
+            $wordCount = count($sourceItems);
 
-    if ($sourceData) {
-        $sourceName = $sourceData['topicName'];
-        $sourceDescription = $sourceData['topicDescription'] ?? '';
-        $wordCount = (int) $sourceData['word_count'];
-        $masteredCount = (int) $sourceData['mastered_count'];
+            $progressRows = dbSelectView(
+                $link,
+                'SELECT vocabulary_id, status FROM vw_user_progress WHERE user_id = ?',
+                'i',
+                [$userId]
+            );
+            $progressByVocabulary = [];
+            foreach ($progressRows as $progress) {
+                $progressByVocabulary[(int) $progress['vocabulary_id']] = $progress['status'];
+            }
+            foreach ($sourceItems as &$item) {
+                $item['learning_status'] = $progressByVocabulary[(int) $item['vocabulary_id']] ?? 'new';
+                if ($item['learning_status'] === 'mastered') {
+                    $masteredCount++;
+                }
+                $item['id'] = (int) $item['vocabulary_id'];
+            }
+            unset($item);
 
-        // Topic hệ thống có danh sách riêng tại Góc rèn luyện. Danh sách này
-        // không được trộn vào trang quản lý từ thuộc các bộ cá nhân.
-        $topicWordPages = max(1, (int) ceil($wordCount / $topicWordsPerPage));
-        $wordPage = min($wordPage, $topicWordPages);
-        $wordOffset = ($wordPage - 1) * $topicWordsPerPage;
-        $wordsStmt = mysqli_prepare($link, '
-            SELECT v.id, v.word, v.pronunciation, v.part_of_speech, v.meaning,
-                   v.example_sentence, COALESCE(uvp.status, \'new\') AS learning_status
-            FROM vocabulary v
-            LEFT JOIN user_vocab_progress uvp
-              ON uvp.vocabulary_id = v.id AND uvp.user_id = ?
-            WHERE v.topic_id = ?
-            ORDER BY v.id ASC
-            LIMIT ? OFFSET ?');
-        mysqli_stmt_bind_param($wordsStmt, 'iiii', $userId, $sourceId, $topicWordsPerPage, $wordOffset);
-        mysqli_stmt_execute($wordsStmt);
-        $wordsResult = mysqli_stmt_get_result($wordsStmt);
-        while ($word = mysqli_fetch_assoc($wordsResult)) {
-            $topicWords[] = $word;
+            if ($source === 'topic') {
+                $topicWordPages = max(1, (int) ceil($wordCount / $topicWordsPerPage));
+                $wordPage = min($wordPage, $topicWordPages);
+                $topicWords = array_slice(
+                    $sourceItems,
+                    ($wordPage - 1) * $topicWordsPerPage,
+                    $topicWordsPerPage
+                );
+            }
         }
-        mysqli_stmt_close($wordsStmt);
-    } else {
-        $sourceError = 'Không tìm thấy chủ đề hệ thống.';
     }
-}
 
-if ($isValidSource && $source === 'set') {
-    // user_id là điều kiện phân quyền, không chỉ là điều kiện lọc giao diện.
-    $stmt = mysqli_prepare($link, '
-        SELECT vs.name, vs.description, COUNT(vsi.id) AS word_count,
-               COUNT(DISTINCT CASE WHEN uvp.status = \'mastered\' THEN vsi.vocabulary_id END) AS mastered_count
-        FROM vocabulary_sets vs
-        LEFT JOIN vocabulary_set_items vsi ON vsi.vocabulary_set_id = vs.id
-        LEFT JOIN user_vocab_progress uvp ON uvp.vocabulary_id = vsi.vocabulary_id AND uvp.user_id = ?
-        WHERE vs.id = ? AND vs.user_id = ?
-        GROUP BY vs.id, vs.name, vs.description');
-    mysqli_stmt_bind_param($stmt, 'iii', $userId, $sourceId, $userId);
-    mysqli_stmt_execute($stmt);
-    $sourceData = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-    mysqli_stmt_close($stmt);
+    if ($isValidSource && $sourceError === '') {
+        $latestSql = $source === 'topic'
+            ? 'SELECT correct_answers, total_questions FROM vw_quiz_result_summary
+               WHERE user_id = ? AND topic_id = ?
+               ORDER BY finished_at DESC, quiz_result_id DESC LIMIT 1'
+            : 'SELECT correct_answers, total_questions FROM vw_quiz_result_summary
+               WHERE user_id = ? AND vocabulary_set_id = ?
+               ORDER BY finished_at DESC, quiz_result_id DESC LIMIT 1';
+        $latestRows = dbSelectView($link, $latestSql, 'ii', [$userId, $sourceId]);
+        if ($latestRows) {
+            $latestQuizCorrect = (int) $latestRows[0]['correct_answers'];
+            $latestQuizTotal = (int) $latestRows[0]['total_questions'];
+        }
 
-    if ($sourceData) {
-        $sourceName = $sourceData['name'];
-        $sourceDescription = $sourceData['description'] ?? '';
-        $wordCount = (int) $sourceData['word_count'];
-        $masteredCount = (int) $sourceData['mastered_count'];
-    } else {
-        $sourceError = 'Không tìm thấy bộ từ hoặc bạn không có quyền truy cập.';
+        $attemptRows = dbSelectView(
+            $link,
+            'SELECT activity_type, status, state_json
+             FROM vw_learning_attempt_status
+             WHERE user_id = ? AND source_type = ? AND source_id = ? AND item_limit = ?
+               AND status IN (\'in_progress\', \'completed\')
+             ORDER BY updated_at DESC, id DESC',
+            'isis',
+            [$userId, $source, $sourceId, $limitOption]
+        );
+        $resolvedActivities = [];
+        foreach ($attemptRows as $attempt) {
+            $activity = $attempt['activity_type'];
+            if (($activity === 'quiz' && $attempt['status'] !== 'in_progress')
+                || isset($resolvedActivities[$activity])
+                || !isset($modeProgress[$activity])) {
+                continue;
+            }
+            $resolvedActivities[$activity] = true;
+            $state = json_decode($attempt['state_json'], true);
+            $state = is_array($state) ? $state : [];
+            if ($activity === 'flashcard') {
+                $total = count($state['cardIds'] ?? []);
+                $completed = count(array_filter(
+                    $state['cardStatuses'] ?? [],
+                    static fn($status): bool => $status === 'da_nho'
+                ));
+                $flashcardRemembered = $completed;
+                $flashcardStatsTotal = $total;
+            } else {
+                $total = count($state['questions'] ?? []);
+                $completed = 0;
+                foreach (($state['questions'] ?? []) as $index => $question) {
+                    $selectedIndex = $state['userAnswers'][(string) $index]
+                        ?? $state['userAnswers'][$index] ?? null;
+                    if ($selectedIndex !== null
+                        && (int) $selectedIndex === (int) ($question['dap_an_dung'] ?? -1)) {
+                        $completed++;
+                    }
+                }
+            }
+            $percent = $total > 0 ? min(100, (int) round($completed * 100 / $total)) : 0;
+            $modeProgress[$activity] = ['percent' => $percent, 'label' => 'Cần tiếp tục'];
+        }
     }
+} catch (Throwable $error) {
+    error_log('Lỗi Góc rèn luyện: ' . $error->getMessage());
+    $sourceError = 'Không thể tải dữ liệu học tập lúc này.';
 }
 
 $hasSelectedSource = $isValidSource && $sourceError === '';
@@ -134,124 +188,12 @@ $canStartLearning = $hasSelectedSource && $wordCount > 0;
 $isTopicContext = $hasSelectedSource && $source === 'topic';
 $sourceQuery = http_build_query(['source' => $source, 'id' => $sourceId, 'limit' => $limitOption]);
 
-// Điểm Quiz là thống kê độc lập, lấy đúng bài đã nộp gần nhất của nguồn học.
-if ($hasSelectedSource) {
-    if ($source === 'topic') {
-        $latestQuizSql = 'SELECT correct_answers, total_questions
-            FROM quiz_results
-            WHERE user_id = ? AND topic_id = ?
-            ORDER BY finished_at DESC, id DESC LIMIT 1';
-    } else {
-        $latestQuizSql = 'SELECT correct_answers, total_questions
-            FROM quiz_results
-            WHERE user_id = ? AND vocabulary_set_id = ?
-            ORDER BY finished_at DESC, id DESC LIMIT 1';
-    }
-    $latestQuizStmt = mysqli_prepare($link, $latestQuizSql);
-    mysqli_stmt_bind_param($latestQuizStmt, 'ii', $userId, $sourceId);
-    mysqli_stmt_execute($latestQuizStmt);
-    $latestQuiz = mysqli_fetch_assoc(mysqli_stmt_get_result($latestQuizStmt));
-    mysqli_stmt_close($latestQuizStmt);
-    if ($latestQuiz) {
-        $latestQuizCorrect = (int) $latestQuiz['correct_answers'];
-        $latestQuizTotal = (int) $latestQuiz['total_questions'];
-    }
-}
-
-// Tiến độ phiên được tách riêng theo activity_type. Trạng thái mastered chỉ
-// thể hiện mức độ ghi nhớ từ, không còn được dùng làm tiến độ Flashcard/Quiz.
-$modeProgress = [
-    'flashcard' => ['percent' => 0, 'label' => 'Chưa bắt đầu'],
-    'quiz' => ['percent' => 0, 'label' => 'Chưa bắt đầu']
-];
-
-if ($hasSelectedSource) {
-    $attemptTableResult = @mysqli_query($link, "SHOW TABLES LIKE 'learning_attempts'");
-    if ($attemptTableResult && mysqli_num_rows($attemptTableResult) > 0) {
-        $attemptSql = "
-            SELECT activity_type, status, state_json
-            FROM learning_attempts
-            WHERE user_id = ? AND source_type = ? AND source_id = ? AND item_limit = ?
-              AND status IN ('in_progress', 'completed')
-            ORDER BY updated_at DESC, id DESC
-        ";
-        $attemptStmt = mysqli_prepare($link, $attemptSql);
-        mysqli_stmt_bind_param($attemptStmt, 'isis', $userId, $source, $sourceId, $limitOption);
-        mysqli_stmt_execute($attemptStmt);
-        $attemptResult = mysqli_stmt_get_result($attemptStmt);
-        $resolvedActivities = [];
-
-        while ($attempt = mysqli_fetch_assoc($attemptResult)) {
-            $activity = $attempt['activity_type'];
-            // Quiz đã nộp được thống kê bằng quiz_results. learning_attempts
-            // của Quiz chỉ dùng để nhận biết một phiên thoát giữa chừng.
-            if ($activity === 'quiz' && $attempt['status'] !== 'in_progress') {
-                continue;
-            }
-            if (isset($resolvedActivities[$activity]) || !isset($modeProgress[$activity])) {
-                continue;
-            }
-            $resolvedActivities[$activity] = true;
-
-            $state = json_decode($attempt['state_json'], true);
-            $state = is_array($state) ? $state : [];
-            if ($activity === 'flashcard') {
-                $total = count($state['cardIds'] ?? []);
-                // Flashcard chỉ tính những từ người dùng xác nhận "Đã nhớ".
-                $completed = count(array_filter(
-                    $state['cardStatuses'] ?? [],
-                    static fn($status) => $status === 'da_nho'
-                ));
-                $flashcardRemembered = $completed;
-                $flashcardStatsTotal = $total;
-            } else {
-                $total = count($state['questions'] ?? []);
-                // Quiz chỉ tính câu đã chọn đúng; câu sai và chưa làm đều chưa
-                // đóng góp vào phần trăm hoàn thành.
-                $completed = 0;
-                foreach (($state['questions'] ?? []) as $index => $question) {
-                    $selectedIndex = $state['userAnswers'][(string) $index]
-                        ?? $state['userAnswers'][$index]
-                        ?? null;
-                    if (
-                        $selectedIndex !== null
-                        && (int) $selectedIndex === (int) ($question['dap_an_dung'] ?? -1)
-                    ) {
-                        $completed++;
-                    }
-                }
-            }
-            $percent = $total > 0 ? min(100, (int) round(($completed / $total) * 100)) : 0;
-            $modeProgress[$activity] = [
-                'percent' => $percent,
-                // Quiz đạt 100% nhưng chưa bấm Nộp bài vẫn là phiên cần tiếp tục.
-                'label' => $percent === 100 && $attempt['status'] === 'completed'
-                    ? 'Đã hoàn thành'
-                    : 'Cần tiếp tục'
-            ];
-        }
-        mysqli_stmt_close($attemptStmt);
-
-        if (!isset($resolvedActivities['quiz']) && $latestQuizTotal > 0) {
-            $latestQuizPercent = min(100, (int) round(($latestQuizCorrect / $latestQuizTotal) * 100));
-            $modeProgress['quiz'] = [
-                'percent' => $latestQuizPercent,
-                'label' => 'Kết quả gần nhất'
-            ];
-        }
-    }
-}
-
 if ($modeProgress['quiz']['label'] === 'Chưa bắt đầu' && $latestQuizTotal > 0) {
-    $latestQuizPercent = min(100, (int) round(($latestQuizCorrect / $latestQuizTotal) * 100));
     $modeProgress['quiz'] = [
-        'percent' => $latestQuizPercent,
-        'label' => 'Kết quả gần nhất'
+        'percent' => min(100, (int) round($latestQuizCorrect * 100 / $latestQuizTotal)),
+        'label' => 'Kết quả gần nhất',
     ];
 }
-
-// Chưa có phiên Flashcard thì hiển thị 0 trên số thẻ sẽ học. Tuyệt đối không
-// lấy user_vocab_progress cho thống kê này vì dữ liệu cũ có thể từng bị Quiz ghi.
 if ($flashcardStatsTotal === 0) {
     $flashcardStatsTotal = $selectedLimit;
 }
