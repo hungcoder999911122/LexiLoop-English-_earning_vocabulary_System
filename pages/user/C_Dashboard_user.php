@@ -1,5 +1,5 @@
 <?php
-require_once '../../includes/auth_guard.php';
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/auth_guard.php');
 require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 $userId = (int) $_SESSION['user_id'];

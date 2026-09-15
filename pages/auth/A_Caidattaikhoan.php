@@ -7,64 +7,79 @@ require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/auth_guard.php");
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
 require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 
-// auth_guard.php đã xác thực session trước khi trang sử dụng user_id.
-$isLoggedIn = isset($_SESSION['user_id']);
-$user_id = $isLoggedIn ? (int) $_SESSION['user_id'] : null;
-
+$user_id = (int) $_SESSION['user_id'];
 $loi = "";
+$thongBao = "";
 
-//Xử lý form, CHỈ chạy sau khi đã chắc chắn đăng nhập rồi
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $A_Caidattaikhoan_password         = $_POST['A_Caidattaikhoan_password'];
-    $A_Caidattaikhoan_password_new     = $_POST['A_Caidattaikhoan_password_new'];
-    $A_Caidattaikhoan_password_new_acp = $_POST['A_Caidattaikhoan_password_new_acp'];
-    $A_Caidattaikhoan_reminder         = isset($_POST['A_Caidattaikhoan_reminder']);
-    $hour                              = $_POST['hour'];
-    $quantity                          = $_POST['quantity'];
+// Lấy thông tin cài đặt hiện tại của người dùng
+$accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_id(?)', 'i', [$user_id]);
+$userRow = $accounts[0] ?? null;
+if (!$userRow) {
+    exit('Không tìm thấy tài khoản.');
+}
 
-    if(empty($A_Caidattaikhoan_password_new) || empty($A_Caidattaikhoan_password_new_acp)) {
-        $loi = "Vui lòng nhập đầy đủ thông tin mật khẩu mới và xác nhận mật khẩu mới.";
-    }
-    elseif($A_Caidattaikhoan_password_new != $A_Caidattaikhoan_password_new_acp) {
-        $loi = "Mật khẩu mới và xác nhận mật khẩu mới không khớp.";
-    }
-    elseif(strlen($A_Caidattaikhoan_password_new) < 6) {
-        $loi = "Mật khẩu mới phải có ít nhất 6 ký tự.";
-    }
-    else {
-        // Kiểm tra mật khẩu hiện tại đúng không
-        $user_id = (int) $_SESSION['user_id'];
-        $accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_id(?)', 'i', [$user_id]);
-        $row = $accounts[0] ?? null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $current_pass      = $_POST['A_Caidattaikhoan_password'] ?? '';
+    $new_pass          = $_POST['A_Caidattaikhoan_password_new'] ?? '';
+    $new_pass_confirm  = $_POST['A_Caidattaikhoan_password_new_acp'] ?? '';
+    $reminderEnabled   = isset($_POST['A_Caidattaikhoan_reminder']) ? 1 : 0;
+    $hour              = $_POST['hour'] ?? '2000';
+    $quantity          = (int) ($_POST['quantity'] ?? 20);
 
-        if(!$row || !password_verify($A_Caidattaikhoan_password, $row['password_hash'])) {
-            $loi = "Mật khẩu hiện tại không đúng.";
+    $normalizedTime = preg_match('/^([01][0-9]|2[0-3])([0-5][0-9])$/', $hour)
+        ? substr($hour, 0, 2) . ':' . substr($hour, 2, 2) . ':00'
+        : '20:00:00';
+    $dailyTarget = ($quantity >= 1 && $quantity <= 200) ? $quantity : 20;
+
+    $new_hash = null;
+    $hasPasswordError = false;
+
+    // Nếu người dùng có nhập đổi mật khẩu
+    if (!empty($new_pass) || !empty($new_pass_confirm) || !empty($current_pass)) {
+        if (empty($current_pass)) {
+            $loi = "Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu.";
+            $hasPasswordError = true;
+        } elseif (!password_verify($current_pass, $userRow['password_hash'])) {
+            $loi = "Mật khẩu hiện tại không chính xác.";
+            $hasPasswordError = true;
+        } elseif (empty($new_pass) || empty($new_pass_confirm)) {
+            $loi = "Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu mới.";
+            $hasPasswordError = true;
+        } elseif ($new_pass !== $new_pass_confirm) {
+            $loi = "Mật khẩu mới và xác nhận mật khẩu không khớp.";
+            $hasPasswordError = true;
+        } elseif (strlen($new_pass) < 6) {
+            $loi = "Mật khẩu mới phải có ít nhất 6 ký tự.";
+            $hasPasswordError = true;
         } else {
-            // BƯỚC 4-5: Mã hóa mật khẩu mới, UPDATE vào DB
-            $new_hash = password_hash($A_Caidattaikhoan_password_new, PASSWORD_DEFAULT);
-            $reminderEnabled = $A_Caidattaikhoan_reminder ? 1 : 0;
-            $normalizedTime = preg_match('/^([01][0-9]|2[0-3])([0-5][0-9])$/', $hour)
-                ? substr($hour, 0, 2) . ':' . substr($hour, 2, 2) . ':00'
-                : '';
-            $dailyTarget = filter_var($quantity, FILTER_VALIDATE_INT);
+            $new_hash = password_hash($new_pass, PASSWORD_DEFAULT);
+        }
+    }
 
-            if ($normalizedTime === '' || $dailyTarget === false) {
-                $loi = "Tùy chọn nhắc nhở không hợp lệ.";
-            } else try {
-                dbCallProcedure(
-                    $link,
-                    'CALL sp_auth_update_account_settings(?, ?, ?, ?, ?)',
-                    'isisi',
-                    [$user_id, $new_hash, $reminderEnabled, $normalizedTime, $dailyTarget]
-                );
-                $loi = "Cập nhật thành công!";
-            } catch (Throwable $error) {
-                error_log('Lỗi cập nhật cài đặt: ' . $error->getMessage());
-                $loi = "Không thể cập nhật cài đặt lúc này.";
-            }
+    if (!$hasPasswordError) {
+        try {
+            dbCallProcedure(
+                $link,
+                'CALL sp_auth_update_account_settings(?, ?, ?, ?, ?)',
+                'isisi',
+                [$user_id, $new_hash, $reminderEnabled, $normalizedTime, $dailyTarget]
+            );
+            $thongBao = "Cập nhật cài đặt thành công!";
+
+            // Tải lại thông tin mới
+            $accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_id(?)', 'i', [$user_id]);
+            $userRow = $accounts[0] ?? $userRow;
+        } catch (Throwable $error) {
+            error_log('Lỗi cập nhật cài đặt: ' . $error->getMessage());
+            $loi = "Không thể cập nhật cài đặt lúc này.";
         }
     }
 }
+
+$curReminder = (int) ($userRow['daily_reminder_enabled'] ?? 0);
+$curTime = $userRow['reminder_time'] ?? '20:00:00';
+$curHourVal = str_replace(':', '', substr($curTime, 0, 5));
+$curTarget = (int) ($userRow['daily_target_words'] ?? 20);
 ?>
 
 <!DOCTYPE html>
@@ -81,34 +96,44 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	<div class="wrapper">
 		<h2>Cài đặt tài khoản</h2>
 
+		<?php if (!empty($thongBao)): ?>
+			<div style="background-color: #d4edda; color: #155724; padding: 12px; margin-bottom: 20px; border-radius: 6px; text-align: center;">
+				<?php echo htmlspecialchars($thongBao); ?>
+			</div>
+		<?php endif; ?>
+
+		<?php if (!empty($loi)): ?>
+			<div style="background-color: #f8d7da; color: #721c24; padding: 12px; margin-bottom: 20px; border-radius: 6px; text-align: center;">
+				<?php echo htmlspecialchars($loi); ?>
+			</div>
+		<?php endif; ?>
+
 		<div class="top-row">
 
 			<div class="box">
 				<h3>Đổi mật khẩu</h3>
 				<form method="POST" action="">
 					<label>Mật khẩu hiện tại</label> <br />
-					<input id="A_Caidattaikhoan_password" name="A_Caidattaikhoan_password" type="password"> <br /><br />
+					<input id="A_Caidattaikhoan_password" name="A_Caidattaikhoan_password" type="password" placeholder="Để trống nếu không muốn đổi"> <br /><br />
 
 					<label>Mật khẩu mới</label> <br />
-					<input id="A_Caidattaikhoan_password_new" name="A_Caidattaikhoan_password_new" type="password"> <br /><br />
+					<input id="A_Caidattaikhoan_password_new" name="A_Caidattaikhoan_password_new" type="password" placeholder="Ít nhất 6 ký tự"> <br /><br />
 
 					<label>Xác nhận mật khẩu mới</label> <br />
-					<input id="A_Caidattaikhoan_password_new_acp" name="A_Caidattaikhoan_password_new_acp" type="password"> <br /><br />
+					<input id="A_Caidattaikhoan_password_new_acp" name="A_Caidattaikhoan_password_new_acp" type="password" placeholder="Nhập lại mật khẩu mới"> <br /><br />
 			</div>
 				
-		
-
 			<div class="box">
 				<h3>Nhắc nhở ôn tập</h3>
 				
 					<div>
-						<input type="checkbox" id="A_Caidattaikhoan_reminder" name="A_Caidattaikhoan_reminder">
+						<input type="checkbox" id="A_Caidattaikhoan_reminder" name="A_Caidattaikhoan_reminder" <?php echo $curReminder === 1 ? 'checked' : ''; ?>>
 						<label for="A_Caidattaikhoan_reminder">Bật nhắc nhở ôn tập hằng ngày gửi về Email</label>
 					</div>
 					<br />
 					<div>
 						<label for="hour">Giờ nhận nhắc nhở</label> <br />
-							<select name="hour" id="hour">
+							<select name="hour" id="hour" data-selected="<?php echo htmlspecialchars($curHourVal); ?>">
                                 <option value="0015">00:15</option>
                                 <option value="0030">00:30</option>
                                 <option value="0045">00:45</option>
@@ -216,9 +241,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 					<div class="form-group">
 						<label for="quantity">Số từ ôn tập mỗi ngày</label> <br />
 						<select name="quantity" id="quantity">
-							<option value="10">10</option>
-							<option value="20" selected>20</option>
-							<option value="30">30</option>
+							<option value="5" <?php echo $curTarget === 5 ? 'selected' : ''; ?>>5 từ</option>
+							<option value="10" <?php echo $curTarget === 10 ? 'selected' : ''; ?>>10 từ</option>
+							<option value="20" <?php echo $curTarget === 20 ? 'selected' : ''; ?>>20 từ</option>
+							<option value="30" <?php echo $curTarget === 30 ? 'selected' : ''; ?>>30 từ</option>
+							<option value="50" <?php echo $curTarget === 50 ? 'selected' : ''; ?>>50 từ</option>
 						</select>
 					</div>
 				</div>
@@ -231,6 +258,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 				</form>
 	</div>
 
-
+	<script>
+		$(document).ready(function() {
+			var selectedHour = $('#hour').data('selected');
+			if (selectedHour) {
+				$('#hour').val(selectedHour);
+			}
+		});
+	</script>
 </body>
 </html>

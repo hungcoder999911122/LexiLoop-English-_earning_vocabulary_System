@@ -185,7 +185,7 @@ SELECT
     DATEDIFF(p.`next_review_date`, '1970-01-01')
 FROM `user_vocab_progress` p
 JOIN `vocabulary` v ON v.`id` = p.`vocabulary_id`
-WHERE p.`next_review_date` <= CURRENT_DATE$$
+WHERE p.`next_review_date` <= CURRENT_DATE OR DATE(p.`last_reviewed_at`) = CURRENT_DATE$$
 
 CREATE VIEW `vw_quiz_result_summary` AS
 SELECT
@@ -613,7 +613,7 @@ BEGIN
             SELECT EXISTS(
                 SELECT 1 FROM `user_vocab_progress`
                 WHERE `user_id` = p_user_id AND `vocabulary_id` = v_vocabulary_id
-                  AND `next_review_date` <= CURRENT_DATE
+                  AND (`next_review_date` <= CURRENT_DATE OR DATE(`last_reviewed_at`) = CURRENT_DATE)
             ) INTO v_is_member;
         END IF;
         IF NOT v_is_member THEN
@@ -735,7 +735,7 @@ BEGIN
         SET v_source_id_db = p_source_id;
         INSERT INTO `tmp_quiz_answers`
         SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
-               v.`meaning`, COALESCE(BINARY TRIM(j.`selected_answer`) = BINARY TRIM(v.`meaning`), 0), j.`response_time_ms`
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
           FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
               `question_order` FOR ORDINALITY,
               `vocabulary_id` INT PATH '$.vocabularyId',
@@ -751,7 +751,7 @@ BEGIN
         SET v_source_id_db = p_source_id;
         INSERT INTO `tmp_quiz_answers`
         SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
-               v.`meaning`, COALESCE(BINARY TRIM(j.`selected_answer`) = BINARY TRIM(v.`meaning`), 0), j.`response_time_ms`
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
           FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
               `question_order` FOR ORDINALITY,
               `vocabulary_id` INT PATH '$.vocabularyId',
@@ -764,7 +764,7 @@ BEGIN
     ELSE
         INSERT INTO `tmp_quiz_answers`
         SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
-               v.`meaning`, COALESCE(BINARY TRIM(j.`selected_answer`) = BINARY TRIM(v.`meaning`), 0), j.`response_time_ms`
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
           FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
               `question_order` FOR ORDINALITY,
               `vocabulary_id` INT PATH '$.vocabularyId',
@@ -773,7 +773,7 @@ BEGIN
           )) j
           JOIN `user_vocab_progress` p
             ON p.`vocabulary_id` = j.`vocabulary_id` AND p.`user_id` = p_user_id
-           AND p.`next_review_date` <= CURRENT_DATE
+           AND (p.`next_review_date` <= CURRENT_DATE OR DATE(p.`last_reviewed_at`) = CURRENT_DATE)
           JOIN `vocabulary` v ON v.`id` = j.`vocabulary_id`;
     END IF;
 

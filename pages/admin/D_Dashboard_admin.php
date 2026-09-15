@@ -23,7 +23,7 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
       type="text/css"
       href="../../CSS/D_Dashboard_admin.css"
     />
-    <script src="../jquery-4.0.0.min.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
   </head>
 
   <body>
@@ -65,7 +65,7 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
             >Cài đặt</a
           >
           <hr class="D_Dashboard_admin_GachNgang" />
-          <a href="../main/B_homepage.php" class="D_Dashboard_admin_MucMenu"
+          <a href="../auth/A_DangXuat.php" class="D_Dashboard_admin_MucMenu"
             >Đăng xuất</a
           >
         </nav>

@@ -33,8 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 				$_SESSION['full_name'] = $row['full_name'];
 				$_SESSION['role']      = $row['role'];
 
-				// Chuyển đến Dashboard
-				header("Location: ../user/C_Dashboard_user.php?login=success");
+				// Chuyển đến Dashboard theo quyền
+				if ($row['role'] === 'admin') {
+					header("Location: ../admin/D_Dashboard_admin.php?login=success");
+				} else {
+					header("Location: ../user/C_Dashboard_user.php?login=success");
+				}
 				exit();
 			}
 		}

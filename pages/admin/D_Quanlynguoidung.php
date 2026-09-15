@@ -27,7 +27,7 @@ $ketQuaDanhSach = dbSelectView($link, 'SELECT userID, full_name, email, role, st
       type="text/css"
       href="../../CSS/D_Quanlynguoidung.css"
     />
-    <script src="../jquery-4.0.0.min.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
   </head>
 
   <body>
@@ -67,7 +67,7 @@ $ketQuaDanhSach = dbSelectView($link, 'SELECT userID, full_name, email, role, st
             >Cài đặt</a
           >
           <hr class="D_Quanlynguoidung_GachNgang" />
-          <a href="../main/B_homepage.php" class="D_Quanlynguoidung_MucMenu"
+          <a href="../auth/A_DangXuat.php" class="D_Quanlynguoidung_MucMenu"
             >Đăng xuất</a
           >
         </nav>

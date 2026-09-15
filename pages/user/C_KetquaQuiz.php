@@ -1,5 +1,5 @@
 <?php
-require_once '../../includes/auth_guard.php';
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/auth_guard.php');
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
 
 // auth_guard.php đã xác thực session trước khi trang sử dụng user_id.

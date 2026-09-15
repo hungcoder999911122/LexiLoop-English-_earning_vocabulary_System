@@ -36,7 +36,7 @@
             <button id="B_Quizdemo_BtnCauTiep" class="B_Quizdemo_NutCauTiep" type="button" disabled>Câu tiếp</button>
         </div>
 
-        <a href="/pages/auth/A_DangKy.html" id="B_Quizdemo_BtnDangKy" class="B_Quizdemo_NutDangKy">Đăng ký để làm Quiz thật</a>
+        <a href="/pages/auth/A_DangKy.php" id="B_Quizdemo_BtnDangKy" class="B_Quizdemo_NutDangKy">Đăng ký để làm Quiz thật</a>
 
     </main>
 

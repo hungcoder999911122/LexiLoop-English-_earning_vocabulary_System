@@ -39,7 +39,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') { return htmlspecialchars($caiD
     <meta charset="UTF-8" />
     <title>LexiLoop Admin - Cài đặt hệ thống</title>
     <link rel="stylesheet" type="text/css" href="../../CSS/D_Caidathethong.css" />
-    <script src="../jquery-4.0.0.min.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
   </head>
 
   <body>
@@ -79,7 +79,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') { return htmlspecialchars($caiD
             >Cài đặt</a
           >
           <hr class="D_Caidathethong_GachNgang" />
-          <a href="../main/B_homepage.php" class="D_Caidathethong_MucMenu"
+          <a href="../auth/A_DangXuat.php" class="D_Caidathethong_MucMenu"
             >Đăng xuất</a
           >
         </nav>

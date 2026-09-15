@@ -35,7 +35,7 @@ $danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName FROM vw_topic_ca
     <meta charset="UTF-8" />
     <title>LexiLoop Admin - Quản lý từ vựng</title>
     <link rel="stylesheet" type="text/css" href="../../CSS/D_Quanlytuvung.css" />
-    <script src="../jquery-4.0.0.min.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
   </head>
 
   <body>
@@ -73,7 +73,7 @@ $danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName FROM vw_topic_ca
             >Cài đặt</a
           >
           <hr class="D_Quanlytuvung_GachNgang" />
-          <a href="../main/B_homepage.php" class="D_Quanlytuvung_MucMenu"
+          <a href="../auth/A_DangXuat.php" class="D_Quanlytuvung_MucMenu"
             >Đăng xuất</a
           >
         </nav>

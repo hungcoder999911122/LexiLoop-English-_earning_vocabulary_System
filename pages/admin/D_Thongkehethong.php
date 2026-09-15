@@ -20,7 +20,7 @@ $dsChuDeHocNhieu = dbSelectView($link, 'SELECT topic_name AS topicName, COUNT(*)
     <meta charset="UTF-8" />
     <title>LexiLoop Admin - Thống kê hệ thống</title>
     <link rel="stylesheet" type="text/css" href="../../CSS/D_Thongkehethong.css" />
-    <script src="../jquery-4.0.0.min.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
   </head>
 
   <body>
@@ -60,7 +60,7 @@ $dsChuDeHocNhieu = dbSelectView($link, 'SELECT topic_name AS topicName, COUNT(*)
             >Cài đặt</a
           >
           <hr class="D_Thongkehethong_GachNgang" />
-          <a href="../main/B_homepage.php" class="D_Thongkehethong_MucMenu"
+          <a href="../auth/A_DangXuat.php" class="D_Thongkehethong_MucMenu"
             >Đăng xuất</a
           >
         </nav>
