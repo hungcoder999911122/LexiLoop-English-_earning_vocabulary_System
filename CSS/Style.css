@@ -45,6 +45,7 @@
     --color-background: #f6fbf8;
     --color-surface: #ffffff;
     --color-white: #ffffff;
+    --color-surface-elevated: #ffffff;
     --color-border: #d7e8df;
 
     /* Văn bản */
@@ -63,18 +64,26 @@
 html.dark-mode {
     color-scheme: dark;
 
-    --color-background: #111827;
-    --color-surface: #1f2937;
-    --color-white: #1f2937;
-    --color-border: #374151;
+    /* Tông xanh than + xanh lá dịu: đọc lâu dễ chịu và vẫn đúng thương hiệu. */
+    --color-background: #101a1f;
+    --color-surface: #17252b;
+    --color-white: #17252b;
+    --color-surface-elevated: #203239;
+    --color-border: #345049;
 
-    --color-text: #f3f4f6;
-    --color-text-muted: #9ca3af;
-
-    --color-primary-light: #164e36;
-    --color-accent-light: #1e3a8a;
-    --color-warning-light: #451a03;
-    --color-danger-light: #450a0a;
+    --color-text: #edf7f1;
+    --color-text-muted: #adc3b8;
+    --color-primary: #45c878;
+    --color-primary-dark: #91ebb0;
+    --color-primary-light: #1b4932;
+    --color-accent: #79a8ff;
+    --color-accent-dark: #a9c7ff;
+    --color-accent-light: #203d70;
+    --color-warning: #f6b85b;
+    --color-warning-light: #543716;
+    --color-success: #5bd88a;
+    --color-danger: #ff8e88;
+    --color-danger-light: #59282b;
 }
 
 html.dark-mode body {

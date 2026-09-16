@@ -31,6 +31,9 @@ foreach (explode(' ', trim($headerUserName)) as $namePart) {
 $headerInitials = substr($headerInitials, 0, 2);
 ?>
 
+<!-- Nạp sau CSS từng trang để dark mode có thể ghi đè các màu hard-code cũ. -->
+<link rel="stylesheet" href="/CSS/theme.css">
+
 <header class="top-header">
 
     <!-- Bên trái: tên trang và hành động riêng -->

@@ -6,13 +6,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const savedTheme = localStorage.getItem("lexiloop-theme");
-
-    if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark-mode");
-        updateThemeButton(true);
-    } else {
-        updateThemeButton(false);
-    }
+    // Khi user chưa chọn, tôn trọng chế độ của thiết bị. Khi đã bấm nút,
+    // localStorage sẽ giữ lựa chọn đó cho các trang LexiLoop tiếp theo.
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = savedTheme === "dark" || (savedTheme === null && prefersDark);
+    document.documentElement.classList.toggle("dark-mode", isDark);
+    updateThemeButton(isDark);
 
     themeToggle.addEventListener("click", () => {
         const isDark = document.documentElement.classList.toggle("dark-mode");
@@ -27,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateThemeButton(isDark) {
         themeToggle.textContent = isDark ? "☀️" : "🌙";
+        themeToggle.setAttribute("aria-pressed", String(isDark));
 
         themeToggle.setAttribute(
             "aria-label",
