@@ -11,6 +11,8 @@ USE `db_LexiLoop`;
 -- user_vocab_progress(user_id, vocabulary_id) is already UNIQUE in init data.
 -- Do not recreate the same index here; schema changes belong in migrations.
 
+DROP VIEW IF EXISTS `vw_user_daily_learning_summary`;
+DROP VIEW IF EXISTS `vw_user_daily_unique_words`;
 DROP VIEW IF EXISTS `vw_quiz_incorrect_answers`;
 DROP VIEW IF EXISTS `vw_personal_vocabulary`;
 DROP VIEW IF EXISTS `vw_system_recent_activity`;
@@ -42,6 +44,7 @@ DROP PROCEDURE IF EXISTS `sp_auth_update_account_settings`;
 DROP PROCEDURE IF EXISTS `sp_auth_register_user`;
 DROP PROCEDURE IF EXISTS `sp_auth_get_account_by_id`;
 DROP PROCEDURE IF EXISTS `sp_auth_get_account_by_email`;
+DROP PROCEDURE IF EXISTS `sp_auth_get_active_admin_by_email`;
 DROP PROCEDURE IF EXISTS `sp_save_system_setting`;
 DROP PROCEDURE IF EXISTS `sp_admin_delete_topic`;
 DROP PROCEDURE IF EXISTS `sp_admin_save_topic`;
@@ -246,6 +249,26 @@ LEFT JOIN `Topics` t ON t.`topicID` = ls.`topic_id`
 LEFT JOIN `vocabulary_sets` vs ON vs.`id` = ls.`vocabulary_set_id`
 WHERE ls.`words_studied` > 0$$
 
+-- Mỗi dòng là một từ duy nhất mà user đã luyện trong một ngày.
+-- UNION (không phải UNION ALL) loại trùng khi cùng từ được học nhiều lần,
+-- học bằng Flashcard rồi Quiz, hoặc xuất hiện ở cả chủ đề và bộ từ cá nhân.
+CREATE VIEW `vw_user_daily_unique_words` AS
+SELECT p.`user_id`, rl.`review_date` AS `activity_date`, p.`vocabulary_id`
+FROM `review_logs` rl
+JOIN `user_vocab_progress` p ON p.`id` = rl.`progress_id`
+UNION
+SELECT qr.`user_id`, DATE(qr.`finished_at`) AS `activity_date`, qad.`vocabulary_id`
+FROM `quiz_results` qr
+JOIN `quiz_answer_details` qad ON qad.`quiz_result_id` = qr.`id`
+WHERE qr.`finished_at` IS NOT NULL$$
+
+-- View tổng hợp dùng chung cho Dashboard, streak và biểu đồ lịch sử.
+-- Việc tính một lần tại DB giúp các trang không tự cộng theo quy tắc khác nhau.
+CREATE VIEW `vw_user_daily_learning_summary` AS
+SELECT `user_id`, `activity_date`, COUNT(*) AS `unique_words_count`
+FROM `vw_user_daily_unique_words`
+GROUP BY `user_id`, `activity_date`$$
+
 CREATE VIEW `vw_system_recent_activity` AS
 SELECT CONCAT('Người dùng mới đăng ký: ', `full_name`) AS `noiDung`, `created_at` AS `thoiGian` FROM `Users`
 UNION ALL
@@ -273,24 +296,31 @@ BEGIN
     RETURN ROUND(v_successful * 100.0 / v_total, 2);
 END$$
 
--- Counts consecutive calendar days ending today on which the user studied or
--- reviewed at least one word. A missing day terminates the streak.
+-- Đếm chuỗi ngày có ít nhất một từ duy nhất được luyện bằng Flashcard hoặc Quiz.
+-- Nếu hôm nay chưa học nhưng hôm qua có học, chuỗi vẫn được giữ đến hết hôm nay;
+-- chỉ khi bỏ trọn một ngày thì chuỗi mới trở về 0.
 CREATE FUNCTION `fn_get_current_streak`(p_user_id INT)
 RETURNS INT
 READS SQL DATA
 BEGIN
-    DECLARE v_day DATE DEFAULT CURRENT_DATE;
+    DECLARE v_day DATE DEFAULT NULL;
     DECLARE v_streak INT DEFAULT 0;
     DECLARE v_has_activity BOOLEAN DEFAULT FALSE;
 
+    SELECT MAX(`activity_date`) INTO v_day
+      FROM `vw_user_daily_learning_summary`
+     WHERE `user_id` = p_user_id
+       AND `activity_date` BETWEEN CURRENT_DATE - INTERVAL 1 DAY AND CURRENT_DATE;
+
+    IF v_day IS NULL THEN
+        RETURN 0;
+    END IF;
+
     streak_loop: LOOP
         SELECT EXISTS(
-            SELECT 1 FROM `learning_sessions` ls
-             WHERE ls.`user_id` = p_user_id AND ls.`session_date` = v_day
-            UNION ALL
-            SELECT 1 FROM `review_logs` rl
-            JOIN `user_vocab_progress` p ON p.`id` = rl.`progress_id`
-             WHERE p.`user_id` = p_user_id AND rl.`review_date` = v_day
+            SELECT 1
+              FROM `vw_user_daily_learning_summary` d
+             WHERE d.`user_id` = p_user_id AND d.`activity_date` = v_day
         ) INTO v_has_activity;
 
         IF NOT v_has_activity THEN
@@ -310,6 +340,19 @@ BEGIN
     SELECT `userID`, `email`, `password_hash`, `full_name`, `role`, `status`
       FROM `Users`
      WHERE `email` = LOWER(TRIM(p_email))
+     LIMIT 1;
+END$$
+
+-- This is intentionally separate from user login: it never exposes a normal
+-- user account to the administration login flow.
+CREATE PROCEDURE `sp_auth_get_active_admin_by_email`(IN p_email VARCHAR(50))
+READS SQL DATA
+BEGIN
+    SELECT `userID`, `email`, `password_hash`, `full_name`, `role`, `status`
+      FROM `Users`
+     WHERE `email` = LOWER(TRIM(p_email))
+       AND `role` = 'admin'
+       AND `status` = 'active'
      LIMIT 1;
 END$$
 
@@ -620,7 +663,9 @@ BEGIN
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary is not in the authorized source';
         END IF;
 
-        SET v_status = IF(v_answer = 'da_nho', 'mastered', 'learning');
+        -- Một lần bấm "Đã nhớ" chưa đủ để coi là đã thuộc. Trạng thái
+        -- mastered chỉ được xác lập sau khi số lần lặp đạt ngưỡng SRS bên dưới.
+        SET v_status = 'learning';
         SET v_interval = IF(v_answer = 'da_nho', 7, 1);
         SET v_quality = IF(v_answer = 'da_nho', 5, 2);
 
@@ -631,17 +676,27 @@ BEGIN
             (p_user_id, v_vocabulary_id, v_status, v_interval, IF(p_is_final, 1, 0),
              DATE_ADD(CURRENT_DATE, INTERVAL v_interval DAY), NOW(), v_quality)
         ON DUPLICATE KEY UPDATE
-            `id` = LAST_INSERT_ID(`id`), `status` = VALUES(`status`),
+            `id` = LAST_INSERT_ID(`id`),
             `interval_days` = VALUES(`interval_days`),
             `repetitions` = `repetitions` + IF(p_is_final, 1, 0),
+            `status` = CASE
+                -- "Chưa nhớ" luôn đưa từ về trạng thái đang học.
+                WHEN v_answer = 'chua_nho' THEN 'learning'
+                -- Giữ lựa chọn "Thuộc" mà user đã chủ động đặt ở trang cá nhân.
+                WHEN `status` = 'mastered' THEN 'mastered'
+                -- Với tiến độ tự động, cần đủ số lần lặp mới được coi là đã thuộc.
+                WHEN `repetitions` >= 5 THEN 'mastered'
+                ELSE 'learning'
+            END,
             `next_review_date` = VALUES(`next_review_date`),
             `last_reviewed_at` = NOW(), `last_quality_rating` = VALUES(`last_quality_rating`);
         SET v_progress_id = LAST_INSERT_ID();
 
-        IF p_is_final THEN
-            INSERT INTO `review_logs` (`progress_id`, `review_date`, `quality_rating`, `response_time_ms`)
-            VALUES (v_progress_id, CURRENT_DATE, v_quality, NULL);
-        END IF;
+        -- Ghi nhận cả những thẻ đã đánh giá trong phiên kết thúc sớm. View
+        -- thống kê theo ngày sẽ loại trùng, nên lưu lại nhiều lần vẫn chỉ tính
+        -- một vocabulary_id cho KPI và streak của ngày đó.
+        INSERT INTO `review_logs` (`progress_id`, `review_date`, `quality_rating`, `response_time_ms`)
+        VALUES (v_progress_id, CURRENT_DATE, v_quality, NULL);
         SET v_word_count = v_word_count + 1;
     END LOOP;
     CLOSE status_cursor;
@@ -1178,12 +1233,15 @@ DELIMITER ;
 -- GRANT SELECT ON `db_LexiLoop`.`vw_quiz_incorrect_answers` TO 'app_user'@'%';
 -- GRANT SELECT ON `db_LexiLoop`.`vw_personal_vocabulary` TO 'app_user'@'%';
 -- GRANT SELECT ON `db_LexiLoop`.`vw_user_recent_activity` TO 'app_user'@'%';
+-- GRANT SELECT ON `db_LexiLoop`.`vw_user_daily_unique_words` TO 'app_user'@'%';
+-- GRANT SELECT ON `db_LexiLoop`.`vw_user_daily_learning_summary` TO 'app_user'@'%';
 -- GRANT SELECT ON `db_LexiLoop`.`vw_system_recent_activity` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_record_study_session` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_save_flashcard_session` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_submit_quiz` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_manage_learning_attempt` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_auth_get_account_by_email` TO 'app_user'@'%';
+-- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_auth_get_active_admin_by_email` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_auth_get_account_by_id` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_auth_register_user` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_auth_update_account_settings` TO 'app_user'@'%';

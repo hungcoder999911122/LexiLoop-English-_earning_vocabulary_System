@@ -41,27 +41,54 @@ if ($selectedRange !== 'all') {
 
 if ($isLoggedIn && isset($link) && $link instanceof mysqli) {
     try {
-        $where = 'user_id = ?';
-        $types = 'i';
-        $params = [$user_id];
+        // Biểu đồ dùng số từ duy nhất theo ngày. Học lặp cùng một từ bằng
+        // Flashcard, Quiz hoặc từ nhiều nguồn vẫn chỉ đóng góp một đơn vị.
+        $dailyWhere = 'user_id = ?';
+        $dailyTypes = 'i';
+        $dailyParams = [$user_id];
         if ($selectedRange !== 'all') {
-            $where .= ' AND DATE(activity_time) BETWEEN ? AND ?';
-            $types .= 'ss';
-            $params[] = $chartStartDate;
-            $params[] = $chartEndDate;
+            $dailyWhere .= ' AND activity_date BETWEEN ? AND ?';
+            $dailyTypes .= 'ss';
+            $dailyParams[] = $chartStartDate;
+            $dailyParams[] = $chartEndDate;
         }
-        $activities = dbSelectView($link, "SELECT * FROM vw_user_recent_activity WHERE $where ORDER BY activity_time DESC, id DESC", $types, $params);
+        $dailyRows = dbSelectView(
+            $link,
+            "SELECT activity_date, unique_words_count FROM vw_user_daily_learning_summary WHERE $dailyWhere ORDER BY activity_date",
+            $dailyTypes,
+            $dailyParams
+        );
         if ($selectedRange === 'all') {
             $du_lieu_bieu_do = [];
         }
-        foreach ($activities as $row) {
-            $date = date('Y-m-d', strtotime($row['activity_time']));
-            $words = $row['activity_type'] === 'quiz' ? (int) $row['total_questions'] : (int) $row['words_studied'];
+        foreach ($dailyRows as $row) {
+            $date = (string) $row['activity_date'];
+            $words = (int) $row['unique_words_count'];
             $key = $selectedRange === 'all' ? date('Y-m', strtotime($date)) : $date;
             if ($selectedRange === 'all' && !isset($du_lieu_bieu_do[$key])) {
                 $du_lieu_bieu_do[$key] = ['key' => $key, 'label' => date('m/Y', strtotime($date)), 'so_tu' => 0, 'chieu_cao' => '0%'];
             }
             if (isset($du_lieu_bieu_do[$key])) { $du_lieu_bieu_do[$key]['so_tu'] += $words; }
+        }
+
+        // Nhật ký giữ từng phiên để phân biệt Flashcard và Quiz. Chỉ phần
+        // KPI/biểu đồ phía trên mới loại trùng theo vocabulary_id.
+        $activityWhere = 'user_id = ?';
+        $activityTypes = 'i';
+        $activityParams = [$user_id];
+        if ($selectedRange !== 'all') {
+            $activityWhere .= ' AND DATE(activity_time) BETWEEN ? AND ?';
+            $activityTypes .= 'ss';
+            $activityParams[] = $chartStartDate;
+            $activityParams[] = $chartEndDate;
+        }
+        $activities = dbSelectView(
+            $link,
+            "SELECT * FROM vw_user_recent_activity WHERE $activityWhere ORDER BY activity_time DESC, id DESC",
+            $activityTypes,
+            $activityParams
+        );
+        foreach ($activities as $row) {
             $time = dinhDangThoiGian($row['activity_time']);
             if (!(int) $row['has_exact_time']) { $time = 'Ngày ' . date('d/m/Y', strtotime($row['activity_time'])) . ' · chưa lưu giờ'; }
             $danh_sach_lich_su[] = [

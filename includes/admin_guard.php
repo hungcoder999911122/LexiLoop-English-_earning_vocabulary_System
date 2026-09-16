@@ -8,8 +8,15 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/A_DangNhap.php');
+    header('Location: /pages/admin/D_DangNhapAdmin.php');
     exit;
+}
+
+// The login scope prevents a normal user-login session being treated as an
+// administration session. The database role check below remains authoritative.
+if (($_SESSION['auth_scope'] ?? '') !== 'admin') {
+    http_response_code(403);
+    exit('Phiên đăng nhập này không có phạm vi quản trị.');
 }
 
 $adminUserId = (int) $_SESSION['user_id'];

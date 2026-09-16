@@ -19,9 +19,10 @@ $trackedWords = $learningWords + $masteredWords;
 $learningProgressPercent = $trackedWords > 0 ? min(100, (int) round($masteredWords * 100 / $trackedWords)) : 0;
 $reviewRows = dbSelectView($link, 'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE', 'i', [$userId]);
 $reviewToday = (int) ($reviewRows[0]['total'] ?? 0);
-$sessionRows = dbSelectView($link, 'SELECT COALESCE(SUM(words_studied), 0) AS total FROM vw_learning_sessions WHERE user_id = ? AND session_date = CURRENT_DATE', 'i', [$userId]);
-$quizRows = dbSelectView($link, 'SELECT COALESCE(SUM(total_questions), 0) AS total FROM vw_quiz_results WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURRENT_DATE', 'i', [$userId]);
-$todayWords = (int) ($sessionRows[0]['total'] ?? 0) + (int) ($quizRows[0]['total'] ?? 0);
+// Một từ chỉ được tính một lần trong ngày, dù user học lặp hoặc dùng cả
+// Flashcard và Quiz. Quy tắc loại trùng được đặt tập trung trong View.
+$todayRows = dbSelectView($link, 'SELECT unique_words_count AS total FROM vw_user_daily_learning_summary WHERE user_id = ? AND activity_date = CURRENT_DATE', 'i', [$userId]);
+$todayWords = (int) ($todayRows[0]['total'] ?? 0);
 $targetPercent = $dailyTarget > 0 ? min(100, $todayWords * 100 / $dailyTarget) : 0;
 $remainingWords = max($dailyTarget - $todayWords, 0);
 

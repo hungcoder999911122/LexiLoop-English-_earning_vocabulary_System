@@ -18,7 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 		$accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_email(?)', 's', [strtolower($email)]);
 		$row = $accounts[0] ?? null;
 
-		if (!$row || $row['status'] !== 'active')
+		// This public form authenticates learners only. Administrators must use
+		// the separate admin-login endpoint so their session has admin scope.
+		if (!$row || $row['status'] !== 'active' || $row['role'] !== 'user')
 		{
 			$loi = "Email hoặc mật khẩu không chính xác.";
 		} else 
@@ -32,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 				$_SESSION['user_id']   = $row['userID'];
 				$_SESSION['full_name'] = $row['full_name'];
 				$_SESSION['role']      = $row['role'];
+				$_SESSION['auth_scope'] = 'user';
 
 				// Chuyển đến Dashboard theo quyền
 				if ($row['role'] === 'admin') {
