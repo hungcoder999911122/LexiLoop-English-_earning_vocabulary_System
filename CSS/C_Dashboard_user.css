@@ -621,3 +621,132 @@
     transition: none;
   }
 }
+/* =========================================
+   DARK MODE - DASHBOARD
+   ========================================= */
+
+   html.dark-mode .C_Dashboard_user_body {
+    background: #111827;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_welcomeCard,
+html.dark-mode .C_Dashboard_user_statsCard,
+html.dark-mode .C_Dashboard_user_streakCard,
+html.dark-mode .C_Dashboard_user_panel {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+html.dark-mode .C_Dashboard_user_statItem {
+    background-color: #1f2937;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_sectionHeader h3,
+html.dark-mode .C_Dashboard_user_quickCard strong,
+html.dark-mode .C_Dashboard_user_activityInfo strong {
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard small,
+html.dark-mode .C_Dashboard_user_activityInfo small,
+html.dark-mode .C_Dashboard_user_targetNote {
+    color: #9ca3af;
+}
+
+html.dark-mode .C_Dashboard_user_activityRow {
+    border-bottom-color: #374151;
+}
+
+html.dark-mode .C_Dashboard_user_targetProgress {
+    background: #374151;
+} 
+/* =========================================
+   DARK MODE - DASHBOARD
+   ========================================= */
+
+   html.dark-mode .C_Dashboard_user_body {
+    background: #111827;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_welcomeCard,
+html.dark-mode .C_Dashboard_user_statsCard,
+html.dark-mode .C_Dashboard_user_panel {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+html.dark-mode .C_Dashboard_user_statItem {
+    background: #1f2937;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_sectionHeader h3,
+html.dark-mode .C_Dashboard_user_quickCard strong,
+html.dark-mode .C_Dashboard_user_activityInfo strong {
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard small,
+html.dark-mode .C_Dashboard_user_activityInfo small,
+html.dark-mode .C_Dashboard_user_targetNote {
+    color: #9ca3af;
+}
+
+html.dark-mode .C_Dashboard_user_activityRow {
+    border-bottom-color: #374151;
+}
+
+html.dark-mode .C_Dashboard_user_targetProgress {
+    background: #374151;
+}
+/* =========================================
+   DARK MODE - DASHBOARD
+   ========================================= */
+
+   html.dark-mode .C_Dashboard_user_body {
+    background: #111827 !important;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_welcomeCard,
+html.dark-mode .C_Dashboard_user_statsCard,
+html.dark-mode .C_Dashboard_user_panel,
+html.dark-mode .C_Dashboard_user_statItem,
+html.dark-mode .C_Dashboard_user_quickCard {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard strong,
+html.dark-mode .C_Dashboard_user_sectionHeader h3,
+html.dark-mode .C_Dashboard_user_activityInfo strong {
+    color: #f3f4f6;
+}
+
+html.dark-mode .C_Dashboard_user_quickCard small,
+html.dark-mode .C_Dashboard_user_activityInfo small,
+html.dark-mode .C_Dashboard_user_targetNote {
+    color: #9ca3af;
+}
+/* =========================================
+   DARK MODE - DASHBOARD
+   ========================================= */
+
+   html.dark-mode .C_Dashboard_user_body {
+    background: #111827 !important;
+    color: #f3f4f6;
+}

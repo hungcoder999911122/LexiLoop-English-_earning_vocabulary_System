@@ -56,6 +56,32 @@
     --sidebar-width-collapsed: 76px;
 }
 
+    /* =========================================
+   DARK MODE
+   ========================================= */
+
+html.dark-mode {
+    color-scheme: dark;
+
+    --color-background: #111827;
+    --color-surface: #1f2937;
+    --color-white: #1f2937;
+    --color-border: #374151;
+
+    --color-text: #f3f4f6;
+    --color-text-muted: #9ca3af;
+
+    --color-primary-light: #164e36;
+    --color-accent-light: #1e3a8a;
+    --color-warning-light: #451a03;
+    --color-danger-light: #450a0a;
+}
+
+html.dark-mode body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
 /* ========================================
    THẺ TIÊU ĐỀ (h1 - h4)
    ======================================== */
@@ -542,4 +568,25 @@ button {
     .guest-preview-card__login {
         width: 100%;
     }
+}
+/* =========================================
+   DARK MODE - GLOBAL
+   ========================================= */
+
+   html.dark-mode body {
+    background-color: #111827;
+    color: #f3f4f6;
+}
+
+html.dark-mode input,
+html.dark-mode select,
+html.dark-mode textarea {
+    background-color: #1f2937;
+    color: #f3f4f6;
+    border-color: #374151;
+}
+
+html.dark-mode input::placeholder,
+html.dark-mode textarea::placeholder {
+    color: #9ca3af;
 }

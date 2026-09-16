@@ -65,10 +65,10 @@ $headerInitials = substr($headerInitials, 0, 2);
 
         <button
             class="top-header-btn"
+            id="themeToggle"
             type="button"
-            aria-label="Chế độ sáng tối đang phát triển"
-            title="Đang phát triển"
-            disabled>
+            aria-label="Chuyển sang chế độ tối"
+            title="Chế độ tối">
             🌙
         </button>
 
@@ -102,3 +102,5 @@ $headerInitials = substr($headerInitials, 0, 2);
         <?php endif; ?>
     </div>
 </header>
+
+<script src="/JS/theme.js"></script>
