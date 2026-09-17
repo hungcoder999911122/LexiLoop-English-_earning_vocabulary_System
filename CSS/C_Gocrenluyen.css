@@ -455,6 +455,50 @@
 }
 
 /* Thanh cuộn ngang khi bảng quá rộng */
+/* Thanh tìm kiếm độc lập với bộ chọn nội dung học; thu gọn trên màn hình nhỏ. */
+.C_Gocrenluyen_wordToolbar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 18px 0;
+}
+.C_Gocrenluyen_wordSearch { flex: 1 1 280px; }
+.C_Gocrenluyen_wordFilter { flex: 0 1 180px; }
+.C_Gocrenluyen_wordToolbar label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--practice-text, #26342c);
+    font-size: 13px;
+    font-weight: 600;
+}
+.C_Gocrenluyen_wordToolbar input[type="search"],
+.C_Gocrenluyen_wordToolbar select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--practice-border, #d7e2db);
+    border-radius: 10px;
+    background: #f4f8f5;
+    color: #26342c;
+    font: inherit;
+}
+.C_Gocrenluyen_wordToolbar button {
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid #287348;
+    border-radius: 10px;
+    background: #287348;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.C_Gocrenluyen_wordToolbar button:hover { background: #215e3b; }
+.C_Gocrenluyen_wordResults { padding-bottom: 12px; color: #68786f; font-size: 13px; }
+.C_Gocrenluyen_table td.C_Gocrenluyen_wordEmpty { padding: 30px 16px; text-align: center; }
+.C_Gocrenluyen_word { color: #216a43; font-size: 15px; }
+
 .C_Gocrenluyen_tableResponsive {
   overflow-x: auto;
 }

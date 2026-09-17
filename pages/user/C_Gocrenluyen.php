@@ -38,6 +38,12 @@ $topicWords = [];
 $topicWordsPerPage = 10;
 $wordPage = max(1, filter_var($_GET['word_page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
 $topicWordPages = 1;
+$wordSearch = is_string($_GET['word_search'] ?? '') ? trim($_GET['word_search'] ?? '') : '';
+$wordStatus = $_GET['word_status'] ?? 'all';
+if (!in_array($wordStatus, ['all', 'unmastered', 'mastered'], true)) {
+    $wordStatus = 'all';
+}
+$filteredWordCount = 0;
 $modeProgress = [
     'flashcard' => ['percent' => 0, 'label' => 'Chưa bắt đầu'],
     'quiz' => ['percent' => 0, 'label' => 'Chưa bắt đầu'],
@@ -106,10 +112,27 @@ try {
             unset($item);
 
             if ($source === 'topic') {
-                $topicWordPages = max(1, (int) ceil($wordCount / $topicWordsPerPage));
+                // Lọc toàn bộ danh sách trước khi phân trang; không thay đổi thống kê học của chủ đề.
+                $filteredWords = array_values(array_filter($sourceItems, function ($item) use ($wordSearch, $wordStatus) {
+                    $isMastered = $item['learning_status'] === 'mastered';
+                    if (($wordStatus === 'mastered' && !$isMastered)
+                        || ($wordStatus === 'unmastered' && $isMastered)) {
+                        return false;
+                    }
+                    // Chưa thuộc bao gồm cả từ mới và từ đang học.
+                    if ($wordSearch === '') {
+                        return true;
+                    }
+                    $searchText = implode(' ', [$item['word'], $item['meaning'], $item['pronunciation'] ?? '']);
+                    return function_exists('mb_stripos')
+                        ? mb_stripos($searchText, $wordSearch, 0, 'UTF-8') !== false
+                        : stripos($searchText, $wordSearch) !== false;
+                }));
+                $filteredWordCount = count($filteredWords);
+                $topicWordPages = max(1, (int) ceil($filteredWordCount / $topicWordsPerPage));
                 $wordPage = min($wordPage, $topicWordPages);
                 $topicWords = array_slice(
-                    $sourceItems,
+                    $filteredWords,
                     ($wordPage - 1) * $topicWordsPerPage,
                     $topicWordsPerPage
                 );
@@ -362,6 +385,26 @@ if ($flashcardStatsTotal === 0) {
                     <span class="C_Gocrenluyen_modeCount"><?= $wordCount ?> từ</span>
                 </div>
 
+                <form class="C_Gocrenluyen_wordToolbar" method="get">
+                    <input type="hidden" name="source" value="topic">
+                    <input type="hidden" name="id" value="<?= $sourceId ?>">
+                    <input type="hidden" name="limit" value="<?= htmlspecialchars($limitOption) ?>">
+                    <div class="C_Gocrenluyen_wordSearch">
+                        <label for="C_Gocrenluyen_wordSearch">Tìm từ vựng</label>
+                        <input type="search" id="C_Gocrenluyen_wordSearch" name="word_search" value="<?= htmlspecialchars($wordSearch, ENT_QUOTES, 'UTF-8') ?>" placeholder="Nhập từ, nghĩa hoặc phiên âm…">
+                    </div>
+                    <div class="C_Gocrenluyen_wordFilter">
+                        <label for="C_Gocrenluyen_wordStatus">Trạng thái học</label>
+                        <select id="C_Gocrenluyen_wordStatus" name="word_status">
+                            <option value="all" <?= $wordStatus === 'all' ? 'selected' : '' ?>>Tất cả</option>
+                            <option value="unmastered" <?= $wordStatus === 'unmastered' ? 'selected' : '' ?>>Chưa thuộc</option>
+                            <option value="mastered" <?= $wordStatus === 'mastered' ? 'selected' : '' ?>>Đã thuộc</option>
+                        </select>
+                    </div>
+                    <button type="submit">Áp dụng</button>
+                    <span class="C_Gocrenluyen_wordResults" role="status"><?= $filteredWordCount ?> / <?= $wordCount ?> từ</span>
+                </form>
+
                 <div class="C_Gocrenluyen_tableResponsive">
                     <table class="C_Gocrenluyen_table">
                         <thead>
@@ -374,6 +417,9 @@ if ($flashcardStatsTotal === 0) {
                             </tr>
                         </thead>
                         <tbody>
+                            <?php if (!$topicWords): ?>
+                                <tr><td colspan="5" class="C_Gocrenluyen_wordEmpty">Không có từ vựng phù hợp. Anh hãy thử từ khóa hoặc trạng thái khác.</td></tr>
+                            <?php endif; ?>
                             <?php foreach ($topicWords as $word): ?>
                                 <?php
                                 $statusLabels = ['new' => 'Mới', 'learning' => 'Đang học', 'mastered' => 'Đã thuộc'];
@@ -381,7 +427,7 @@ if ($flashcardStatsTotal === 0) {
                                 ?>
                                 <tr>
                                     <td>
-                                        <strong><?= htmlspecialchars($word['word']) ?></strong>
+                                        <strong class="C_Gocrenluyen_word"><?= htmlspecialchars($word['word']) ?></strong>
                                         <?php if (!empty($word['pronunciation'])): ?>
                                             <small><?= htmlspecialchars($word['pronunciation']) ?></small>
                                         <?php endif; ?>
@@ -399,7 +445,7 @@ if ($flashcardStatsTotal === 0) {
                 <?php if ($topicWordPages > 1): ?>
                     <nav class="C_Gocrenluyen_pagination" aria-label="Phân trang từ vựng của chủ đề">
                         <?php for ($pageNumber = 1; $pageNumber <= $topicWordPages; $pageNumber++): ?>
-                            <?php $pageQuery = http_build_query(['source' => 'topic', 'id' => $sourceId, 'limit' => $limitOption, 'word_page' => $pageNumber]); ?>
+                            <?php $pageQuery = http_build_query(['source' => 'topic', 'id' => $sourceId, 'limit' => $limitOption, 'word_search' => $wordSearch, 'word_status' => $wordStatus, 'word_page' => $pageNumber]); ?>
                             <a class="<?= $pageNumber === $wordPage ? 'is-active' : '' ?>" href="?<?= htmlspecialchars($pageQuery) ?>"><?= $pageNumber ?></a>
                         <?php endfor; ?>
                     </nav>
