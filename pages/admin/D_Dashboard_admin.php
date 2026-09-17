@@ -74,12 +74,16 @@ $flashcardCssPhanTram = number_format($flashcardPhanTram, 4, '.', '');
 
 $hoatDongTuan = [];
 $nhanNgay = [];
+$tongLuotTuan = 0;
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime($ngayHienTai . " -$i day"));
-    $hoatDongTuan[] = (int) ($luotHocTheoNgay[$date]['study_count'] ?? 0);
+    $luot = (int) ($luotHocTheoNgay[$date]['study_count'] ?? 0);
+    $hoatDongTuan[] = $luot;
     $nhanNgay[] = date('d/m', strtotime($date));
+    $tongLuotTuan += $luot;
 }
 $dinhCao = max(max($hoatDongTuan), 1);
+$trungBinhTuan = round($tongLuotTuan / 7);
 $activityPagination = adminPaginateView($link, 'SELECT COUNT(*) AS total FROM vw_system_recent_activity',
     'SELECT loai, activity_id, tieuDe, chiTiet, thoiGian, actor_name, target_name, score_text FROM vw_system_recent_activity ORDER BY thoiGian DESC, loai, activity_id DESC',
     'activity_page', 4);
@@ -236,7 +240,7 @@ $ketQuaHoatDong = $activityPagination['rows'];
             <div class="D_Dashboard_admin_HopBieuDo">
               <div class="chart-header">
                 <div>
-                  <h2 class="D_Dashboard_admin_TieuDeHop">Lượt học trong 7 ngày</h2>
+                  <h2 class="D_Dashboard_admin_TieuDeHop">Thống kê lượt học (7 ngày qua)</h2>
                   <p class="chart-subtitle">Phiên Flashcard có từ đã học và quiz hoàn thành. Cột đậm là hôm nay.</p>
                 </div>
               </div>
@@ -251,12 +255,26 @@ $ketQuaHoatDong = $activityPagination['rows'];
                   </div>
                 <?php endforeach; ?>
               </div>
+              <div class="dashboard-weekly-summary">
+                <div class="weekly-stat-item">
+                  <span class="weekly-stat-label">Tổng lượt</span>
+                  <strong class="weekly-stat-value"><?php echo number_format($tongLuotTuan); ?></strong>
+                </div>
+                <div class="weekly-stat-item">
+                  <span class="weekly-stat-label">Trung bình/ngày</span>
+                  <strong class="weekly-stat-value"><?php echo number_format($trungBinhTuan); ?></strong>
+                </div>
+                <div class="weekly-stat-item">
+                  <span class="weekly-stat-label">Đỉnh điểm</span>
+                  <strong class="weekly-stat-value"><?php echo number_format($dinhCao); ?></strong>
+                </div>
+              </div>
             </div>
 
             <!-- Hoạt động gần đây -->
             <div class="D_Dashboard_admin_HopHoatDong" id="admin-activity">
               <div class="activity-header-box">
-                <h2 class="D_Dashboard_admin_TieuDeHop">Hoạt động gần đây</h2>
+                <h2 class="D_Dashboard_admin_TieuDeHop">Nhật ký hệ thống</h2>
                 <span class="activity-live-badge">Gần đây</span>
               </div>
               <p class="chart-subtitle">Ghi nhận tiến trình học, quiz và tài khoản mới nhất</p>
@@ -349,7 +367,7 @@ $ketQuaHoatDong = $activityPagination['rows'];
           <section class="dashboard-reports" id="dashboard-reports" aria-labelledby="dashboard-reports-title">
             <div class="dashboard-report-heading">
               <div>
-                <h2 id="dashboard-reports-title" class="D_Dashboard_admin_TieuDeHop">Báo cáo sử dụng</h2>
+                <h2 id="dashboard-reports-title" class="D_Dashboard_admin_TieuDeHop">Báo cáo tổng quan</h2>
                 <p class="chart-subtitle"><?php echo date('d/m/Y', strtotime($baoCaoTuNgay)); ?> – <?php echo date('d/m/Y', strtotime($ngayHienTai)); ?> · Chỉ tính hoạt động của học viên</p>
               </div>
               <form id="dashboard-report-filter" method="get" action="/pages/admin/D_Dashboard_admin.php#dashboard-reports">
@@ -365,8 +383,8 @@ $ketQuaHoatDong = $activityPagination['rows'];
             </div>
             <div class="dashboard-report-grid">
               <section class="D_Dashboard_admin_HopBieuDo" aria-labelledby="dashboard-topics-title">
-                <h3 id="dashboard-topics-title" class="D_Dashboard_admin_TieuDeHop">Chủ đề nổi bật</h3>
-                <p class="chart-subtitle">5 chủ đề có nhiều học viên tham gia nhất. Cột cao và đậm hơn có nhiều học viên hơn; mỗi người tính một lần trên mỗi chủ đề.</p>
+                <h3 id="dashboard-topics-title" class="D_Dashboard_admin_TieuDeHop">Chủ đề được quan tâm nhất</h3>
+                <p class="chart-subtitle">Top 5 chủ đề được nhiều học viên quan tâm và tham gia.</p>
                 <?php if (!$chuDeNoiBat): ?>
                   <p class="dashboard-report-empty">Chưa có hoạt động học theo chủ đề trong khoảng thời gian này.</p>
                 <?php else: ?>
@@ -404,7 +422,7 @@ $ketQuaHoatDong = $activityPagination['rows'];
                 <?php endif; ?>
               </section>
               <section class="D_Dashboard_admin_HopBieuDo" aria-labelledby="dashboard-distribution-title">
-                <h3 id="dashboard-distribution-title" class="D_Dashboard_admin_TieuDeHop">Phân bố các chức năng học </h3>
+                <h3 id="dashboard-distribution-title" class="D_Dashboard_admin_TieuDeHop">Tỉ lệ sử dụng tính năng học </h3>
                 <p class="chart-subtitle">Bao gồm chủ đề hệ thống, bộ từ cá nhân và ôn tập.</p>
                 <?php if ($tongLuotBaoCao === 0): ?>
                   <p class="dashboard-report-empty">Chưa có lượt học trong khoảng thời gian này.</p>

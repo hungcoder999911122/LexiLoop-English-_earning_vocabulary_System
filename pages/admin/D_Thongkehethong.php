@@ -148,13 +148,7 @@ $flashcardSummary = 'Đã nhớ: ' . $flashcardGroups[0]['count'] . ', chưa nh�
             <span class="menu-icon">🔤</span>
             <span>Từ vựng</span>
           </a>
-          <a
-            href="D_Thongkehethong.php"
-            class="D_Thongkehethong_MucMenu D_Thongkehethong_DangChon"
-          >
-            <span class="menu-icon">📈</span>
-            <span>Thống kê</span>
-          </a>
+
           <a href="D_Caidathethong.php" class="D_Thongkehethong_MucMenu">
             <span class="menu-icon">⚙️</span>
             <span>Cài đặt</span>

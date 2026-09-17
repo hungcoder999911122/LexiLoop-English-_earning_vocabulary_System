@@ -94,10 +94,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
             <span class="menu-icon">🔤</span>
             <span>Từ vựng</span>
           </a>
-          <a href="D_Thongkehethong.php" class="D_Caidathethong_MucMenu">
-            <span class="menu-icon">📈</span>
-            <span>Thống kê</span>
-          </a>
+
           <a href="D_Caidathethong.php" class="D_Caidathethong_MucMenu D_Caidathethong_DangChon">
             <span class="menu-icon">⚙️</span>
             <span>Cài đặt</span>

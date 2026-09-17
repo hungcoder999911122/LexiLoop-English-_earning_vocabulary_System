@@ -53,10 +53,7 @@ require_once dirname(__DIR__, 2) . '/includes/admin_users_controller.php';
             <span class="menu-icon">🔤</span>
             <span>Từ vựng</span>
           </a>
-          <a href="D_Thongkehethong.php" class="D_Quanlynguoidung_MucMenu">
-            <span class="menu-icon">📈</span>
-            <span>Thống kê</span>
-          </a>
+
           <a href="D_Caidathethong.php" class="D_Quanlynguoidung_MucMenu">
             <span class="menu-icon">⚙️</span>
             <span>Cài đặt</span>
