@@ -1,176 +1,451 @@
-* {
+/* =========================================================
+   LEXILOOP ADMIN - TOPIC MANAGEMENT STYLESHEET
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --admin-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #0e7748;
+  --color-primary-dark: #0a5c37;
+  --color-primary-light: #e6f7ef;
+  --color-accent: #2563eb;
+  
+  --color-bg: #f8faf9;
+  --color-surface: #ffffff;
+  --color-border: #e2ebe6;
+  --color-border-dark: #cbdcd3;
+  
+  --color-text-main: #0f241d;
+  --color-text-sub: #526d60;
+  --color-text-muted: #799587;
+  
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  
+  --sidebar-w: 250px;
+  --topbar-h: 68px;
+}
+
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
-  color: #111111;
-  background-color: #ffffff;
+  font-family: var(--admin-font);
+  color: var(--color-text-main);
+  background-color: var(--color-bg);
+  min-height: 100vh;
 }
 
 .D_Quanlychude_Wrapper {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Thanh tren cung */
+/* Topbar */
 .D_Quanlychude_Topbar {
+  height: var(--topbar-h);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 30px;
-  border-bottom: 2px solid #000000;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .D_Quanlychude_Logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 20px;
-  font-weight: bold;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+}
+
+.logo-emoji {
+  font-size: 24px;
+}
+
+.badge-admin {
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .D_Quanlychude_TopbarPhai {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+}
+
+.D_Quanlychude_TimKiemBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .D_Quanlychude_TimKiem {
-  padding: 8px 12px;
-  border: 1px solid #000000;
-  font-size: 14px;
+  height: 38px;
+  width: 240px;
+  padding: 0 14px 0 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-family: var(--admin-font);
+  font-size: 13.5px;
+  background-color: var(--color-bg);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.D_Quanlychude_TimKiem:focus {
+  width: 280px;
+  border-color: var(--color-primary);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(14, 119, 72, 0.12);
+}
+
+.D_Quanlychude_UserMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .D_Quanlychude_Avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid #000000;
+  background: linear-gradient(135deg, #0e7748 0%, #15803d 100%);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
+  font-weight: 700;
 }
 
-/* Bo cuc chinh: sidebar + noi dung */
+.admin-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+/* Layout Body */
 .D_Quanlychude_Body {
   display: flex;
+  flex: 1;
 }
 
+/* Sidebar */
 .D_Quanlychude_Sidebar {
-  width: 220px;
-  border-right: 1px solid #000000;
-  min-height: calc(100vh - 69px);
-  padding: 20px 0;
+  width: var(--sidebar-w);
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  min-height: calc(100vh - var(--topbar-h));
+  padding: 24px 14px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.8px;
+  padding: 0 14px 10px 14px;
 }
 
 .D_Quanlychude_MucMenu {
-  display: block;
-  padding: 12px 30px;
-  color: #111111;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  color: var(--color-text-sub);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 14.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.menu-icon {
+  font-size: 18px;
 }
 
 .D_Quanlychude_MucMenu:hover {
-  background-color: #f2f2f2;
+  background-color: var(--color-bg);
+  color: var(--color-primary-dark);
 }
 
 .D_Quanlychude_DangChon {
-  background-color: #e0e0e0;
-  font-weight: bold;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
 }
 
 .D_Quanlychude_GachNgang {
   border: none;
-  border-top: 1px solid #cccccc;
-  margin: 16px 30px;
+  border-top: 1px solid var(--color-border);
+  margin: 16px 8px;
 }
 
+.D_Quanlychude_DangXuat:hover {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* Main Content */
 .D_Quanlychude_NoiDung {
   flex: 1;
-  padding: 30px 40px;
+  padding: 32px 36px;
+  max-width: 1300px;
 }
 
-.D_Quanlychude_TieuDe {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.D_Quanlychude_TieuDeMuc {
-  font-size: 16px;
-  font-weight: bold;
-  margin: 30px 0 12px 0;
-}
-
-/* Hang tieu de + nut them */
 .D_Quanlychude_HangTieuDe {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.D_Quanlychude_NutXam {
-  padding: 10px 18px;
-  border: 1px solid #000000;
-  background-color: #e0e0e0;
-  cursor: pointer;
+.D_Quanlychude_TieuDe {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.5px;
+}
+
+.D_Quanlychude_MoTaTrang {
+  font-size: 13.5px;
+  color: var(--color-text-sub);
+  margin-top: 4px;
+}
+
+/* Buttons */
+.D_Quanlychude_NutChinh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #0e7748 0%, #15803d 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--admin-font);
   font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(14, 119, 72, 0.2);
+  transition: all 0.2s ease;
 }
 
-.D_Quanlychude_NutXam:hover {
-  background-color: #cccccc;
+.D_Quanlychude_NutChinh svg {
+  width: 16px;
+  height: 16px;
+}
+
+.D_Quanlychude_NutChinh:hover {
+  background: linear-gradient(135deg, #0a5c37 0%, #0e7748 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(14, 119, 72, 0.25);
 }
 
 .D_Quanlychude_NutTrang {
   padding: 10px 18px;
-  border: 1px solid #000000;
+  border: 1px solid var(--color-border);
   background-color: #ffffff;
+  color: var(--color-text-sub);
+  border-radius: 10px;
   cursor: pointer;
+  font-family: var(--admin-font);
   font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s ease;
 }
 
 .D_Quanlychude_NutTrang:hover {
-  background-color: #f0f0f0;
+  background-color: var(--color-bg);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-main);
 }
 
-/* Bang du lieu */
+/* Notification banner */
+.D_Quanlychude_ThongBao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.D_Quanlychude_ThongBao svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.D_Quanlychude_ThongBao_thanhcong {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+  border: 1px solid #bbf7d0;
+}
+
+.D_Quanlychude_ThongBao_loi {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+  border: 1px solid #fecaca;
+}
+
+/* Card Table */
+.D_Quanlychude_CardBang {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
 .D_Quanlychude_Bang {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #000000;
-}
-
-.D_Quanlychude_Bang th,
-.D_Quanlychude_Bang td {
-  text-align: left;
-  padding: 14px 16px;
-  border-bottom: 1px solid #000000;
-  font-size: 14px;
 }
 
 .D_Quanlychude_Bang thead th {
-  font-weight: bold;
+  background-color: #fafcfb;
+  text-align: left;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.D_Quanlychude_Bang tbody td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-text-sub);
+  vertical-align: middle;
+}
+
+.D_Quanlychude_Bang tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.D_Quanlychude_Bang tbody tr:hover {
+  background-color: #fafdfb;
+}
+
+.D_Quanlychude_OTen strong {
+  color: var(--color-text-main);
+  font-weight: 700;
+}
+
+.D_Quanlychude_OMoTa {
+  color: var(--color-text-sub);
+  line-height: 1.45;
+}
+
+.badge-count {
+  display: inline-block;
+  padding: 4px 10px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+
+.D_Quanlychude_ONgay {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Action buttons */
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .D_Quanlychude_NutSua,
 .D_Quanlychude_NutXoa {
-  padding: 8px 14px;
-  border: 1px solid #000000;
-  background-color: #ffffff;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: var(--admin-font);
   font-size: 13px;
-  margin-right: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  transition: all 0.15s ease;
 }
 
-.D_Quanlychude_NutSua:hover,
+.D_Quanlychude_NutSua svg,
+.D_Quanlychude_NutXoa svg {
+  width: 14px;
+  height: 14px;
+}
+
+.D_Quanlychude_NutSua {
+  color: var(--color-accent);
+}
+
+.D_Quanlychude_NutSua:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.D_Quanlychude_NutXoa {
+  color: var(--color-danger);
+}
+
 .D_Quanlychude_NutXoa:hover {
-  background-color: #f0f0f0;
+  background-color: var(--color-danger-light);
+  border-color: #fecaca;
 }
 
-/* Modal them / sua */
+.D_Quanlychude_KhongTimThay {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* Modal */
 .D_Quanlychude_LopPhu {
   display: none;
   position: fixed;
@@ -178,41 +453,125 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(15, 36, 29, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   align-items: center;
   justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: modalOverlayFade 0.2s ease;
+}
+
+@keyframes modalOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .D_Quanlychude_HopModal {
   background-color: #ffffff;
-  border: 1px solid #000000;
-  padding: 30px;
-  width: 420px;
+  border-radius: 20px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.D_Quanlychude_ModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
 }
 
 .D_Quanlychude_TieuDeModal {
-  font-size: 18px;
-  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.D_Quanlychude_BtnDong {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.D_Quanlychude_BtnDong:hover {
+  color: var(--color-text-main);
+  background-color: var(--color-bg);
+}
+
+.modal-form-group {
+  margin-bottom: 18px;
 }
 
 .D_Quanlychude_Nhan {
   display: block;
-  font-size: 13px;
-  color: #555555;
-  margin-bottom: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 7px;
+}
+
+.required {
+  color: var(--color-danger);
 }
 
 .D_Quanlychude_ONhap {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #000000;
-  margin-bottom: 16px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  font-family: var(--admin-font);
   font-size: 14px;
+  color: var(--color-text-main);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.D_Quanlychude_ONhap:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 119, 72, 0.12);
+}
+
+.D_Quanlychude_Textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .D_Quanlychude_HangNutModal {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 10px;
+  margin-top: 24px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .D_Quanlychude_Sidebar {
+    width: 76px;
+    padding: 20px 8px;
+  }
+  .sidebar-section-title,
+  .D_Quanlychude_MucMenu span:last-child {
+    display: none;
+  }
+  .D_Quanlychude_MucMenu {
+    justify-content: center;
+  }
+  .D_Quanlychude_NoiDung {
+    padding: 20px 16px;
+  }
 }
