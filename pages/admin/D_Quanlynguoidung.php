@@ -88,7 +88,7 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
           </a>
           <a href="D_Quanlychude.php" class="D_Quanlynguoidung_MucMenu">
             <span class="menu-icon">📚</span>
-            <span>Chủ đề</span>
+            <span>Chủ đề & Bộ từ</span>
           </a>
           <a href="D_Quanlytuvung.php" class="D_Quanlynguoidung_MucMenu">
             <span class="menu-icon">🔤</span>

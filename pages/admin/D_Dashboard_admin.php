@@ -3,6 +3,7 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
 
 $soNguoiDung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_users')[0]['value'] ?? 0);
 $soChuDe = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_topic_catalog')[0]['value'] ?? 0);
+$soBoTu = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_vocabulary_sets')[0]['value'] ?? 0);
 $soTuVung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_vocabulary_catalog')[0]['value'] ?? 0);
 $soQuizXong = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_quiz_results WHERE finished_at IS NOT NULL')[0]['value'] ?? 0);
 
@@ -67,7 +68,7 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
           </a>
           <a href="D_Quanlychude.php" class="D_Dashboard_admin_MucMenu">
             <span class="menu-icon">📚</span>
-            <span>Chủ đề</span>
+            <span>Chủ đề & Bộ từ</span>
           </a>
           <a href="D_Quanlytuvung.php" class="D_Dashboard_admin_MucMenu">
             <span class="menu-icon">🔤</span>
@@ -113,8 +114,8 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
             <div class="D_Dashboard_admin_TheSo stat-card-topics">
               <div class="stat-card-icon">📚</div>
               <div class="stat-card-info">
-                <p class="D_Dashboard_admin_NhanTheSo">Chủ đề từ vựng</p>
-                <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soChuDe); ?></p>
+                <p class="D_Dashboard_admin_NhanTheSo">Chủ đề & Bộ từ</p>
+                <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soChuDe); ?> <span style="font-size: 13px; font-weight: normal; color: #526d60;">(<?php echo $soBoTu; ?> bộ từ user)</span></p>
               </div>
             </div>
             <div class="D_Dashboard_admin_TheSo stat-card-vocab">

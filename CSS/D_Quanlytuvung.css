@@ -10,6 +10,8 @@
   --color-primary-dark: #0a5c37;
   --color-primary-light: #e6f7ef;
   --color-accent: #2563eb;
+  --color-purple: #7c3aed;
+  --color-purple-light: #f3e8ff;
   
   --color-bg: #f8faf9;
   --color-surface: #ffffff;
@@ -111,7 +113,7 @@ body {
 
 .D_Quanlytuvung_TimKiem {
   height: 38px;
-  width: 260px;
+  width: 280px;
   padding: 0 14px 0 36px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -123,7 +125,7 @@ body {
 }
 
 .D_Quanlytuvung_TimKiem:focus {
-  width: 300px;
+  width: 320px;
   border-color: var(--color-primary);
   background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(14, 119, 72, 0.12);
@@ -223,7 +225,7 @@ body {
 .D_Quanlytuvung_NoiDung {
   flex: 1;
   padding: 32px 36px;
-  max-width: 1300px;
+  max-width: 1400px;
 }
 
 .D_Quanlytuvung_HangTieuDe {
@@ -248,15 +250,26 @@ body {
   margin-top: 4px;
 }
 
+.stat-text-system {
+  color: #0e7748;
+  font-weight: 600;
+}
+
+.stat-text-personal {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
 .D_Quanlytuvung_HangNutPhai {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .D_Quanlytuvung_Loc {
   height: 42px;
-  padding: 0 16px;
+  padding: 0 14px;
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
   font-family: var(--admin-font);
@@ -370,8 +383,8 @@ body {
 .D_Quanlytuvung_Bang thead th {
   background-color: #fafcfb;
   text-align: left;
-  padding: 14px 20px;
-  font-size: 13px;
+  padding: 14px 18px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -380,9 +393,9 @@ body {
 }
 
 .D_Quanlytuvung_Bang tbody td {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--color-text-sub);
   vertical-align: middle;
 }
@@ -392,36 +405,104 @@ body {
 }
 
 .D_Quanlytuvung_Bang tbody tr:hover {
-  background-color: #fafdfb;
+  background-color: #f7faf8;
+}
+
+/* Vocab presentation */
+.vocab-word-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .vocab-word {
   font-size: 15px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-}
-
-.D_Quanlytuvung_ONghia {
+  font-weight: 800;
   color: var(--color-text-main);
-  line-height: 1.5;
 }
 
+.vocab-pos {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: lowercase;
+}
+
+.vocab-phonetic {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: monospace, sans-serif;
+  margin-top: 3px;
+}
+
+.meaning-text {
+  color: var(--color-text-main);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.example-text {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* Badges */
 .badge-topic {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 10px;
-  background-color: #eff6ff;
-  color: var(--color-accent);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   border-radius: 20px;
+  line-height: 1.3;
+}
+
+.badge-system {
+  background-color: #e6f7ef;
+  color: #0e7748;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-personal {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border: 1px solid #e9d5ff;
+}
+
+.creator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.admin-badge {
+  background-color: #eff6ff;
+  color: #1d4ed8;
   border: 1px solid #dbeafe;
+}
+
+.user-badge {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 /* Action buttons */
 .action-buttons {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .D_Quanlytuvung_NutSua,
@@ -429,10 +510,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   font-family: var(--admin-font);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--color-border);
@@ -442,8 +523,8 @@ body {
 
 .D_Quanlytuvung_NutSua svg,
 .D_Quanlytuvung_NutXoa svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .D_Quanlytuvung_NutSua {
@@ -486,24 +567,22 @@ body {
   justify-content: center;
   z-index: 100;
   padding: 20px;
-  animation: modalOverlayFade 0.2s ease;
 }
 
 .D_Quanlytuvung_HopModal {
   background-color: #ffffff;
   border-radius: 20px;
-  padding: 28px 32px;
+  padding: 26px 30px;
   width: 100%;
-  max-width: 500px;
+  max-width: 580px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .D_Quanlytuvung_ModalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .D_Quanlytuvung_TieuDeModal {
@@ -529,16 +608,25 @@ body {
   background-color: var(--color-bg);
 }
 
+.modal-form-row-two {
+  display: flex;
+  gap: 14px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
 .modal-form-group {
-  margin-bottom: 18px;
+  margin-bottom: 15px;
 }
 
 .D_Quanlytuvung_Nhan {
   display: block;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-main);
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 
 .required {
@@ -547,11 +635,11 @@ body {
 
 .D_Quanlytuvung_ONhap {
   width: 100%;
-  padding: 11px 14px;
+  padding: 10px 12px;
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
   font-family: var(--admin-font);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--color-text-main);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -564,7 +652,7 @@ body {
 
 .D_Quanlytuvung_Textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .D_Quanlytuvung_Select {
@@ -576,7 +664,7 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 /* Responsive */
@@ -594,5 +682,9 @@ body {
   }
   .D_Quanlytuvung_NoiDung {
     padding: 20px 16px;
+  }
+  .modal-form-row-two {
+    flex-direction: column;
+    gap: 0;
   }
 }

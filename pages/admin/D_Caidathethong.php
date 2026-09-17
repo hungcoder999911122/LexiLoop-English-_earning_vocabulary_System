@@ -84,7 +84,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
           </a>
           <a href="D_Quanlychude.php" class="D_Caidathethong_MucMenu">
             <span class="menu-icon">📚</span>
-            <span>Chủ đề</span>
+            <span>Chủ đề & Bộ từ</span>
           </a>
           <a href="D_Quanlytuvung.php" class="D_Caidathethong_MucMenu">
             <span class="menu-icon">🔤</span>

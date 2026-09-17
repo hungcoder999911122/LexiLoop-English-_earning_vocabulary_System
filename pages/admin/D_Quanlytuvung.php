@@ -18,14 +18,22 @@ try {
             $loaiThongBao = 'thanhcong';
         } elseif ($action === 'them' || $action === 'sua') {
             $word = trim((string) ($_POST['word'] ?? ''));
+            $pronunciation = trim((string) ($_POST['pronunciation'] ?? ''));
+            $partOfSpeech = trim((string) ($_POST['part_of_speech'] ?? ''));
             $meaning = trim((string) ($_POST['meaning'] ?? ''));
+            $example = trim((string) ($_POST['example_sentence'] ?? ''));
             $topicId = (int) ($_POST['topic_id'] ?? 0);
 
-            if ($word === '' || $meaning === '' || $topicId <= 0) {
-                throw new RuntimeException('Vui lòng nhập đầy đủ từ vựng, nghĩa và chọn chủ đề.');
+            if ($word === '' || $meaning === '') {
+                throw new RuntimeException('Vui lòng nhập đầy đủ từ vựng và nghĩa tiếng Việt.');
             }
 
-            dbCallProcedure($link, 'CALL sp_admin_save_vocabulary(?, ?, ?, ?, ?)', 'iiiss', [$adminUserId, $id, $topicId, $word, $meaning]);
+            dbCallProcedure(
+                $link,
+                'CALL sp_admin_save_vocabulary(?, ?, ?, ?, ?, ?, ?, ?)',
+                'iiisssss',
+                [$adminUserId, $id, $topicId, $word, $pronunciation, $partOfSpeech, $meaning, $example]
+            );
             $thongBao = ($action === 'them') ? 'Thêm từ vựng mới thành công.' : 'Cập nhật từ vựng thành công.';
             $loaiThongBao = 'thanhcong';
         }
@@ -40,14 +48,18 @@ try {
     } elseif ($error instanceof RuntimeException) {
         $thongBao = $msg;
     } else {
-        $thongBao = 'Không thể xử lý từ vựng lúc này.';
+        $thongBao = 'Không thể xử lý từ vựng lúc này: ' . $msg;
     }
     $loaiThongBao = 'loi';
 }
 
-$ketQuaDanhSach = dbSelectView($link, 'SELECT id, word, meaning, topic_id, topicName FROM vw_vocabulary_catalog ORDER BY created_at DESC');
-$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName FROM vw_topic_catalog ORDER BY topicName');
+$ketQuaDanhSach = dbSelectView($link, 'SELECT id, word, pronunciation, part_of_speech, meaning, example_sentence, topic_id, topicName, source_type, created_by, creator_name, creator_email, creator_role, set_names, display_topic, created_at FROM vw_vocabulary_catalog ORDER BY created_at DESC, id DESC');
+$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName, word_count FROM vw_topic_catalog ORDER BY topicName');
+$danhSachBoTu = dbSelectView($link, 'SELECT id, name, owner_name, word_count FROM vw_vocabulary_sets ORDER BY name');
+
 $tongSoTuVung = count($ketQuaDanhSach);
+$soTuHeThong = count(array_filter($ketQuaDanhSach, static fn(array $item): bool => ($item['source_type'] ?? '') === 'system'));
+$soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool => ($item['source_type'] ?? '') === 'personal'));
 ?>
 <!doctype html>
 <html lang="vi">
@@ -80,7 +92,7 @@ $tongSoTuVung = count($ketQuaDanhSach);
               type="text"
               id="D_Quanlytuvung_TimKiemTopbar"
               class="D_Quanlytuvung_TimKiem"
-              placeholder="Tìm kiếm từ vựng hoặc nghĩa..."
+              placeholder="Tìm kiếm từ, nghĩa, người tạo..."
             />
           </div>
           <div class="D_Quanlytuvung_UserMenu">
@@ -104,7 +116,7 @@ $tongSoTuVung = count($ketQuaDanhSach);
           </a>
           <a href="D_Quanlychude.php" class="D_Quanlytuvung_MucMenu">
             <span class="menu-icon">📚</span>
-            <span>Chủ đề</span>
+            <span>Chủ đề & Bộ từ</span>
           </a>
           <a href="D_Quanlytuvung.php" class="D_Quanlytuvung_MucMenu D_Quanlytuvung_DangChon">
             <span class="menu-icon">🔤</span>
@@ -130,20 +142,47 @@ $tongSoTuVung = count($ketQuaDanhSach);
           <div class="D_Quanlytuvung_HangTieuDe">
             <div>
               <h1 class="D_Quanlytuvung_TieuDe">Quản lý từ vựng</h1>
-              <p class="D_Quanlytuvung_MoTaTrang">Tổng cộng <strong id="D_Quanlytuvung_TongSo"><?php echo $tongSoTuVung; ?></strong> từ vựng trong cơ sở dữ liệu</p>
+              <p class="D_Quanlytuvung_MoTaTrang">
+                Tổng cộng <strong id="D_Quanlytuvung_TongSo"><?php echo $tongSoTuVung; ?></strong> từ vựng
+                (<span class="stat-text-system">🌐 <?php echo $soTuHeThong; ?> từ hệ thống</span>,
+                <span class="stat-text-personal">👤 <?php echo $soTuCaNhan; ?> từ cá nhân user</span>)
+              </p>
             </div>
             <div class="D_Quanlytuvung_HangNutPhai">
+              <!-- Bộ lọc nguồn -->
+              <div class="filter-box">
+                <label for="D_Quanlytuvung_LocNguon" class="sr-only">Nguồn từ vựng</label>
+                <select id="D_Quanlytuvung_LocNguon" class="D_Quanlytuvung_Loc">
+                  <option value="tat_ca">Tất cả nguồn (<?php echo $tongSoTuVung; ?>)</option>
+                  <option value="system">🌐 Từ vựng Hệ thống (<?php echo $soTuHeThong; ?>)</option>
+                  <option value="personal">👤 Từ vựng Cá nhân (<?php echo $soTuCaNhan; ?>)</option>
+                </select>
+              </div>
+
+              <!-- Bộ lọc theo chủ đề / bộ từ -->
               <div class="filter-box">
                 <label for="D_Quanlytuvung_LocChuDe" class="sr-only">Lọc theo chủ đề</label>
                 <select id="D_Quanlytuvung_LocChuDe" class="D_Quanlytuvung_Loc">
-                  <option value="tat_ca">Tất cả chủ đề (<?php echo count($danhSachChuDe); ?>)</option>
-                  <?php foreach ($danhSachChuDe as $cd): ?>
-                    <option value="<?php echo htmlspecialchars($cd["topicName"]); ?>">
-                      <?php echo htmlspecialchars($cd["topicName"]); ?>
-                    </option>
-                  <?php endforeach; ?>
+                  <option value="tat_ca">Tất cả chủ đề & bộ từ</option>
+                  <optgroup label="── CHỦ ĐỀ HỆ THỐNG ──">
+                    <?php foreach ($danhSachChuDe as $cd): ?>
+                      <option value="topic_<?php echo (int) $cd['topicID']; ?>" data-name="<?php echo htmlspecialchars($cd['topicName']); ?>">
+                        🌐 <?php echo htmlspecialchars($cd['topicName']); ?> (<?php echo (int) $cd['word_count']; ?>)
+                      </option>
+                    <?php endforeach; ?>
+                  </optgroup>
+                  <?php if (!empty($danhSachBoTu)): ?>
+                    <optgroup label="── BỘ TỪ CÁ NHÂN USER ──">
+                      <?php foreach ($danhSachBoTu as $bt): ?>
+                        <option value="set_<?php echo (int) $bt['id']; ?>" data-name="<?php echo htmlspecialchars($bt['name']); ?>">
+                          👤 <?php echo htmlspecialchars($bt['name']); ?> (<?php echo htmlspecialchars($bt['owner_name'] ?? 'User'); ?> - <?php echo (int) $bt['word_count']; ?> từ)
+                        </option>
+                      <?php endforeach; ?>
+                    </optgroup>
+                  <?php endif; ?>
                 </select>
               </div>
+
               <button
                 id="D_Quanlytuvung_BtnThem"
                 class="D_Quanlytuvung_NutChinh"
@@ -158,7 +197,7 @@ $tongSoTuVung = count($ketQuaDanhSach);
             </div>
           </div>
 
-          <?php if ($thongBao !== ""): ?>
+          <?php if ($thongBao !== ''): ?>
             <div class="D_Quanlytuvung_ThongBao D_Quanlytuvung_ThongBao_<?php echo $loaiThongBao; ?>">
               <?php if ($loaiThongBao === 'thanhcong'): ?>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -173,33 +212,78 @@ $tongSoTuVung = count($ketQuaDanhSach);
             <table class="D_Quanlytuvung_Bang">
               <thead>
                 <tr>
-                  <th style="width: 25%;">Từ vựng (Tiếng Anh)</th>
-                  <th style="width: 40%;">Nghĩa tiếng Việt</th>
-                  <th style="width: 20%;">Chủ đề</th>
-                  <th style="width: 15%; text-align: right;">Thao tác</th>
+                  <th style="width: 22%;">Từ vựng & Phiên âm</th>
+                  <th style="width: 32%;">Nghĩa & Ví dụ</th>
+                  <th style="width: 20%;">Chủ đề / Bộ từ</th>
+                  <th style="width: 14%;">Người tạo</th>
+                  <th style="width: 12%; text-align: right;">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="D_Quanlytuvung_ThanBang">
                 <?php if (count($ketQuaDanhSach) === 0): ?>
                   <tr class="D_Quanlytuvung_DongTrong">
-                    <td colspan="4" style="text-align: center; padding: 36px 16px;">Chưa có từ vựng nào. Nhấn "+ Thêm từ mới" để tạo từ vựng.</td>
+                    <td colspan="5" style="text-align: center; padding: 36px 16px;">Chưa có từ vựng nào. Nhấn "+ Thêm từ mới" để tạo từ vựng.</td>
                   </tr>
                 <?php else: ?>
-                  <?php foreach ($ketQuaDanhSach as $hang): ?>
+                  <?php foreach ($ketQuaDanhSach as $hang):
+                      $isSystem = ($hang['source_type'] === 'system');
+                      $creatorLabel = $hang['creator_name'] ?: ($hang['creator_email'] ?: 'User #' . ($hang['created_by'] ?? 1));
+                  ?>
                     <tr
-                      data-id="<?php echo (int) $hang["id"]; ?>"
-                      data-tuvung="<?php echo htmlspecialchars($hang["word"]); ?>"
-                      data-nghia="<?php echo htmlspecialchars($hang["meaning"]); ?>"
-                      data-chude="<?php echo htmlspecialchars($hang["topicName"]); ?>"
-                      data-topicid="<?php echo (int) $hang["topic_id"]; ?>"
+                      data-id="<?php echo (int) $hang['id']; ?>"
+                      data-tuvung="<?php echo htmlspecialchars($hang['word']); ?>"
+                      data-phienam="<?php echo htmlspecialchars($hang['pronunciation'] ?? ''); ?>"
+                      data-tuloai="<?php echo htmlspecialchars($hang['part_of_speech'] ?? ''); ?>"
+                      data-nghia="<?php echo htmlspecialchars($hang['meaning']); ?>"
+                      data-vidu="<?php echo htmlspecialchars($hang['example_sentence'] ?? ''); ?>"
+                      data-chude="<?php echo htmlspecialchars($hang['topicName'] ?? ''); ?>"
+                      data-displaytopic="<?php echo htmlspecialchars($hang['display_topic'] ?? ''); ?>"
+                      data-topicid="<?php echo (int) ($hang['topic_id'] ?? 0); ?>"
+                      data-source="<?php echo htmlspecialchars($hang['source_type']); ?>"
+                      data-creator="<?php echo htmlspecialchars($creatorLabel); ?>"
+                      data-creatoremail="<?php echo htmlspecialchars($hang['creator_email'] ?? ''); ?>"
                     >
                       <td class="D_Quanlytuvung_OTu">
-                        <span class="vocab-word"><?php echo htmlspecialchars($hang["word"]); ?></span>
+                        <div class="vocab-word-box">
+                          <span class="vocab-word"><?php echo htmlspecialchars($hang['word']); ?></span>
+                          <?php if (!empty($hang['part_of_speech'])): ?>
+                            <span class="vocab-pos"><?php echo htmlspecialchars($hang['part_of_speech']); ?></span>
+                          <?php endif; ?>
+                        </div>
+                        <?php if (!empty($hang['pronunciation'])): ?>
+                          <div class="vocab-phonetic"><?php echo htmlspecialchars($hang['pronunciation']); ?></div>
+                        <?php endif; ?>
                       </td>
-                      <td class="D_Quanlytuvung_ONghia"><?php echo htmlspecialchars($hang["meaning"]); ?></td>
+
+                      <td class="D_Quanlytuvung_ONghia">
+                        <div class="meaning-text"><?php echo htmlspecialchars($hang['meaning']); ?></div>
+                        <?php if (!empty($hang['example_sentence'])): ?>
+                          <div class="example-text"><em>"<?php echo htmlspecialchars($hang['example_sentence']); ?>"</em></div>
+                        <?php endif; ?>
+                      </td>
+
                       <td class="D_Quanlytuvung_OChuDe">
-                        <span class="badge-topic"><?php echo htmlspecialchars($hang["topicName"]); ?></span>
+                        <?php if ($isSystem): ?>
+                          <span class="badge-topic badge-system" title="Chủ đề hệ thống: <?php echo htmlspecialchars($hang['topicName']); ?>">
+                            🌐 <?php echo htmlspecialchars($hang['topicName']); ?>
+                          </span>
+                        <?php else: ?>
+                          <span class="badge-topic badge-personal" title="Từ vựng cá nhân: <?php echo htmlspecialchars($hang['display_topic']); ?>">
+                            👤 <?php echo htmlspecialchars($hang['display_topic']); ?>
+                          </span>
+                        <?php endif; ?>
                       </td>
+
+                      <td class="D_Quanlytuvung_OCreator">
+                        <?php if (($hang['creator_role'] ?? '') === 'admin' || (int)($hang['created_by'] ?? 0) === 1): ?>
+                          <span class="creator-badge admin-badge" title="Quản trị viên tạo">🛡️ Admin</span>
+                        <?php else: ?>
+                          <span class="creator-badge user-badge" title="Tạo bởi: <?php echo htmlspecialchars($hang['creator_email'] ?? ''); ?>">
+                            👤 <?php echo htmlspecialchars($creatorLabel); ?>
+                          </span>
+                        <?php endif; ?>
+                      </td>
+
                       <td style="text-align: right;">
                         <div class="action-buttons">
                           <button class="D_Quanlytuvung_NutSua" type="button" title="Chỉnh sửa từ vựng">
@@ -216,7 +300,7 @@ $tongSoTuVung = count($ketQuaDanhSach);
                             onsubmit="return confirm('Bạn có chắc chắn muốn xóa từ \'<?php echo addslashes($hang['word']); ?>\'?');"
                           >
                             <input type="hidden" name="hanhdong" value="xoa" />
-                            <input type="hidden" name="id" value="<?php echo (int) $hang["id"]; ?>" />
+                            <input type="hidden" name="id" value="<?php echo (int) $hang['id']; ?>" />
                             <button class="D_Quanlytuvung_NutXoa" type="submit" title="Xóa từ vựng">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -253,16 +337,57 @@ $tongSoTuVung = count($ketQuaDanhSach);
             <input type="hidden" id="D_Quanlytuvung_HanhDong" name="hanhdong" value="them" />
             <input type="hidden" id="D_Quanlytuvung_HiddenId" name="id" value="" />
 
-            <div class="modal-form-group">
-              <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapTu">Từ vựng (Tiếng Anh) <span class="required">*</span></label>
-              <input
-                type="text"
-                id="D_Quanlytuvung_ONhapTu"
-                name="word"
-                class="D_Quanlytuvung_ONhap"
-                placeholder="Ví dụ: Resilience, Innovation..."
-                required
-              />
+            <div class="modal-form-row-two">
+              <div class="modal-form-group flex-1">
+                <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapTu">Từ vựng (Tiếng Anh) <span class="required">*</span></label>
+                <input
+                  type="text"
+                  id="D_Quanlytuvung_ONhapTu"
+                  name="word"
+                  class="D_Quanlytuvung_ONhap"
+                  placeholder="Ví dụ: technology, algorithm..."
+                  required
+                />
+              </div>
+              <div class="modal-form-group flex-1">
+                <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapPhienAm">Phiên âm IPA</label>
+                <input
+                  type="text"
+                  id="D_Quanlytuvung_ONhapPhienAm"
+                  name="pronunciation"
+                  class="D_Quanlytuvung_ONhap"
+                  placeholder="Ví dụ: /tɛkˈnɒlədʒi/"
+                />
+              </div>
+            </div>
+
+            <div class="modal-form-row-two">
+              <div class="modal-form-group flex-1">
+                <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapTuLoai">Loại từ</label>
+                <select id="D_Quanlytuvung_ONhapTuLoai" name="part_of_speech" class="D_Quanlytuvung_ONhap D_Quanlytuvung_Select">
+                  <option value="noun">Danh từ (noun)</option>
+                  <option value="verb">Động từ (verb)</option>
+                  <option value="adjective">Tính từ (adjective)</option>
+                  <option value="adverb">Trạng từ (adverb)</option>
+                  <option value="pronoun">Đại từ (pronoun)</option>
+                  <option value="preposition">Giới từ (preposition)</option>
+                  <option value="conjunction">Liên từ (conjunction)</option>
+                  <option value="phrase">Cụm từ (phrase)</option>
+                  <option value="other">Khác (other)</option>
+                </select>
+              </div>
+
+              <div class="modal-form-group flex-1">
+                <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapChuDe">Thuộc chủ đề hệ thống</label>
+                <select id="D_Quanlytuvung_ONhapChuDe" name="topic_id" class="D_Quanlytuvung_ONhap D_Quanlytuvung_Select">
+                  <option value="0">-- Từ vựng cá nhân / Không gắn chủ đề hệ thống --</option>
+                  <?php foreach ($danhSachChuDe as $cd): ?>
+                    <option value="<?php echo (int) $cd['topicID']; ?>">
+                      🌐 <?php echo htmlspecialchars($cd['topicName']); ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
             </div>
 
             <div class="modal-form-group">
@@ -271,21 +396,21 @@ $tongSoTuVung = count($ketQuaDanhSach);
                 id="D_Quanlytuvung_ONhapNghia"
                 name="meaning"
                 class="D_Quanlytuvung_ONhap D_Quanlytuvung_Textarea"
-                rows="3"
-                placeholder="Ví dụ: Khả năng phục hồi, sự đổi mới sáng tạo..."
+                rows="2"
+                placeholder="Ví dụ: Công nghệ, kỹ thuật..."
                 required
               ></textarea>
             </div>
 
             <div class="modal-form-group">
-              <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapChuDe">Thuộc chủ đề <span class="required">*</span></label>
-              <select id="D_Quanlytuvung_ONhapChuDe" name="topic_id" class="D_Quanlytuvung_ONhap D_Quanlytuvung_Select" required>
-                <?php foreach ($danhSachChuDe as $cd): ?>
-                  <option value="<?php echo (int) $cd["topicID"]; ?>">
-                    <?php echo htmlspecialchars($cd["topicName"]); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
+              <label class="D_Quanlytuvung_Nhan" for="D_Quanlytuvung_ONhapViDu">Câu ví dụ (Tiếng Anh)</label>
+              <textarea
+                id="D_Quanlytuvung_ONhapViDu"
+                name="example_sentence"
+                class="D_Quanlytuvung_ONhap D_Quanlytuvung_Textarea"
+                rows="2"
+                placeholder="Ví dụ: Modern technology makes communication much easier."
+              ></textarea>
             </div>
 
             <div class="D_Quanlytuvung_HangNutModal">
@@ -309,7 +434,7 @@ $tongSoTuVung = count($ketQuaDanhSach);
       </div>
     </div>
 
-    <!-- Script đường dẫn tuyệt đối chuẩn xác -->
+    <!-- Script JavaScript -->
     <script src="/JS/D_Quanlytuvung.js"></script>
   </body>
 </html>

@@ -51,6 +51,7 @@ DROP PROCEDURE IF EXISTS `sp_admin_save_topic`;
 DROP PROCEDURE IF EXISTS `sp_admin_change_user_status`;
 DROP PROCEDURE IF EXISTS `sp_admin_delete_vocabulary`;
 DROP PROCEDURE IF EXISTS `sp_admin_save_vocabulary`;
+DROP PROCEDURE IF EXISTS `sp_admin_delete_vocabulary_set`;
 DROP PROCEDURE IF EXISTS `sp_delete_vocabulary_set`;
 DROP PROCEDURE IF EXISTS `sp_save_vocabulary_set`;
 DROP PROCEDURE IF EXISTS `sp_update_user_profile`;
@@ -95,20 +96,60 @@ FROM `Users`$$
 
 CREATE VIEW `vw_topic_catalog` AS
 SELECT t.`topicID`, t.`topicName`, t.`topicDescription`, t.`category`, t.`created_by`,
-       t.`topicCreated_at`, COUNT(v.`id`) AS `word_count`
-FROM `Topics` t LEFT JOIN `vocabulary` v ON v.`topic_id` = t.`topicID`
-GROUP BY t.`topicID`, t.`topicName`, t.`topicDescription`, t.`category`, t.`created_by`, t.`topicCreated_at`$$
+       u.`full_name` AS `creator_name`, u.`email` AS `creator_email`, u.`role` AS `creator_role`,
+       t.`topicCreated_at`, COUNT(DISTINCT v.`id`) AS `word_count`
+FROM `Topics` t
+LEFT JOIN `Users` u ON u.`userID` = t.`created_by`
+LEFT JOIN `vocabulary` v ON v.`topic_id` = t.`topicID`
+GROUP BY t.`topicID`, t.`topicName`, t.`topicDescription`, t.`category`, t.`created_by`,
+         u.`full_name`, u.`email`, u.`role`, t.`topicCreated_at`$$
 
 CREATE VIEW `vw_vocabulary_catalog` AS
-SELECT v.*, t.`topicName`, t.`category` AS `topic_category`
-FROM `vocabulary` v LEFT JOIN `Topics` t ON t.`topicID` = v.`topic_id`$$
+SELECT
+    v.`id`,
+    v.`topic_id`,
+    v.`word`,
+    v.`pronunciation`,
+    v.`part_of_speech`,
+    v.`meaning`,
+    v.`example_sentence`,
+    v.`created_by`,
+    v.`created_at`,
+    v.`audio_url`,
+    t.`topicName`,
+    t.`category` AS `topic_category`,
+    u.`full_name` AS `creator_name`,
+    u.`email` AS `creator_email`,
+    u.`role` AS `creator_role`,
+    CASE
+        WHEN v.`topic_id` IS NOT NULL THEN 'system'
+        ELSE 'personal'
+    END AS `source_type`,
+    GROUP_CONCAT(DISTINCT vs.`id` ORDER BY vs.`id`) AS `set_ids`,
+    GROUP_CONCAT(DISTINCT vs.`name` ORDER BY vs.`name` SEPARATOR ', ') AS `set_names`,
+    CASE
+        WHEN t.`topicName` IS NOT NULL THEN t.`topicName`
+        WHEN GROUP_CONCAT(DISTINCT vs.`name` SEPARATOR ', ') IS NOT NULL THEN GROUP_CONCAT(DISTINCT vs.`name` SEPARATOR ', ')
+        ELSE 'Cá nhân (Chưa gán bộ từ)'
+    END AS `display_topic`
+FROM `vocabulary` v
+LEFT JOIN `Topics` t ON t.`topicID` = v.`topic_id`
+LEFT JOIN `Users` u ON u.`userID` = v.`created_by`
+LEFT JOIN `vocabulary_set_items` vsi ON vsi.`vocabulary_id` = v.`id`
+LEFT JOIN `vocabulary_sets` vs ON vs.`id` = vsi.`vocabulary_set_id`
+GROUP BY v.`id`, v.`topic_id`, v.`word`, v.`pronunciation`, v.`part_of_speech`,
+         v.`meaning`, v.`example_sentence`, v.`created_by`, v.`created_at`,
+         v.`audio_url`, t.`topicName`, t.`category`, u.`full_name`, u.`email`, u.`role`$$
 
 CREATE VIEW `vw_quiz_results` AS SELECT * FROM `quiz_results`$$
 CREATE VIEW `vw_learning_sessions` AS SELECT * FROM `learning_sessions`$$
 CREATE VIEW `vw_vocabulary_sets` AS
-SELECT vs.*, COUNT(vsi.`id`) AS `word_count`
-FROM `vocabulary_sets` vs LEFT JOIN `vocabulary_set_items` vsi ON vsi.`vocabulary_set_id` = vs.`id`
-GROUP BY vs.`id`, vs.`user_id`, vs.`name`, vs.`description`, vs.`created_at`, vs.`updated_at`$$
+SELECT vs.*, u.`full_name` AS `owner_name`, u.`email` AS `owner_email`, COUNT(DISTINCT vsi.`id`) AS `word_count`
+FROM `vocabulary_sets` vs
+LEFT JOIN `Users` u ON u.`userID` = vs.`user_id`
+LEFT JOIN `vocabulary_set_items` vsi ON vsi.`vocabulary_set_id` = vs.`id`
+GROUP BY vs.`id`, vs.`user_id`, vs.`name`, vs.`description`, vs.`created_at`, vs.`updated_at`,
+         u.`full_name`, u.`email`$$
 CREATE VIEW `vw_system_settings` AS SELECT * FROM `system_settings`$$
 
 -- PHP filters this view by user_id. The view does not expose another user's
@@ -1096,30 +1137,50 @@ END$$
 
 CREATE PROCEDURE `sp_admin_save_vocabulary`(
     IN p_actor_id INT, IN p_vocabulary_id INT, IN p_topic_id INT,
-    IN p_word VARCHAR(100), IN p_meaning TEXT
+    IN p_word VARCHAR(100), IN p_pronunciation VARCHAR(100),
+    IN p_part_of_speech VARCHAR(30), IN p_meaning TEXT, IN p_example_sentence TEXT
 )
 MODIFIES SQL DATA
 BEGIN
+    DECLARE v_valid_topic INT DEFAULT NULL;
     IF NOT EXISTS(SELECT 1 FROM `Users` WHERE `userID` = p_actor_id AND `role` = 'admin' AND `status` = 'active') THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
     END IF;
-    IF CHAR_LENGTH(TRIM(p_word)) = 0 OR CHAR_LENGTH(TRIM(p_meaning)) = 0
-       OR NOT EXISTS(SELECT 1 FROM `Topics` WHERE `topicID` = p_topic_id) THEN
+    IF CHAR_LENGTH(TRIM(p_word)) = 0 OR CHAR_LENGTH(TRIM(p_meaning)) = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid vocabulary data';
     END IF;
-    IF EXISTS(SELECT 1 FROM `vocabulary` WHERE LOWER(`word`) = LOWER(TRIM(p_word))
-              AND `topic_id` = p_topic_id AND `id` <> COALESCE(p_vocabulary_id, 0)) THEN
+    IF p_topic_id IS NOT NULL AND p_topic_id > 0 THEN
+        IF NOT EXISTS(SELECT 1 FROM `Topics` WHERE `topicID` = p_topic_id) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'topic not found';
+        END IF;
+        SET v_valid_topic = p_topic_id;
+    ELSE
+        SET v_valid_topic = NULL;
+    END IF;
+
+    IF v_valid_topic IS NOT NULL AND EXISTS(
+        SELECT 1 FROM `vocabulary` WHERE LOWER(`word`) = LOWER(TRIM(p_word))
+        AND `topic_id` = v_valid_topic AND `id` <> COALESCE(p_vocabulary_id, 0)
+    ) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'word already exists in topic';
     END IF;
+
     IF p_vocabulary_id IS NULL OR p_vocabulary_id = 0 THEN
-        INSERT INTO `vocabulary` (`topic_id`, `word`, `meaning`, `created_by`)
-        VALUES (p_topic_id, TRIM(p_word), TRIM(p_meaning), p_actor_id);
+        INSERT INTO `vocabulary` (`topic_id`, `word`, `pronunciation`, `part_of_speech`, `meaning`, `example_sentence`, `created_by`)
+        VALUES (v_valid_topic, TRIM(p_word), NULLIF(TRIM(p_pronunciation), ''), NULLIF(TRIM(p_part_of_speech), ''),
+                TRIM(p_meaning), NULLIF(TRIM(p_example_sentence), ''), p_actor_id);
     ELSE
         IF NOT EXISTS(SELECT 1 FROM `vocabulary` WHERE `id` = p_vocabulary_id) THEN
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary not found';
         END IF;
-        UPDATE `vocabulary` SET `topic_id` = p_topic_id, `word` = TRIM(p_word), `meaning` = TRIM(p_meaning)
-        WHERE `id` = p_vocabulary_id;
+        UPDATE `vocabulary`
+           SET `topic_id` = IF(p_topic_id IS NOT NULL AND p_topic_id > 0, v_valid_topic, `topic_id`),
+               `word` = TRIM(p_word),
+               `pronunciation` = NULLIF(TRIM(p_pronunciation), ''),
+               `part_of_speech` = NULLIF(TRIM(p_part_of_speech), ''),
+               `meaning` = TRIM(p_meaning),
+               `example_sentence` = NULLIF(TRIM(p_example_sentence), '')
+         WHERE `id` = p_vocabulary_id;
     END IF;
 END$$
 
@@ -1131,6 +1192,16 @@ BEGIN
     END IF;
     DELETE FROM `vocabulary` WHERE `id` = p_vocabulary_id;
     IF ROW_COUNT() <> 1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary not found'; END IF;
+END$$
+
+CREATE PROCEDURE `sp_admin_delete_vocabulary_set`(IN p_actor_id INT, IN p_set_id INT)
+MODIFIES SQL DATA
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM `Users` WHERE `userID` = p_actor_id AND `role` = 'admin' AND `status` = 'active') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
+    END IF;
+    DELETE FROM `vocabulary_sets` WHERE `id` = p_set_id;
+    IF ROW_COUNT() <> 1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary set not found'; END IF;
 END$$
 
 CREATE PROCEDURE `sp_admin_save_topic`(

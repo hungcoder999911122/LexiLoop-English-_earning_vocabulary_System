@@ -10,6 +10,8 @@
   --color-primary-dark: #0a5c37;
   --color-primary-light: #e6f7ef;
   --color-accent: #2563eb;
+  --color-purple: #7c3aed;
+  --color-purple-light: #f3e8ff;
   
   --color-bg: #f8faf9;
   --color-surface: #ffffff;
@@ -111,7 +113,7 @@ body {
 
 .D_Quanlychude_TimKiem {
   height: 38px;
-  width: 240px;
+  width: 280px;
   padding: 0 14px 0 36px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -123,7 +125,7 @@ body {
 }
 
 .D_Quanlychude_TimKiem:focus {
-  width: 280px;
+  width: 320px;
   border-color: var(--color-primary);
   background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(14, 119, 72, 0.12);
@@ -223,14 +225,16 @@ body {
 .D_Quanlychude_NoiDung {
   flex: 1;
   padding: 32px 36px;
-  max-width: 1300px;
+  max-width: 1400px;
 }
 
 .D_Quanlychude_HangTieuDe {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .D_Quanlychude_TieuDe {
@@ -244,6 +248,50 @@ body {
   font-size: 13.5px;
   color: var(--color-text-sub);
   margin-top: 4px;
+}
+
+/* Tabs */
+.D_Quanlychude_Tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 2px;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  font-family: var(--admin-font);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  background: transparent;
+  border: none;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+}
+
+.tab-btn.tab-active {
+  color: var(--color-primary-dark);
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-border);
+  border-bottom: 2px solid #ffffff;
+  margin-bottom: -4px;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.tab-pane-active {
+  display: block;
 }
 
 /* Buttons */
@@ -341,8 +389,8 @@ body {
 .D_Quanlychude_Bang thead th {
   background-color: #fafcfb;
   text-align: left;
-  padding: 14px 20px;
-  font-size: 13px;
+  padding: 14px 18px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -351,9 +399,9 @@ body {
 }
 
 .D_Quanlychude_Bang tbody td {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--color-text-sub);
   vertical-align: middle;
 }
@@ -363,11 +411,18 @@ body {
 }
 
 .D_Quanlychude_Bang tbody tr:hover {
-  background-color: #fafdfb;
+  background-color: #f7faf8;
 }
 
-.D_Quanlychude_OTen strong {
+.topic-name {
   color: var(--color-text-main);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.set-name {
+  color: var(--color-purple);
+  font-size: 14.5px;
   font-weight: 700;
 }
 
@@ -386,8 +441,46 @@ body {
   border-radius: 20px;
 }
 
-.D_Quanlychude_ONgay {
-  font-size: 13px;
+.badge-purple {
+  background-color: var(--color-purple-light);
+  color: var(--color-purple);
+}
+
+.creator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.admin-badge {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+}
+
+.user-badge {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.owner-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.owner-name {
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.owner-email {
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
@@ -395,29 +488,40 @@ body {
 .action-buttons {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
+.D_Quanlychude_NutXem,
 .D_Quanlychude_NutSua,
 .D_Quanlychude_NutXoa {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   font-family: var(--admin-font);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--color-border);
   background-color: #ffffff;
+  text-decoration: none;
   transition: all 0.15s ease;
+}
+
+.D_Quanlychude_NutXem {
+  color: var(--color-primary-dark);
+}
+
+.D_Quanlychude_NutXem:hover {
+  background-color: var(--color-primary-light);
+  border-color: #bbf7d0;
 }
 
 .D_Quanlychude_NutSua svg,
 .D_Quanlychude_NutXoa svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .D_Quanlychude_NutSua {
@@ -460,34 +564,22 @@ body {
   justify-content: center;
   z-index: 100;
   padding: 20px;
-  animation: modalOverlayFade 0.2s ease;
-}
-
-@keyframes modalOverlayFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .D_Quanlychude_HopModal {
   background-color: #ffffff;
   border-radius: 20px;
-  padding: 28px 32px;
+  padding: 26px 30px;
   width: 100%;
   max-width: 480px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes modalScaleUp {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
 }
 
 .D_Quanlychude_ModalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .D_Quanlychude_TieuDeModal {
@@ -514,15 +606,15 @@ body {
 }
 
 .modal-form-group {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .D_Quanlychude_Nhan {
   display: block;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-main);
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 
 .required {
@@ -531,11 +623,11 @@ body {
 
 .D_Quanlychude_ONhap {
   width: 100%;
-  padding: 11px 14px;
+  padding: 10px 12px;
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
   font-family: var(--admin-font);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--color-text-main);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -548,14 +640,14 @@ body {
 
 .D_Quanlychude_Textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 75px;
 }
 
 .D_Quanlychude_HangNutModal {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 22px;
 }
 
 /* Responsive */
