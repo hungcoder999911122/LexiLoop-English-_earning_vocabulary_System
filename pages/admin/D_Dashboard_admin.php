@@ -16,7 +16,7 @@ for ($i = 6; $i >= 0; $i--) {
     $nhanNgay[] = date('d/m', strtotime("-$i day"));
 }
 $dinhCao = max(max($hoatDongTuan), 1);
-$ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_recent_activity ORDER BY thoiGian DESC LIMIT 6');
+$ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, actor_name, target_name, score_text FROM vw_system_recent_activity ORDER BY thoiGian DESC LIMIT 8');
 ?>
 <!doctype html>
 <html lang="vi">
@@ -159,8 +159,11 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
 
             <!-- Hoạt động gần đây -->
             <div class="D_Dashboard_admin_HopHoatDong">
-              <h2 class="D_Dashboard_admin_TieuDeHop">Hoạt động gần đây</h2>
-              <p class="chart-subtitle">Ghi nhận tiến trình học và quiz mới nhất</p>
+              <div class="activity-header-box">
+                <h2 class="D_Dashboard_admin_TieuDeHop">Hoạt động gần đây</h2>
+                <span class="activity-live-badge">Trực tiếp</span>
+              </div>
+              <p class="chart-subtitle">Ghi nhận tiến trình học, quiz và tài khoản mới nhất</p>
 
               <div class="D_Dashboard_admin_DanhSachHoatDong">
                 <?php if (count($ketQuaHoatDong) === 0): ?>
@@ -168,11 +171,74 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT noiDung, thoiGian FROM vw_system_r
                     <span>Chưa có lịch sử hoạt động nào trong hệ thống.</span>
                   </div>
                 <?php else: ?>
-                  <?php foreach ($ketQuaHoatDong as $hd): ?>
+                  <?php foreach ($ketQuaHoatDong as $hd):
+                      $loai = $hd['loai'] ?? 'user';
+                      $icon = '📌';
+                      $labelPrefix = 'Hoạt động:';
+                      $titleText = '';
+                      $detailText = '';
+                      $iconClass = 'activity-type-default';
+
+                      switch ($loai) {
+                          case 'user':
+                              $icon = '👤';
+                              $labelPrefix = 'Người dùng mới đăng ký:';
+                              $titleText = $hd['actor_name'] ?: ($hd['tieuDe'] ?: 'Người dùng');
+                              if (!empty($hd['chiTiet']) && $hd['chiTiet'] !== $titleText) {
+                                  $detailText = $hd['chiTiet'];
+                              }
+                              $iconClass = 'activity-type-user';
+                              break;
+                          case 'topic':
+                              $icon = '📚';
+                              $labelPrefix = 'Chủ đề hệ thống mới:';
+                              $titleText = '"' . ($hd['target_name'] ?: $hd['tieuDe']) . '"';
+                              if (!empty($hd['chiTiet']) && $hd['chiTiet'] !== ($hd['target_name'] ?: $hd['tieuDe'])) {
+                                  $detailText = $hd['chiTiet'];
+                              }
+                              $iconClass = 'activity-type-topic';
+                              break;
+                          case 'set':
+                              $icon = '🗂️';
+                              $labelPrefix = 'Bộ từ cá nhân mới:';
+                              $titleText = '"' . ($hd['target_name'] ?: $hd['tieuDe']) . '"';
+                              if (!empty($hd['actor_name'])) {
+                                  $detailText = 'Tạo bởi: ' . $hd['actor_name'];
+                              }
+                              $iconClass = 'activity-type-set';
+                              break;
+                          case 'quiz':
+                              $icon = '🎯';
+                              $labelPrefix = 'Hoàn thành bài Quiz:';
+                              $titleText = $hd['target_name'] ?: ($hd['tieuDe'] ?: 'Ôn tập');
+                              $actor = $hd['actor_name'] ?: 'Người học';
+                              $score = $hd['score_text'] ?: ($hd['chiTiet'] ?: '');
+                              $detailText = $actor . ' đạt kết quả ' . $score . ' câu đúng';
+                              $iconClass = 'activity-type-quiz';
+                              break;
+                          case 'flashcard':
+                              $icon = '📖';
+                              $labelPrefix = 'Hoàn thành học Flashcard:';
+                              $titleText = $hd['target_name'] ?: ($hd['tieuDe'] ?: 'Ôn tập');
+                              $actor = $hd['actor_name'] ?: 'Người học';
+                              $words = $hd['score_text'] ?: ($hd['chiTiet'] ?: '0');
+                              $detailText = $actor . ' đã ôn luyện ' . $words . ' từ';
+                              $iconClass = 'activity-type-flashcard';
+                              break;
+                      }
+                  ?>
                     <div class="D_Dashboard_admin_DongHoatDong">
-                      <div class="activity-dot"></div>
+                      <div class="activity-icon-badge <?php echo $iconClass; ?>">
+                        <?php echo $icon; ?>
+                      </div>
                       <div class="activity-text">
-                        <span><?php echo htmlspecialchars($hd["noiDung"]); ?></span>
+                        <div class="activity-title-line">
+                          <span class="activity-label"><?php echo $labelPrefix; ?></span>
+                          <strong class="activity-subject"><?php echo htmlspecialchars($titleText); ?></strong>
+                        </div>
+                        <?php if (!empty($detailText)): ?>
+                          <div class="activity-detail-line"><?php echo htmlspecialchars($detailText); ?></div>
+                        <?php endif; ?>
                         <span class="D_Dashboard_admin_ThoiGian"><?php echo date("d/m/Y H:i", strtotime($hd["thoiGian"])); ?></span>
                       </div>
                     </div>
