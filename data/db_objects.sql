@@ -311,9 +311,64 @@ FROM `vw_user_daily_unique_words`
 GROUP BY `user_id`, `activity_date`$$
 
 CREATE VIEW `vw_system_recent_activity` AS
-SELECT CONCAT('Người dùng mới đăng ký: ', `full_name`) AS `noiDung`, `created_at` AS `thoiGian` FROM `Users`
+SELECT 
+    'user' AS `loai`,
+    `full_name` AS `tieuDe`,
+    `email` AS `chiTiet`,
+    `created_at` AS `thoiGian`,
+    `full_name` AS `actor_name`,
+    `email` AS `target_name`,
+    NULL AS `score_text`
+FROM `Users`
 UNION ALL
-SELECT CONCAT('Chủ đề "', `topicName`, '" được thêm'), `topicCreated_at` FROM `Topics`$$
+SELECT 
+    'topic' AS `loai`,
+    `topicName` AS `tieuDe`,
+    `topicDescription` AS `chiTiet`,
+    `topicCreated_at` AS `thoiGian`,
+    NULL AS `actor_name`,
+    `topicName` AS `target_name`,
+    NULL AS `score_text`
+FROM `Topics`
+UNION ALL
+SELECT 
+    'set' AS `loai`,
+    vs.`name` AS `tieuDe`,
+    u.`full_name` AS `chiTiet`,
+    vs.`created_at` AS `thoiGian`,
+    u.`full_name` AS `actor_name`,
+    vs.`name` AS `target_name`,
+    NULL AS `score_text`
+FROM `vocabulary_sets` vs
+LEFT JOIN `Users` u ON u.`userID` = vs.`user_id`
+UNION ALL
+SELECT 
+    'quiz' AS `loai`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
+    CONCAT(qr.`correct_answers`, '/', qr.`total_questions`) AS `chiTiet`,
+    COALESCE(qr.`finished_at`, qr.`started_at`) AS `thoiGian`,
+    u.`full_name` AS `actor_name`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập') AS `target_name`,
+    CONCAT(qr.`correct_answers`, '/', qr.`total_questions`) AS `score_text`
+FROM `quiz_results` qr
+LEFT JOIN `Users` u ON u.`userID` = qr.`user_id`
+LEFT JOIN `Topics` t ON t.`topicID` = qr.`topic_id`
+LEFT JOIN `vocabulary_sets` vs ON vs.`id` = qr.`vocabulary_set_id`
+WHERE qr.`finished_at` IS NOT NULL
+UNION ALL
+SELECT 
+    'flashcard' AS `loai`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
+    CAST(ls.`words_studied` AS CHAR) AS `chiTiet`,
+    COALESCE(ls.`finished_at`, ls.`started_at`, CAST(CONCAT(ls.`session_date`, ' 00:00:00') AS DATETIME)) AS `thoiGian`,
+    u.`full_name` AS `actor_name`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập') AS `target_name`,
+    CAST(ls.`words_studied` AS CHAR) AS `score_text`
+FROM `learning_sessions` ls
+LEFT JOIN `Users` u ON u.`userID` = ls.`user_id`
+LEFT JOIN `Topics` t ON t.`topicID` = ls.`topic_id`
+LEFT JOIN `vocabulary_sets` vs ON vs.`id` = ls.`vocabulary_set_id`
+WHERE ls.`words_studied` > 0$$
 
 -- Retention is the percentage of successful reviews (quality >= 3)
 -- during the most recent 30 days. NULL means there is no review data yet.
