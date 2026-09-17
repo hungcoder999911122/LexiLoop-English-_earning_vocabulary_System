@@ -501,6 +501,37 @@ body {
   font-size: 14px;
 }
 
+/* Công cụ tài khoản: giữ các thao tác trên một hàng, cuộn bảng trên màn hình nhỏ. */
+.D_Quanlynguoidung_NoiDung { min-width: 0; width: 100%; }
+.D_Quanlynguoidung_Sidebar { flex-shrink: 0; }
+.D_Quanlynguoidung_HangTieuDe { gap: 20px; flex-wrap: wrap; }
+.D_Quanlynguoidung_CardBang { overflow-x: auto; }
+.D_Quanlynguoidung_Bang { min-width: 980px; }
+.admin-account-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; white-space: nowrap; }
+.admin-account-actions form { margin: 0; flex-shrink: 0; }
+.admin-account-role, .admin-account-delete, #admin-create-account { padding: 9px 13px; border: 1px solid #cbdcd3; border-radius: 8px; background: #fff; color: #0a5c37; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+#admin-create-account { background: #0e7748; border-color: #0e7748; color: #fff; }
+.admin-account-delete { color: #b42318; border-color: #fecaca; }
+.admin-account-role:hover { background: #edf8f1; }
+.admin-account-delete:hover { background: #fff1f0; }
+.admin-account-actions button:disabled, #admin-create-account:disabled { opacity: .45; cursor: not-allowed; }
+.admin-account-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 24px; border: 1px solid #cbdcd3; border-radius: 16px; color: #0f241d; box-shadow: 0 20px 70px #0003; }
+.admin-account-dialog::backdrop { background: #0f241d80; }
+.admin-account-dialog-header, .admin-account-dialog-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-account-dialog-header { margin-bottom: 20px; }
+.admin-account-dialog-header h2 { margin: 0; font-size: 20px; }
+.admin-account-dialog-header button { background: transparent; border: 0; font-size: 26px; cursor: pointer; color: #526d60; }
+.admin-account-dialog .admin-list-field { margin-bottom: 16px; }
+.admin-account-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.admin-account-dialog-footer { margin-top: 24px; justify-content: flex-end; }
+.admin-account-dialog-footer button { cursor: pointer; font: inherit; }
+.admin-account-dialog .admin-context-description { margin-bottom: 16px; }
+@media (max-width: 600px) {
+  .admin-account-form-grid { grid-template-columns: 1fr; gap: 0; }
+  .D_Quanlynguoidung_Topbar { padding: 0 16px; }
+  .D_Quanlynguoidung_Topbar .admin-name { display: none; }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .D_Quanlynguoidung_Sidebar {

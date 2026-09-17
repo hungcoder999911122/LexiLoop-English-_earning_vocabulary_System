@@ -1,5 +1,9 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+require_once dirname(__DIR__, 2) . '/includes/admin_guard.php';
+
+// Khai báo rõ kết nối dùng chung trước khi gọi View/Stored Procedure.
+$link = getDatabaseConnection();
+require_once dirname(__DIR__, 2) . '/includes/admin_pagination.php';
 
 $thongBao = '';
 $loaiThongBao = '';
@@ -53,11 +57,41 @@ try {
     $loaiThongBao = 'loi';
 }
 
-$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName, topicDescription, topicCreated_at, creator_name, creator_email, creator_role, word_count AS soTuVung FROM vw_topic_catalog ORDER BY topicCreated_at DESC');
-$danhSachBoTu = dbSelectView($link, 'SELECT id, user_id, name, description, created_at, updated_at, owner_name, owner_email, word_count AS soTuVung FROM vw_vocabulary_sets ORDER BY updated_at DESC');
-
-$tongSoChuDe = count($danhSachChuDe);
-$tongSoBoTu = count($danhSachBoTu);
+$keyword = adminQueryText('q');
+$activeTab = adminQueryText('tab') === 'usersets' ? 'usersets' : 'system';
+$content = adminQueryText('content', 'all');
+$content = in_array($content, ['all', 'with_words', 'empty'], true) ? $content : 'all';
+$sort = adminQueryText('sort', 'newest');
+$sort = in_array($sort, ['newest', 'name', 'words'], true) ? $sort : 'newest';
+$topicConditions = [];
+$setConditions = [];
+$topicValues = [];
+$setValues = [];
+if ($keyword !== '') {
+    $topicConditions[] = "(topicName LIKE ? ESCAPE '!' OR topicDescription LIKE ? ESCAPE '!' OR creator_name LIKE ? ESCAPE '!' OR creator_email LIKE ? ESCAPE '!')";
+    $setConditions[] = "(name LIKE ? ESCAPE '!' OR description LIKE ? ESCAPE '!' OR owner_name LIKE ? ESCAPE '!' OR owner_email LIKE ? ESCAPE '!')";
+    $topicValues = $setValues = array_fill(0, 4, adminSearchPattern($keyword));
+}
+if ($content !== 'all') {
+    $wordCondition = $content === 'empty' ? 'word_count = 0' : 'word_count > 0';
+    $topicConditions[] = $setConditions[] = $wordCondition;
+}
+$topicWhere = $topicConditions ? ' WHERE ' . implode(' AND ', $topicConditions) : '';
+$setWhere = $setConditions ? ' WHERE ' . implode(' AND ', $setConditions) : '';
+// Chỉ chọn ORDER BY từ danh sách cố định, không ghép SQL từ tham số GET.
+$topicOrders = ['newest' => 'topicCreated_at DESC, topicID DESC', 'name' => 'topicName, topicID', 'words' => 'word_count DESC, topicID DESC'];
+$setOrders = ['newest' => 'updated_at DESC, id DESC', 'name' => 'name, id', 'words' => 'word_count DESC, id DESC'];
+$filterTypes = $keyword !== '' ? 'ssss' : '';
+$topicPagination = adminPaginateView($link, 'SELECT COUNT(*) AS total FROM vw_topic_catalog' . $topicWhere,
+    'SELECT topicID, topicName, topicDescription, topicCreated_at, created_by, creator_name, creator_email, creator_role, word_count AS soTuVung FROM vw_topic_catalog' . $topicWhere . ' ORDER BY ' . $topicOrders[$sort],
+    'topic_page', 10, $filterTypes, $topicValues);
+$setPagination = adminPaginateView($link, 'SELECT COUNT(*) AS total FROM vw_vocabulary_sets' . $setWhere,
+    'SELECT id, user_id, name, description, created_at, updated_at, owner_name, owner_email, word_count AS soTuVung FROM vw_vocabulary_sets' . $setWhere . ' ORDER BY ' . $setOrders[$sort],
+    'set_page', 10, $filterTypes, $setValues);
+$danhSachChuDe = $topicPagination['rows'];
+$danhSachBoTu = $setPagination['rows'];
+$tongSoChuDe = (int) dbSelectView($link, 'SELECT COUNT(*) AS total FROM vw_topic_catalog')[0]['total'];
+$tongSoBoTu = (int) dbSelectView($link, 'SELECT COUNT(*) AS total FROM vw_vocabulary_sets')[0]['total'];
 ?>
 <!doctype html>
 <html lang="vi">
@@ -70,6 +104,9 @@ $tongSoBoTu = count($danhSachBoTu);
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="/CSS/D_Quanlychude.css" />
     <script src="/JS/jquery-4.0.0.min.js"></script>
+    <link rel="stylesheet" href="/CSS/admin-pagination.css" />
+    <link rel="stylesheet" href="/CSS/admin-list.css" />
+    <link rel="stylesheet" href="/CSS/admin-sidebar.css" />
   </head>
 
   <body>
@@ -81,18 +118,6 @@ $tongSoBoTu = count($danhSachBoTu);
           <span class="logo-text">LexiLoop <span class="badge-admin">Admin</span></span>
         </div>
         <div class="D_Quanlychude_TopbarPhai">
-          <div class="D_Quanlychude_TimKiemBox">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              id="D_Quanlychude_TimKiemTopbar"
-              class="D_Quanlychude_TimKiem"
-              placeholder="Tìm kiếm chủ đề, bộ từ hoặc người tạo..."
-            />
-          </div>
           <div class="D_Quanlychude_UserMenu">
             <div class="D_Quanlychude_Avatar"><?php echo strtoupper(substr($_SESSION['full_name'] ?? 'AD', 0, 2)); ?></div>
             <span class="admin-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?></span>
@@ -102,7 +127,7 @@ $tongSoBoTu = count($danhSachBoTu);
 
       <div class="D_Quanlychude_Body">
         <!-- Sidebar Navigation -->
-        <nav class="D_Quanlychude_Sidebar">
+        <nav class="D_Quanlychude_Sidebar admin-sidebar" aria-label="Điều hướng quản trị">
           <div class="sidebar-section-title">QUẢN TRỊ HỆ THỐNG</div>
           <a href="D_Dashboard_admin.php" class="D_Quanlychude_MucMenu">
             <span class="menu-icon">📊</span>
@@ -154,17 +179,49 @@ $tongSoBoTu = count($danhSachBoTu);
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              <span>+ Thêm chủ đề hệ thống</span>
+              <span>Thêm chủ đề hệ thống</span>
             </button>
           </div>
 
+          <!-- Tìm kiếm và bộ lọc cùng một form, áp dụng trước khi phân trang. -->
+          <form id="admin-filters" class="admin-list-toolbar" method="get" aria-label="Tìm kiếm và lọc chủ đề, bộ từ">
+            <input type="hidden" name="tab" id="admin-active-tab" value="<?php echo $activeTab; ?>" />
+            <div class="admin-list-field admin-list-search">
+              <label for="D_Quanlychude_TimKiem">Tìm kiếm</label>
+              <div class="admin-list-search-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <input type="search" id="D_Quanlychude_TimKiem" name="q" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Tên chủ đề, bộ từ, người tạo..." maxlength="150" />
+              </div>
+            </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlychude_LocSoTu">Số từ vựng</label>
+              <select id="D_Quanlychude_LocSoTu" name="content">
+                <?php foreach (['all' => 'Tất cả', 'with_words' => 'Đã có từ vựng', 'empty' => 'Chưa có từ vựng'] as $value => $label): ?>
+                  <option value="<?php echo $value; ?>" <?php echo $content === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlychude_SapXep">Sắp xếp</label>
+              <select id="D_Quanlychude_SapXep" name="sort">
+                <?php foreach (['newest' => 'Mới nhất', 'name' => 'Tên A–Z', 'words' => 'Nhiều từ nhất'] as $value => $label): ?>
+                  <option value="<?php echo $value; ?>" <?php echo $sort === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="admin-list-actions">
+              <button class="admin-filter-submit" type="submit">Áp dụng</button>
+              <a class="admin-list-reset" href="D_Quanlychude.php?tab=<?php echo $activeTab; ?>">Đặt lại</a>
+            </div>
+          </form>
+
           <!-- Tabs Switcher -->
           <div class="D_Quanlychude_Tabs">
-            <button type="button" class="tab-btn tab-active" data-tab="tab-system">
-              🌐 Chủ đề hệ thống (<?php echo $tongSoChuDe; ?>)
+            <button type="button" class="tab-btn <?php echo $activeTab === 'system' ? 'tab-active' : ''; ?>" data-tab="tab-system">
+              🌐 Chủ đề hệ thống (<?php echo $topicPagination['total']; ?>)
             </button>
-            <button type="button" class="tab-btn" data-tab="tab-usersets">
-              👤 Bộ từ cá nhân User (<?php echo $tongSoBoTu; ?>)
+            <button type="button" class="tab-btn <?php echo $activeTab === 'usersets' ? 'tab-active' : ''; ?>" data-tab="tab-usersets">
+              👤 Bộ từ cá nhân (<?php echo $setPagination['total']; ?>)
             </button>
           </div>
 
@@ -180,7 +237,7 @@ $tongSoBoTu = count($danhSachBoTu);
           <?php endif; ?>
 
           <!-- Tab Content 1: Chu de he thong -->
-          <div id="tab-system" class="tab-pane tab-pane-active">
+          <div id="tab-system" class="tab-pane <?php echo $activeTab === 'system' ? 'tab-pane-active' : ''; ?>">
             <div class="D_Quanlychude_CardBang">
               <table class="D_Quanlychude_Bang">
                 <thead>
@@ -195,7 +252,7 @@ $tongSoBoTu = count($danhSachBoTu);
                 <tbody id="D_Quanlychude_ThanBangHeThong">
                   <?php if (count($danhSachChuDe) === 0): ?>
                     <tr class="D_Quanlychude_DongTrong">
-                      <td colspan="5" style="text-align: center; padding: 36px 16px;">Chưa có chủ đề nào. Nhấn "+ Thêm chủ đề hệ thống" để tạo mới.</td>
+                      <td colspan="5" style="text-align: center; padding: 36px 16px;">Không tìm thấy chủ đề phù hợp.</td>
                     </tr>
                   <?php else: ?>
                     <?php foreach ($danhSachChuDe as $hang):
@@ -225,7 +282,7 @@ $tongSoBoTu = count($danhSachBoTu);
                         </td>
                         <td style="text-align: right;">
                           <div class="action-buttons">
-                            <a href="D_Quanlytuvung.php" class="D_Quanlychude_NutXem" title="Xem danh sách từ vựng">
+                            <a href="D_Quanlytuvung.php?source=system&amp;category=topic_<?php echo (int) $hang['topicID']; ?>" class="D_Quanlychude_NutXem" title="Xem từ vựng trong chủ đề này">
                               <span>Xem từ</span>
                             </a>
                             <button class="D_Quanlychude_NutSua" type="button" title="Chỉnh sửa chủ đề">
@@ -237,7 +294,7 @@ $tongSoBoTu = count($danhSachBoTu);
                             </button>
                             <form
                               method="post"
-                              action="D_Quanlychude.php"
+                              action="<?php echo htmlspecialchars(adminPageUrl(['tab' => 'system']), ENT_QUOTES, 'UTF-8'); ?>"
                               style="display:inline"
                               onsubmit="return confirm('Bạn có chắc chắn muốn xóa chủ đề \'<?php echo addslashes($hang['topicName']); ?>\'? Toàn bộ từ vựng thuộc chủ đề này sẽ bị xóa.');"
                             >
@@ -258,6 +315,7 @@ $tongSoBoTu = count($danhSachBoTu);
                   <?php endif; ?>
                 </tbody>
               </table>
+              <?php adminRenderPagination($topicPagination, 'Phân trang chủ đề', ['tab' => 'system'], 'tab-system'); ?>
               <div id="D_Quanlychude_KhongTimThayHeThong" class="D_Quanlychude_KhongTimThay" style="display: none;">
                 Không tìm thấy chủ đề hệ thống nào khớp với từ khóa tìm kiếm.
               </div>
@@ -265,7 +323,7 @@ $tongSoBoTu = count($danhSachBoTu);
           </div>
 
           <!-- Tab Content 2: Bo tu ca nhan cua User -->
-          <div id="tab-usersets" class="tab-pane">
+          <div id="tab-usersets" class="tab-pane <?php echo $activeTab === 'usersets' ? 'tab-pane-active' : ''; ?>">
             <div class="D_Quanlychude_CardBang">
               <table class="D_Quanlychude_Bang">
                 <thead>
@@ -280,7 +338,7 @@ $tongSoBoTu = count($danhSachBoTu);
                 <tbody id="D_Quanlychude_ThanBangBoTu">
                   <?php if (count($danhSachBoTu) === 0): ?>
                     <tr class="D_Quanlychude_DongTrong">
-                      <td colspan="5" style="text-align: center; padding: 36px 16px;">Chưa có người dùng nào tạo bộ từ cá nhân.</td>
+                      <td colspan="5" style="text-align: center; padding: 36px 16px;">Không tìm thấy bộ từ cá nhân phù hợp.</td>
                     </tr>
                   <?php else: ?>
                     <?php foreach ($danhSachBoTu as $botu):
@@ -310,9 +368,12 @@ $tongSoBoTu = count($danhSachBoTu);
                         </td>
                         <td style="text-align: right;">
                           <div class="action-buttons">
+                            <a href="D_Quanlytuvung.php?category=set_<?php echo (int) $botu['id']; ?>" class="D_Quanlychude_NutXem" title="Xem từ vựng trong bộ từ này">
+                              <span>Xem từ</span>
+                            </a>
                             <form
                               method="post"
-                              action="D_Quanlychude.php"
+                              action="<?php echo htmlspecialchars(adminPageUrl(['tab' => 'usersets']), ENT_QUOTES, 'UTF-8'); ?>"
                               style="display:inline"
                               onsubmit="return confirm('Bạn có chắc chắn muốn xóa bộ từ \'<?php echo addslashes($botu['name']); ?>\' của người dùng <?php echo addslashes($owner); ?>?');"
                             >
@@ -333,6 +394,7 @@ $tongSoBoTu = count($danhSachBoTu);
                   <?php endif; ?>
                 </tbody>
               </table>
+              <?php adminRenderPagination($setPagination, 'Phân trang bộ từ', ['tab' => 'usersets'], 'tab-usersets'); ?>
               <div id="D_Quanlychude_KhongTimThayBoTu" class="D_Quanlychude_KhongTimThay" style="display: none;">
                 Không tìm thấy bộ từ người dùng nào khớp với từ khóa tìm kiếm.
               </div>
@@ -351,7 +413,7 @@ $tongSoBoTu = count($danhSachBoTu);
             <button type="button" class="D_Quanlychude_BtnDong" id="D_Quanlychude_BtnDongModal" aria-label="Đóng">&times;</button>
           </div>
 
-          <form id="D_Quanlychude_Form" method="post" action="D_Quanlychude.php">
+          <form id="D_Quanlychude_Form" method="post" action="<?php echo htmlspecialchars(adminPageUrl(['tab' => 'system']), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" id="D_Quanlychude_HanhDong" name="hanhdong" value="them" />
             <input type="hidden" id="D_Quanlychude_HiddenId" name="topicID" value="" />
 

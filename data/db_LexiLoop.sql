@@ -231,8 +231,7 @@ INSERT INTO `Topics` (`topicID`, `topicName`, `topicDescription`, `category`, `c
 (17, 'Transportation', 'Từ vựng về phương tiện giao thông', 'common', 1, '2026-08-28 16:40:44'),
 (18, 'Science', 'Từ vựng về khoa học và nghiên cứu', 'common', 2, '2026-08-28 16:40:44'),
 (19, 'Architecture', 'Từ vựng về kiến trúc và xây dựng', 'common', 2, '2026-08-28 16:40:44'),
-(20, 'Emotions', 'Từ vựng mô tả cảm xúc và tâm lý', 'common', 1, '2026-08-28 16:40:44'),
-(21, 'Hoạt động', NULL, 'common', 3, '2026-09-07 23:00:16');
+(20, 'Emotions', 'Từ vựng mô tả cảm xúc và tâm lý', 'common', 1, '2026-08-28 16:40:44');
 
 -- --------------------------------------------------------
 
@@ -324,8 +323,7 @@ CREATE TABLE `user_vocab_progress` (
 
 INSERT INTO `user_vocab_progress` (`id`, `user_id`, `vocabulary_id`, `status`, `ease_factor`, `interval_days`, `repetitions`, `next_review_date`, `last_reviewed_at`, `last_quality_rating`) VALUES
 (1, 2, 1, 'mastered', 2.5, 21, 5, '2026-09-18', '2026-08-28 16:40:44', 5),
-(2, 2, 2, 'learning', 2.4, 6, 2, '2026-09-03', '2026-08-28 16:40:44', 4),
-(3, 3, 201, 'new', 2.5, 0, 0, '2026-09-07', NULL, NULL);
+(2, 2, 2, 'learning', 2.4, 6, 2, '2026-09-03', '2026-08-28 16:40:44', 4);
 
 -- --------------------------------------------------------
 
@@ -550,8 +548,7 @@ INSERT INTO `vocabulary` (`id`, `topic_id`, `word`, `pronunciation`, `part_of_sp
 (197, 20, 'confidence', '/ˈkɒnfɪdəns/', 'noun', 'sự tự tin', 'Practice helped him build confidence.', 1, '2026-08-28 16:40:44', NULL),
 (198, 20, 'surprise', '/sərˈpraɪz/', 'noun', 'sự ngạc nhiên', 'The birthday party was a complete surprise.', 1, '2026-08-28 16:40:44', NULL),
 (199, 20, 'anxiety', '/æŋˈzaɪəti/', 'noun', 'sự lo lắng', 'Preparing well can reduce anxiety before an exam.', 1, '2026-08-28 16:40:44', NULL),
-(200, 20, 'patience', '/ˈpeɪʃəns/', 'noun', 'sự kiên nhẫn', 'Learning a new language requires patience.', 1, '2026-08-28 16:40:44', NULL),
-(201, 21, 'play', NULL, NULL, 'chơi', NULL, 3, '2026-09-07 23:00:16', NULL);
+(200, 20, 'patience', '/ˈpeɪʃəns/', 'noun', 'sự kiên nhẫn', 'Learning a new language requires patience.', 1, '2026-08-28 16:40:44', NULL);
 
 -- --------------------------------------------------------
 

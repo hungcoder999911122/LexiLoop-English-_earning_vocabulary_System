@@ -8,6 +8,8 @@
 
 USE `db_LexiLoop`;
 
+-- Đồng nhất mã ký tự và quy tắc so sánh cho phiên import.
+SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 -- user_vocab_progress(user_id, vocabulary_id) is already UNIQUE in init data.
 -- Do not recreate the same index here; schema changes belong in migrations.
 
@@ -49,6 +51,11 @@ DROP PROCEDURE IF EXISTS `sp_save_system_setting`;
 DROP PROCEDURE IF EXISTS `sp_admin_delete_topic`;
 DROP PROCEDURE IF EXISTS `sp_admin_save_topic`;
 DROP PROCEDURE IF EXISTS `sp_admin_change_user_status`;
+DROP PROCEDURE IF EXISTS `sp_admin_account_capabilities`;
+DROP PROCEDURE IF EXISTS `sp_admin_create_account`;
+DROP PROCEDURE IF EXISTS `sp_admin_change_user_role`;
+DROP PROCEDURE IF EXISTS `sp_admin_delete_account`;
+DROP PROCEDURE IF EXISTS `sp_admin_lock_account_pair`;
 DROP PROCEDURE IF EXISTS `sp_admin_delete_vocabulary`;
 DROP PROCEDURE IF EXISTS `sp_admin_save_vocabulary`;
 DROP PROCEDURE IF EXISTS `sp_admin_delete_vocabulary_set`;
@@ -313,6 +320,7 @@ GROUP BY `user_id`, `activity_date`$$
 CREATE VIEW `vw_system_recent_activity` AS
 SELECT 
     'user' AS `loai`,
+    `userID` AS `activity_id`,
     `full_name` AS `tieuDe`,
     `email` AS `chiTiet`,
     `created_at` AS `thoiGian`,
@@ -323,6 +331,7 @@ FROM `Users`
 UNION ALL
 SELECT 
     'topic' AS `loai`,
+    `topicID` AS `activity_id`,
     `topicName` AS `tieuDe`,
     `topicDescription` AS `chiTiet`,
     `topicCreated_at` AS `thoiGian`,
@@ -333,6 +342,7 @@ FROM `Topics`
 UNION ALL
 SELECT 
     'set' AS `loai`,
+    vs.`id` AS `activity_id`,
     vs.`name` AS `tieuDe`,
     u.`full_name` AS `chiTiet`,
     vs.`created_at` AS `thoiGian`,
@@ -344,6 +354,7 @@ LEFT JOIN `Users` u ON u.`userID` = vs.`user_id`
 UNION ALL
 SELECT 
     'quiz' AS `loai`,
+    qr.`id` AS `activity_id`,
     COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
     CONCAT(qr.`correct_answers`, '/', qr.`total_questions`) AS `chiTiet`,
     COALESCE(qr.`finished_at`, qr.`started_at`) AS `thoiGian`,
@@ -358,6 +369,7 @@ WHERE qr.`finished_at` IS NOT NULL
 UNION ALL
 SELECT 
     'flashcard' AS `loai`,
+    ls.`id` AS `activity_id`,
     COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
     CAST(ls.`words_studied` AS CHAR) AS `chiTiet`,
     COALESCE(ls.`finished_at`, ls.`started_at`, CAST(CONCAT(ls.`session_date`, ' 00:00:00') AS DATETIME)) AS `thoiGian`,
@@ -1180,16 +1192,6 @@ BEGIN
     SELECT v_updated AS `updated_count`;
 END$$
 
-CREATE PROCEDURE `sp_admin_change_user_status`(IN p_actor_id INT, IN p_user_id INT, IN p_status VARCHAR(10))
-MODIFIES SQL DATA
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM `Users` WHERE `userID` = p_actor_id AND `role` = 'admin' AND `status` = 'active')
-       OR p_status NOT IN ('active', 'locked') OR p_actor_id = p_user_id THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin status change denied';
-    END IF;
-    UPDATE `Users` SET `status` = p_status WHERE `userID` = p_user_id;
-END$$
-
 CREATE PROCEDURE `sp_admin_save_vocabulary`(
     IN p_actor_id INT, IN p_vocabulary_id INT, IN p_topic_id INT,
     IN p_word VARCHAR(100), IN p_pronunciation VARCHAR(100),
@@ -1346,6 +1348,129 @@ BEGIN
     COMMIT;
 END$$
 
+
+
+-- Helper chạy bên trong transaction của procedure gọi nó.
+-- Khóa hai dòng Users theo userID tăng dần để tránh vòng chờ A->B, B->A.
+-- Sau khi có khóa, đọc lại quyền hiện tại; không tin role lưu trong session PHP.
+CREATE PROCEDURE sp_admin_lock_account_pair(IN p_actor_id INT, IN p_target_id INT)
+MODIFIES SQL DATA
+BEGIN
+    DECLARE v_id INT DEFAULT NULL;
+    DECLARE v_role VARCHAR(10) DEFAULT NULL;
+    DECLARE v_status VARCHAR(10) DEFAULT NULL;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_id = NULL;
+    IF p_actor_id IS NULL OR p_target_id IS NULL OR p_actor_id <= 0 OR p_target_id <= 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account not found';
+    END IF;
+    SELECT userID INTO v_id FROM Users WHERE userID = LEAST(p_actor_id, p_target_id) FOR UPDATE;
+    IF v_id IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account not found'; END IF;
+    SELECT userID INTO v_id FROM Users WHERE userID = GREATEST(p_actor_id, p_target_id) FOR UPDATE;
+    IF v_id IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account not found'; END IF;
+    SELECT role, status INTO v_role, v_status FROM Users WHERE userID = p_actor_id FOR UPDATE;
+    IF v_role IS NULL OR v_role <> 'admin' OR v_status IS NULL OR v_status <> 'active' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
+    END IF;
+    IF p_actor_id = p_target_id THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'self account change denied';
+    END IF;
+    -- Actor active/admin vẫn giữ khóa đến COMMIT và không được sửa chính mình.
+    -- Vì vậy luôn còn ít nhất một admin active sau thay đổi, kể cả khi hai admin
+    -- đồng thời yêu cầu hạ quyền/khóa nhau: người chạy sau phải kiểm tra lại quyền.
+END$$
+
+CREATE PROCEDURE sp_admin_create_account(
+    IN p_actor_id INT, IN p_full_name VARCHAR(100), IN p_email VARCHAR(50),
+    IN p_password_hash VARCHAR(300), IN p_role VARCHAR(10)
+)
+MODIFIES SQL DATA
+BEGIN
+    DECLARE v_actor_role VARCHAR(10) DEFAULT NULL;
+    DECLARE v_actor_status VARCHAR(10) DEFAULT NULL;
+    DECLARE v_user_id INT;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_actor_role = NULL;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+    START TRANSACTION;
+    SELECT role, status INTO v_actor_role, v_actor_status FROM Users WHERE userID = p_actor_id FOR UPDATE;
+    IF v_actor_role IS NULL OR v_actor_role <> 'admin' OR v_actor_status <> 'active' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
+    END IF;
+    IF p_full_name IS NULL OR CHAR_LENGTH(TRIM(p_full_name)) < 2
+       OR p_email IS NULL OR CHAR_LENGTH(TRIM(p_email)) < 3 OR LOCATE('@', p_email) = 0
+       OR p_password_hash IS NULL OR CHAR_LENGTH(p_password_hash) < 20
+       OR p_role IS NULL OR p_role NOT IN ('user', 'admin') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid account data';
+    END IF;
+    -- UNIQUE(email) là lớp bảo vệ cuối cùng khi hai request cùng tạo một email.
+    INSERT INTO Users(full_name, email, password_hash, role, status)
+    VALUES(TRIM(p_full_name), LOWER(TRIM(p_email)), p_password_hash, p_role, 'active');
+    SET v_user_id = LAST_INSERT_ID();
+    COMMIT;
+    SELECT v_user_id AS user_id;
+END$$
+
+CREATE PROCEDURE sp_admin_change_user_role(IN p_actor_id INT, IN p_user_id INT, IN p_role VARCHAR(10))
+MODIFIES SQL DATA
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+    START TRANSACTION;
+    CALL sp_admin_lock_account_pair(p_actor_id, p_user_id);
+    IF p_role IS NULL OR p_role NOT IN ('user', 'admin') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid role';
+    END IF;
+    UPDATE Users SET role = p_role WHERE userID = p_user_id;
+    COMMIT;
+END$$
+
+CREATE PROCEDURE sp_admin_change_user_status(IN p_actor_id INT, IN p_user_id INT, IN p_status VARCHAR(10))
+MODIFIES SQL DATA
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+    START TRANSACTION;
+    CALL sp_admin_lock_account_pair(p_actor_id, p_user_id);
+    IF p_status IS NULL OR p_status NOT IN ('active', 'locked') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid status';
+    END IF;
+    UPDATE Users SET status = p_status WHERE userID = p_user_id;
+    COMMIT;
+END$$
+
+CREATE PROCEDURE sp_admin_delete_account(IN p_actor_id INT, IN p_user_id INT)
+MODIFIES SQL DATA
+BEGIN
+    DECLARE v_status VARCHAR(10);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+    START TRANSACTION;
+    CALL sp_admin_lock_account_pair(p_actor_id, p_user_id);
+    SELECT status INTO v_status FROM Users WHERE userID = p_user_id FOR UPDATE;
+    IF v_status <> 'locked' OR v_status IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account must be locked';
+    END IF;
+    -- Không xóa tài khoản có lịch sử hoặc tài nguyên cá nhân để tránh CASCADE
+    -- làm mất dữ liệu học/orphan từ cá nhân. Tài khoản này nên giữ trạng thái locked.
+    IF EXISTS(SELECT 1 FROM learning_sessions WHERE user_id = p_user_id)
+       OR EXISTS(SELECT 1 FROM quiz_results WHERE user_id = p_user_id)
+       OR EXISTS(SELECT 1 FROM user_vocab_progress WHERE user_id = p_user_id)
+       OR EXISTS(SELECT 1 FROM learning_attempts WHERE user_id = p_user_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account has learning data';
+    END IF;
+    IF EXISTS(SELECT 1 FROM vocabulary_sets WHERE user_id = p_user_id)
+       OR EXISTS(SELECT 1 FROM vocabulary WHERE created_by = p_user_id AND topic_id IS NULL) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account has personal data';
+    END IF;
+    DELETE FROM Users WHERE userID = p_user_id;
+    COMMIT;
+END$$
+
+-- PHP chỉ CALL để kiểm tra tính sẵn sàng, không truy vấn metadata trực tiếp.
+CREATE PROCEDURE sp_admin_account_capabilities()
+READS SQL DATA
+BEGIN
+    SELECT (COUNT(*) = 5) AS ready FROM information_schema.ROUTINES
+    WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_TYPE = 'PROCEDURE'
+      AND ROUTINE_NAME IN ('sp_admin_lock_account_pair', 'sp_admin_create_account',
+        'sp_admin_change_user_role', 'sp_admin_change_user_status', 'sp_admin_delete_account');
+END$$
 DELIMITER ;
 
 -- Recommended least-privilege pattern (replace app_user with the actual account):

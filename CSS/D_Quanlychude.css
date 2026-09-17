@@ -378,11 +378,12 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .D_Quanlychude_Bang {
   width: 100%;
+  min-width: 820px;
   border-collapse: collapse;
 }
 
@@ -489,6 +490,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .D_Quanlychude_NutXem,
@@ -507,6 +510,8 @@ body {
   background-color: #ffffff;
   text-decoration: none;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .D_Quanlychude_NutXem {

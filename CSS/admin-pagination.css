@@ -1,0 +1,12 @@
+.admin-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-top: 1px solid #e2ebe6; font-size: 12px; }
+.admin-pagination-summary { color: #526d60; }
+.admin-pagination-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.admin-pagination-links a { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 8px 10px; border: 1px solid #e2ebe6; border-radius: 8px; color: #0a5c37; text-decoration: none; background: white; }
+.admin-pagination-links a:hover { background: #e6f7ef; }
+.admin-pagination-links a[aria-current="page"] { background: #0e7748; border-color: #0e7748; color: white; font-weight: 700; }
+.admin-pagination-links a:focus-visible, .admin-filter-submit:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.admin-filter-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+.admin-filter-submit { padding: 10px 14px; font: inherit; font-size: 13px; font-weight: 600; border: 1px solid #0e7748; border-radius: 8px; color: white; background: #0e7748; cursor: pointer; }
+.admin-filter-submit:hover { background: #0a5c37; }
+.admin-filter-reset { font-size: 12px; color: #526d60; }
+@media (max-width: 600px) { .admin-pagination { align-items: flex-start; flex-direction: column; } }

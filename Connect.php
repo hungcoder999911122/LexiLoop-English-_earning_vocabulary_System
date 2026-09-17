@@ -58,4 +58,17 @@ if (!$link) {
 // Thiết lập bộ mã hóa tiếng Việt và múi giờ
 mysqli_set_charset($link, "utf8mb4");
 mysqli_query($link, "SET time_zone = '+07:00'");
+
+// Lưu kết nối dùng chung kể cả khi file được require trong phạm vi một hàm.
+$GLOBALS['lexiLoopDatabaseConnection'] = $link;
+
+/** Lấy kết nối đã khởi tạo, không mở thêm kết nối MySQL. */
+function getDatabaseConnection(): mysqli
+{
+    $connection = $GLOBALS['lexiLoopDatabaseConnection'] ?? null;
+    if (!$connection instanceof mysqli) {
+        throw new RuntimeException('Kết nối CSDL chưa được khởi tạo.');
+    }
+    return $connection;
+}
 ?>

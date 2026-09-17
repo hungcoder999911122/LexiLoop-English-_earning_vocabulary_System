@@ -6,6 +6,13 @@ $(function () {
     $(this).addClass("tab-active");
     $(".tab-pane").removeClass("tab-pane-active");
     $("#" + targetTab).addClass("tab-pane-active");
+    var tab = targetTab === "tab-usersets" ? "usersets" : "system";
+    $("#admin-active-tab").val(tab);
+    $(".admin-list-reset").attr("href", "D_Quanlychude.php?tab=" + tab);
+    var url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.replaceState(null, "", url);
+
   });
 
   function D_Quanlychude_MoModalThem() {
@@ -75,43 +82,4 @@ $(function () {
     }
   });
 
-  // Tìm kiếm theo thời gian thực trên Topbar
-  $("#D_Quanlychude_TimKiemTopbar").on("input keyup", function () {
-    var tuKhoa = $(this).val().toLowerCase().trim();
-
-    // 1. Lọc bảng Chủ đề hệ thống
-    var soKhopHeThong = 0;
-    $("#D_Quanlychude_ThanBangHeThong tr").not(".D_Quanlychude_DongTrong").each(function () {
-      var ten = ($(this).attr("data-tenchude") || "").toLowerCase();
-      var mota = ($(this).attr("data-mota") || "").toLowerCase();
-      var creator = ($(this).attr("data-creator") || "").toLowerCase();
-      var khop = (tuKhoa === "" || ten.indexOf(tuKhoa) > -1 || mota.indexOf(tuKhoa) > -1 || creator.indexOf(tuKhoa) > -1);
-      $(this).toggle(khop);
-      if (khop) soKhopHeThong++;
-    });
-
-    if (soKhopHeThong === 0 && $("#D_Quanlychude_ThanBangHeThong tr").not(".D_Quanlychude_DongTrong").length > 0) {
-      $("#D_Quanlychude_KhongTimThayHeThong").show();
-    } else {
-      $("#D_Quanlychude_KhongTimThayHeThong").hide();
-    }
-
-    // 2. Lọc bảng Bộ từ cá nhân User
-    var soKhopBoTu = 0;
-    $("#D_Quanlychude_ThanBangBoTu tr").not(".D_Quanlychude_DongTrong").each(function () {
-      var ten = ($(this).attr("data-tenbotu") || "").toLowerCase();
-      var mota = ($(this).attr("data-mota") || "").toLowerCase();
-      var owner = ($(this).attr("data-owner") || "").toLowerCase();
-      var email = ($(this).attr("data-email") || "").toLowerCase();
-      var khop = (tuKhoa === "" || ten.indexOf(tuKhoa) > -1 || mota.indexOf(tuKhoa) > -1 || owner.indexOf(tuKhoa) > -1 || email.indexOf(tuKhoa) > -1);
-      $(this).toggle(khop);
-      if (khop) soKhopBoTu++;
-    });
-
-    if (soKhopBoTu === 0 && $("#D_Quanlychude_ThanBangBoTu tr").not(".D_Quanlychude_DongTrong").length > 0) {
-      $("#D_Quanlychude_KhongTimThayBoTu").show();
-    } else {
-      $("#D_Quanlychude_KhongTimThayBoTu").hide();
-    }
-  });
 });

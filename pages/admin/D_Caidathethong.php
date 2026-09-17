@@ -1,5 +1,8 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+require_once dirname(__DIR__, 2) . '/includes/admin_guard.php';
+
+// Khai báo rõ kết nối dùng chung trước khi gọi View/Stored Procedure.
+$link = getDatabaseConnection();
 
 $thongBao = '';
 $loaiThongBao = '';
@@ -52,6 +55,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="/CSS/D_Caidathethong.css" />
     <script src="/JS/jquery-4.0.0.min.js"></script>
+    <link rel="stylesheet" href="/CSS/admin-sidebar.css" />
   </head>
 
   <body>
@@ -72,7 +76,7 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
 
       <div class="D_Caidathethong_Body">
         <!-- Sidebar Navigation -->
-        <nav class="D_Caidathethong_Sidebar">
+        <nav class="D_Caidathethong_Sidebar admin-sidebar" aria-label="Điều hướng quản trị">
           <div class="sidebar-section-title">QUẢN TRỊ HỆ THỐNG</div>
           <a href="D_Dashboard_admin.php" class="D_Caidathethong_MucMenu">
             <span class="menu-icon">📊</span>

@@ -1,5 +1,9 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+require_once dirname(__DIR__, 2) . '/includes/admin_guard.php';
+
+// Khai báo rõ kết nối dùng chung trước khi gọi View/Stored Procedure.
+$link = getDatabaseConnection();
+require_once dirname(__DIR__, 2) . '/includes/admin_pagination.php';
 
 $thongBao = '';
 $loaiThongBao = '';
@@ -53,25 +57,94 @@ try {
     $loaiThongBao = 'loi';
 }
 
-$ketQuaDanhSach = dbSelectView($link, 'SELECT id, word, pronunciation, part_of_speech, meaning, example_sentence, topic_id, topicName, source_type, created_by, creator_name, creator_email, creator_role, set_names, display_topic, created_at FROM vw_vocabulary_catalog ORDER BY created_at DESC, id DESC');
-$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName, word_count FROM vw_topic_catalog ORDER BY topicName');
-$danhSachBoTu = dbSelectView($link, 'SELECT id, name, owner_name, word_count FROM vw_vocabulary_sets ORDER BY name');
+$keyword = adminQueryText('q');
+$source = adminQueryText('source', 'tat_ca');
+$source = in_array($source, ['system', 'personal'], true) ? $source : 'tat_ca';
+$category = adminQueryText('category', 'tat_ca');
+$category = preg_match('/^(topic|set)_[1-9][0-9]{0,9}$/D', $category) ? $category : 'tat_ca';
+if ($source === 'personal' && strpos($category, 'topic_') === 0) {
+    $category = 'tat_ca';
+}
+$conditions = [];
+$types = '';
+$values = [];
+if ($keyword !== '') {
+    $columns = ['word', 'pronunciation', 'meaning', 'example_sentence', 'display_topic', 'creator_name', 'creator_email'];
+    $conditions[] = '(' . implode(' OR ', array_map(static fn($column): string => $column . " LIKE ? ESCAPE '!'", $columns)) . ')';
+    $types .= str_repeat('s', count($columns));
+    $values = array_fill(0, count($columns), adminSearchPattern($keyword));
+}
+if ($source !== 'tat_ca') {
+    $conditions[] = 'source_type = ?';
+    $types .= 's';
+    $values[] = $source;
+}
+if (strpos($category, 'topic_') === 0) {
+    $conditions[] = 'topic_id = ?';
+    $types .= 'i';
+    $values[] = (int) substr($category, 6);
+} elseif (strpos($category, 'set_') === 0) {
+    // Lọc bằng ID bộ từ, tránh nhầm các bộ có cùng tên hoặc tên chứa nhau.
+    $conditions[] = 'FIND_IN_SET(?, set_ids) > 0';
+    $types .= 's';
+    $values[] = substr($category, 4);
+}
+$where = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
+$vocabularyPagination = adminPaginateView($link, 'SELECT COUNT(*) AS total FROM vw_vocabulary_catalog' . $where,
+    'SELECT id, word, pronunciation, part_of_speech, meaning, example_sentence, topic_id, topicName, source_type, created_by, creator_name, creator_email, creator_role, set_names, display_topic, created_at FROM vw_vocabulary_catalog' . $where . ' ORDER BY created_at DESC, id DESC',
+    'page', 10, $types, $values);
+$ketQuaDanhSach = $vocabularyPagination['rows'];
+$danhSachChuDe = dbSelectView($link, 'SELECT topicID, topicName, word_count FROM vw_topic_catalog ORDER BY topicName, topicID');
+$danhSachBoTu = dbSelectView($link, 'SELECT id, name, owner_name, owner_email, user_id, word_count FROM vw_vocabulary_sets ORDER BY name, id');
+// Các chỉ số dùng cùng WHERE với bảng; không lấy tổng hệ thống cho một chủ đề/bộ từ.
+$totals = dbSelectView($link, "SELECT COUNT(*) AS total, COALESCE(SUM(source_type = 'system'), 0) AS system_words, COALESCE(SUM(source_type = 'personal'), 0) AS personal_words FROM vw_vocabulary_catalog" . $where, $types, $values)[0];
+$tongSoTuVung = (int) $totals['total'];
+$soTuHeThong = (int) $totals['system_words'];
+$soTuCaNhan = (int) $totals['personal_words'];
 
-$tongSoTuVung = count($ketQuaDanhSach);
-$soTuHeThong = count(array_filter($ketQuaDanhSach, static fn(array $item): bool => ($item['source_type'] ?? '') === 'system'));
-$soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool => ($item['source_type'] ?? '') === 'personal'));
+// Ngữ cảnh hiển thị lấy từ View, không nhận tên/chủ sở hữu do client truyền lên.
+$pageTitle = 'Quản lý từ vựng';
+$scopeDescription = 'Danh sách từ vựng toàn hệ thống và từ cá nhân.';
+$backTab = '';
+if (strpos($category, 'topic_') === 0) {
+    $backTab = 'system';
+    $scopeDescription = 'Chủ đề đã chọn không còn tồn tại.';
+    foreach ($danhSachChuDe as $topic) {
+        if ((int) $topic['topicID'] === (int) substr($category, 6)) {
+            $pageTitle = 'Từ vựng: ' . $topic['topicName'];
+            $scopeDescription = 'Chủ đề hệ thống · ' . $topic['word_count'] . ' từ trong chủ đề.';
+            break;
+        }
+    }
+} elseif (strpos($category, 'set_') === 0) {
+    $backTab = 'usersets';
+    $scopeDescription = 'Bộ từ đã chọn không còn tồn tại.';
+    foreach ($danhSachBoTu as $set) {
+        if ((int) $set['id'] === (int) substr($category, 4)) {
+            $pageTitle = 'Từ vựng: ' . $set['name'];
+            $owner = $set['owner_name'] ?: ($set['owner_email'] ?: 'Người dùng #' . $set['user_id']);
+            $scopeDescription = 'Bộ từ cá nhân · Chủ sở hữu: ' . $owner . ' · ' . $set['word_count'] . ' từ trong bộ.';
+            break;
+        }
+    }
+} elseif ($source !== 'tat_ca') {
+    $scopeDescription = $source === 'system' ? 'Danh sách từ vựng hệ thống.' : 'Danh sách từ vựng cá nhân của người dùng.';
+}
 ?>
 <!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LexiLoop Admin - Quản lý từ vựng</title>
+    <title>LexiLoop Admin - <?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="/CSS/D_Quanlytuvung.css" />
     <script src="/JS/jquery-4.0.0.min.js"></script>
+    <link rel="stylesheet" href="/CSS/admin-pagination.css" />
+    <link rel="stylesheet" href="/CSS/admin-list.css" />
+    <link rel="stylesheet" href="/CSS/admin-sidebar.css" />
   </head>
 
   <body>
@@ -83,18 +156,6 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
           <span class="logo-text">LexiLoop <span class="badge-admin">Admin</span></span>
         </div>
         <div class="D_Quanlytuvung_TopbarPhai">
-          <div class="D_Quanlytuvung_TimKiemBox">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              id="D_Quanlytuvung_TimKiemTopbar"
-              class="D_Quanlytuvung_TimKiem"
-              placeholder="Tìm kiếm từ, nghĩa, người tạo..."
-            />
-          </div>
           <div class="D_Quanlytuvung_UserMenu">
             <div class="D_Quanlytuvung_Avatar"><?php echo strtoupper(substr($_SESSION['full_name'] ?? 'AD', 0, 2)); ?></div>
             <span class="admin-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?></span>
@@ -104,7 +165,7 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
 
       <div class="D_Quanlytuvung_Body">
         <!-- Sidebar Navigation -->
-        <nav class="D_Quanlytuvung_Sidebar">
+        <nav class="D_Quanlytuvung_Sidebar admin-sidebar" aria-label="Điều hướng quản trị">
           <div class="sidebar-section-title">QUẢN TRỊ HỆ THỐNG</div>
           <a href="D_Dashboard_admin.php" class="D_Quanlytuvung_MucMenu">
             <span class="menu-icon">📊</span>
@@ -139,50 +200,20 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
 
         <!-- Main Content -->
         <main class="D_Quanlytuvung_NoiDung">
+          <?php if ($backTab !== ''): ?>
+            <a class="admin-context-back" href="D_Quanlychude.php?tab=<?php echo $backTab; ?>">← Quay lại chủ đề & bộ từ</a>
+          <?php endif; ?>
           <div class="D_Quanlytuvung_HangTieuDe">
             <div>
-              <h1 class="D_Quanlytuvung_TieuDe">Quản lý từ vựng</h1>
+              <h1 class="D_Quanlytuvung_TieuDe"><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h1>
+              <p class="admin-context-description"><?php echo htmlspecialchars($scopeDescription, ENT_QUOTES, 'UTF-8'); ?></p>
               <p class="D_Quanlytuvung_MoTaTrang">
-                Tổng cộng <strong id="D_Quanlytuvung_TongSo"><?php echo $tongSoTuVung; ?></strong> từ vựng
+                Có <strong id="D_Quanlytuvung_TongSo"><?php echo $tongSoTuVung; ?></strong> từ vựng phù hợp
                 (<span class="stat-text-system">🌐 <?php echo $soTuHeThong; ?> từ hệ thống</span>,
-                <span class="stat-text-personal">👤 <?php echo $soTuCaNhan; ?> từ cá nhân user</span>)
+                <span class="stat-text-personal">👤 <?php echo $soTuCaNhan; ?> từ cá nhân</span>)
               </p>
             </div>
             <div class="D_Quanlytuvung_HangNutPhai">
-              <!-- Bộ lọc nguồn -->
-              <div class="filter-box">
-                <label for="D_Quanlytuvung_LocNguon" class="sr-only">Nguồn từ vựng</label>
-                <select id="D_Quanlytuvung_LocNguon" class="D_Quanlytuvung_Loc">
-                  <option value="tat_ca">Tất cả nguồn (<?php echo $tongSoTuVung; ?>)</option>
-                  <option value="system">🌐 Từ vựng Hệ thống (<?php echo $soTuHeThong; ?>)</option>
-                  <option value="personal">👤 Từ vựng Cá nhân (<?php echo $soTuCaNhan; ?>)</option>
-                </select>
-              </div>
-
-              <!-- Bộ lọc theo chủ đề / bộ từ -->
-              <div class="filter-box">
-                <label for="D_Quanlytuvung_LocChuDe" class="sr-only">Lọc theo chủ đề</label>
-                <select id="D_Quanlytuvung_LocChuDe" class="D_Quanlytuvung_Loc">
-                  <option value="tat_ca">Tất cả chủ đề & bộ từ</option>
-                  <optgroup label="── CHỦ ĐỀ HỆ THỐNG ──">
-                    <?php foreach ($danhSachChuDe as $cd): ?>
-                      <option value="topic_<?php echo (int) $cd['topicID']; ?>" data-name="<?php echo htmlspecialchars($cd['topicName']); ?>">
-                        🌐 <?php echo htmlspecialchars($cd['topicName']); ?> (<?php echo (int) $cd['word_count']; ?>)
-                      </option>
-                    <?php endforeach; ?>
-                  </optgroup>
-                  <?php if (!empty($danhSachBoTu)): ?>
-                    <optgroup label="── BỘ TỪ CÁ NHÂN USER ──">
-                      <?php foreach ($danhSachBoTu as $bt): ?>
-                        <option value="set_<?php echo (int) $bt['id']; ?>" data-name="<?php echo htmlspecialchars($bt['name']); ?>">
-                          👤 <?php echo htmlspecialchars($bt['name']); ?> (<?php echo htmlspecialchars($bt['owner_name'] ?? 'User'); ?> - <?php echo (int) $bt['word_count']; ?> từ)
-                        </option>
-                      <?php endforeach; ?>
-                    </optgroup>
-                  <?php endif; ?>
-                </select>
-              </div>
-
               <button
                 id="D_Quanlytuvung_BtnThem"
                 class="D_Quanlytuvung_NutChinh"
@@ -192,10 +223,52 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                <span>+ Thêm từ mới</span>
+                <span>Thêm từ mới</span>
               </button>
             </div>
           </div>
+
+          <!-- Gom tìm kiếm và bộ lọc ngay trên bảng, giữ nguyên tham số phân trang. -->
+          <form id="admin-filters" class="admin-list-toolbar" method="get" aria-label="Tìm kiếm và lọc từ vựng">
+            <div class="admin-list-field admin-list-search">
+              <label for="D_Quanlytuvung_TimKiem">Tìm kiếm</label>
+              <div class="admin-list-search-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <input type="search" id="D_Quanlytuvung_TimKiem" name="q" value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Từ vựng, nghĩa, người tạo..." maxlength="150" />
+              </div>
+            </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlytuvung_LocNguon">Nguồn từ vựng</label>
+              <select id="D_Quanlytuvung_LocNguon" name="source">
+                <option value="tat_ca" <?php echo $source === 'tat_ca' ? 'selected' : ''; ?>>Tất cả nguồn</option>
+                <option value="system" <?php echo $source === 'system' ? 'selected' : ''; ?>>Từ hệ thống</option>
+                <option value="personal" <?php echo $source === 'personal' ? 'selected' : ''; ?>>Từ cá nhân</option>
+              </select>
+            </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlytuvung_LocChuDe">Chủ đề / Bộ từ</label>
+              <select id="D_Quanlytuvung_LocChuDe" name="category">
+                <option value="tat_ca" <?php echo $category === 'tat_ca' ? 'selected' : ''; ?>>Tất cả chủ đề & bộ từ</option>
+                <optgroup label="Chủ đề hệ thống" data-source="system">
+                  <?php foreach ($danhSachChuDe as $cd): ?>
+                    <option value="topic_<?php echo (int) $cd['topicID']; ?>" <?php echo $category === 'topic_' . $cd['topicID'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($cd['topicName']); ?> (<?php echo (int) $cd['word_count']; ?> từ)</option>
+                  <?php endforeach; ?>
+                </optgroup>
+                <?php if ($danhSachBoTu): ?>
+                  <optgroup label="Bộ từ cá nhân" data-source="personal">
+                    <?php foreach ($danhSachBoTu as $bt): ?>
+                      <option value="set_<?php echo (int) $bt['id']; ?>" <?php echo $category === 'set_' . $bt['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($bt['name']); ?> · <?php echo htmlspecialchars($bt['owner_name'] ?? 'Người dùng'); ?></option>
+                    <?php endforeach; ?>
+                  </optgroup>
+                <?php endif; ?>
+              </select>
+            </div>
+            <div class="admin-list-actions">
+              <button class="admin-filter-submit" type="submit">Áp dụng</button>
+              <a class="admin-list-reset" href="D_Quanlytuvung.php">Đặt lại</a>
+            </div>
+          </form>
+          <p class="admin-list-result">Tìm thấy <strong><?php echo number_format($vocabularyPagination['total']); ?></strong> từ vựng phù hợp.</p>
 
           <?php if ($thongBao !== ''): ?>
             <div class="D_Quanlytuvung_ThongBao D_Quanlytuvung_ThongBao_<?php echo $loaiThongBao; ?>">
@@ -222,7 +295,7 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
               <tbody id="D_Quanlytuvung_ThanBang">
                 <?php if (count($ketQuaDanhSach) === 0): ?>
                   <tr class="D_Quanlytuvung_DongTrong">
-                    <td colspan="5" style="text-align: center; padding: 36px 16px;">Chưa có từ vựng nào. Nhấn "+ Thêm từ mới" để tạo từ vựng.</td>
+                    <td colspan="5" style="text-align: center; padding: 36px 16px;">Không tìm thấy từ vựng phù hợp.</td>
                   </tr>
                 <?php else: ?>
                   <?php foreach ($ketQuaDanhSach as $hang):
@@ -295,7 +368,7 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
                           </button>
                           <form
                             method="post"
-                            action="D_Quanlytuvung.php"
+                            action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>"
                             style="display:inline"
                             onsubmit="return confirm('Bạn có chắc chắn muốn xóa từ \'<?php echo addslashes($hang['word']); ?>\'?');"
                           >
@@ -316,6 +389,7 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
                 <?php endif; ?>
               </tbody>
             </table>
+            <?php adminRenderPagination($vocabularyPagination, 'Phân trang từ vựng'); ?>
             <div id="D_Quanlytuvung_KhongTimThay" class="D_Quanlytuvung_KhongTimThay" style="display: none;">
               Không tìm thấy từ vựng nào khớp với bộ lọc hoặc từ khóa tìm kiếm.
             </div>
@@ -333,7 +407,7 @@ $soTuCaNhan = count(array_filter($ketQuaDanhSach, static fn(array $item): bool =
             <button type="button" class="D_Quanlytuvung_BtnDong" id="D_Quanlytuvung_BtnDongModal" aria-label="Đóng">&times;</button>
           </div>
 
-          <form id="D_Quanlytuvung_Form" method="post" action="D_Quanlytuvung.php">
+          <form id="D_Quanlytuvung_Form" method="post" action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" id="D_Quanlytuvung_HanhDong" name="hanhdong" value="them" />
             <input type="hidden" id="D_Quanlytuvung_HiddenId" name="id" value="" />
 

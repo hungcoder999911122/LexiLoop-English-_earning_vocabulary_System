@@ -1,37 +1,5 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
-
-$thongBao = '';
-$loaiThongBao = '';
-
-try {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['hanhdong'] ?? '') === 'doitrangthai') {
-        $userId = (int) ($_POST['userID'] ?? 0);
-        $newStatus = ($_POST['status'] ?? '') === 'active' ? 'locked' : 'active';
-
-        if ($userId === $adminUserId) {
-            throw new RuntimeException('Bạn không thể tự khóa tài khoản quản trị viên của chính mình.');
-        }
-
-        dbCallProcedure($link, 'CALL sp_admin_change_user_status(?, ?, ?)', 'iis', [$adminUserId, $userId, $newStatus]);
-        $thongBao = ($newStatus === 'locked') ? 'Đã khóa tài khoản thành công.' : 'Đã mở khóa tài khoản thành công.';
-        $loaiThongBao = 'thanhcong';
-    }
-} catch (Throwable $error) {
-    error_log('Admin user error: ' . $error->getMessage());
-    $msg = $error->getMessage();
-    if (stripos($msg, 'admin status change denied') !== false) {
-        $thongBao = 'Không thể thay đổi trạng thái tài khoản này (quyền bị từ chối).';
-    } elseif ($error instanceof RuntimeException) {
-        $thongBao = $msg;
-    } else {
-        $thongBao = 'Không thể cập nhật trạng thái tài khoản lúc này.';
-    }
-    $loaiThongBao = 'loi';
-}
-
-$ketQuaDanhSach = dbSelectView($link, 'SELECT userID, full_name, email, role, status, created_at FROM vw_users ORDER BY created_at DESC');
-$tongSoNguoiDung = count($ketQuaDanhSach);
+require_once dirname(__DIR__, 2) . '/includes/admin_users_controller.php';
 ?>
 <!doctype html>
 <html lang="vi">
@@ -44,6 +12,9 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="/CSS/D_Quanlynguoidung.css" />
     <script src="/JS/jquery-4.0.0.min.js"></script>
+    <link rel="stylesheet" href="/CSS/admin-pagination.css" />
+    <link rel="stylesheet" href="/CSS/admin-list.css" />
+    <link rel="stylesheet" href="/CSS/admin-sidebar.css" />
   </head>
 
   <body>
@@ -55,20 +26,8 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
           <span class="logo-text">LexiLoop <span class="badge-admin">Admin</span></span>
         </div>
         <div class="D_Quanlynguoidung_TopbarPhai">
-          <div class="D_Quanlynguoidung_TimKiemBox">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              id="D_Quanlynguoidung_TimKiemTopbar"
-              class="D_Quanlynguoidung_TimKiem"
-              placeholder="Tìm kiếm họ tên hoặc email..."
-            />
-          </div>
           <div class="D_Quanlynguoidung_UserMenu">
-            <div class="D_Quanlynguoidung_Avatar"><?php echo strtoupper(substr($_SESSION['full_name'] ?? 'AD', 0, 2)); ?></div>
+            <div class="D_Quanlynguoidung_Avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['full_name'] ?? 'AD', 0, 2)), ENT_QUOTES, 'UTF-8'); ?></div>
             <span class="admin-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?></span>
           </div>
         </div>
@@ -76,7 +35,7 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
 
       <div class="D_Quanlynguoidung_Body">
         <!-- Sidebar Navigation -->
-        <nav class="D_Quanlynguoidung_Sidebar">
+        <nav class="D_Quanlynguoidung_Sidebar admin-sidebar" aria-label="Điều hướng quản trị">
           <div class="sidebar-section-title">QUẢN TRỊ HỆ THỐNG</div>
           <a href="D_Dashboard_admin.php" class="D_Quanlynguoidung_MucMenu">
             <span class="menu-icon">📊</span>
@@ -116,33 +75,43 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
               <h1 class="D_Quanlynguoidung_TieuDe">Quản lý người dùng</h1>
               <p class="D_Quanlynguoidung_MoTaTrang">Tổng cộng <strong id="D_Quanlynguoidung_TongSo"><?php echo $tongSoNguoiDung; ?></strong> tài khoản trong hệ thống</p>
             </div>
-            
-            <div class="D_Quanlynguoidung_HangLoc">
-              <div class="filter-group">
-                <select
-                  id="D_Quanlynguoidung_LocVaiTro"
-                  class="D_Quanlynguoidung_Loc"
-                  aria-label="Lọc theo vai trò"
-                >
-                  <option value="tat_ca">Tất cả vai trò</option>
-                  <option value="user">Học viên (User)</option>
-                  <option value="admin">Quản trị viên (Admin)</option>
-                </select>
-              </div>
 
-              <div class="filter-group">
-                <select
-                  id="D_Quanlynguoidung_LocTrangThai"
-                  class="D_Quanlynguoidung_Loc"
-                  aria-label="Lọc theo trạng thái"
-                >
-                  <option value="tat_ca">Tất cả trạng thái</option>
-                  <option value="hoat_dong">Hoạt động</option>
-                  <option value="da_khoa">Đã khóa</option>
-                </select>
+            <button type="button" id="admin-create-account" class="admin-filter-submit" <?php echo !$accountToolsReady ? 'disabled title="Chức năng chưa sẵn sàng"' : ''; ?>>+ Tạo tài khoản</button>
+          </div>
+
+          <form id="admin-filters" class="admin-list-toolbar" method="get" aria-label="Tìm kiếm và lọc tài khoản">
+            <div class="admin-list-field admin-list-search">
+              <label for="D_Quanlynguoidung_TimKiem">Tìm kiếm</label>
+              <div class="admin-list-search-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <input type="search" id="D_Quanlynguoidung_TimKiem" name="q" placeholder="Họ tên hoặc email..." value="<?php echo htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8'); ?>" maxlength="150" />
               </div>
             </div>
-          </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlynguoidung_LocVaiTro">Vai trò</label>
+              <select id="D_Quanlynguoidung_LocVaiTro" name="role">
+                <?php foreach (['tat_ca' => 'Tất cả vai trò', 'user' => 'Học viên', 'admin' => 'Quản trị viên'] as $value => $label): ?>
+                  <option value="<?php echo $value; ?>" <?php echo $role === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="admin-list-field">
+              <label for="D_Quanlynguoidung_LocTrangThai">Trạng thái</label>
+              <select id="D_Quanlynguoidung_LocTrangThai" name="status">
+                <?php foreach (['tat_ca' => 'Tất cả trạng thái', 'active' => 'Hoạt động', 'locked' => 'Đã khóa'] as $value => $label): ?>
+                  <option value="<?php echo $value; ?>" <?php echo $status === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="admin-list-actions">
+              <button class="admin-filter-submit" type="submit">Áp dụng</button>
+              <a class="admin-list-reset" href="D_Quanlynguoidung.php">Đặt lại</a>
+            </div>
+          </form>
+          <p class="admin-list-result">Tìm thấy <strong><?php echo number_format($userPagination['total']); ?></strong> tài khoản phù hợp.</p>
+          <?php if (!$accountToolsReady): ?>
+            <p class="admin-account-pending" role="status">Các thao tác tạo, đổi quyền và xóa tài khoản chưa sẵn sàng. Tìm kiếm và khóa/mở khóa vẫn hoạt động.</p>
+          <?php endif; ?>
 
           <?php if ($thongBao !== ""): ?>
             <div class="D_Quanlynguoidung_ThongBao D_Quanlynguoidung_ThongBao_<?php echo $loaiThongBao; ?>">
@@ -159,17 +128,17 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
             <table class="D_Quanlynguoidung_Bang">
               <thead>
                 <tr>
-                  <th style="width: 25%;">Họ và tên</th>
-                  <th style="width: 30%;">Email</th>
-                  <th style="width: 15%;">Vai trò</th>
-                  <th style="width: 15%;">Trạng thái</th>
-                  <th style="width: 15%; text-align: right;">Thao tác</th>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th style="text-align: right;">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="D_Quanlynguoidung_ThanBang">
                 <?php if (count($ketQuaDanhSach) === 0): ?>
                   <tr class="D_Quanlynguoidung_DongTrong">
-                    <td colspan="5" style="text-align: center; padding: 36px 16px;">Không có tài khoản người dùng nào.</td>
+                    <td colspan="5" style="text-align: center; padding: 36px 16px;">Không tìm thấy tài khoản phù hợp.</td>
                   </tr>
                 <?php else: ?>
                   <?php foreach ($ketQuaDanhSach as $hang):
@@ -179,11 +148,11 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
                       $textNut = ($hang["status"] === "active") ? "Khóa" : "Mở khóa";
                       $roleLabel = ($hang["role"] === "admin") ? "Quản trị viên" : "Học viên";
                   ?>
-                    <tr 
+                    <tr
                       data-id="<?php echo (int) $hang["userID"]; ?>"
                       data-hoten="<?php echo htmlspecialchars($hang["full_name"] ?? ''); ?>"
                       data-email="<?php echo htmlspecialchars($hang["email"]); ?>"
-                      data-vaitro="<?php echo htmlspecialchars($hang["role"]); ?>" 
+                      data-vaitro="<?php echo htmlspecialchars($hang["role"]); ?>"
                       data-trangthai="<?php echo $trangThaiData; ?>"
                     >
                       <td class="D_Quanlynguoidung_OHoTen">
@@ -213,19 +182,22 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
                       </td>
                       <td style="text-align: right;">
                         <?php if ($isSelf): ?>
-                          <span class="text-disabled" title="Không thể tự khóa tài khoản của chính mình">—</span>
+                          <span class="text-disabled">Tài khoản hiện tại</span>
                         <?php else: ?>
-                          <form 
-                            method="post" 
-                            action="D_Quanlynguoidung.php" 
+                          <div class="admin-account-actions">
+                          <button class="admin-account-role" type="button" data-id="<?php echo (int) $hang['userID']; ?>" data-email="<?php echo htmlspecialchars($hang['email'], ENT_QUOTES, 'UTF-8'); ?>" data-role="<?php echo htmlspecialchars($hang['role'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo !$accountToolsReady ? 'disabled' : ''; ?>>Đổi quyền</button>
+                          <form
+                            method="post"
+                            action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>"
                             style="display:inline"
-                            onsubmit="return confirm('<?php echo ($hang['status'] === 'active') ? 'Khóa tài khoản người dùng ' . addslashes($hang['email']) . '?' : 'Mở khóa tài khoản ' . addslashes($hang['email']) . '?'; ?>');"
+                            data-confirm="<?php echo htmlspecialchars($textNut . ' tài khoản ' . $hang['email'] . '?', ENT_QUOTES, 'UTF-8'); ?>"
                           >
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>" />
                             <input type="hidden" name="hanhdong" value="doitrangthai" />
                             <input type="hidden" name="userID" value="<?php echo (int) $hang["userID"]; ?>" />
-                            <input type="hidden" name="status" value="<?php echo htmlspecialchars($hang["status"]); ?>" />
-                            <button 
-                              class="D_Quanlynguoidung_NutTrangThai <?php echo ($hang["status"] === "active") ? 'btn-lock' : 'btn-unlock'; ?>" 
+                            <input type="hidden" name="new_status" value="<?php echo $hang['status'] === 'active' ? 'locked' : 'active'; ?>" />
+                            <button
+                              class="D_Quanlynguoidung_NutTrangThai <?php echo ($hang["status"] === "active") ? 'btn-lock' : 'btn-unlock'; ?>"
                               type="submit"
                             >
                               <?php if ($hang["status"] === "active"): ?>
@@ -242,6 +214,13 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
                               <span><?php echo $textNut; ?></span>
                             </button>
                           </form>
+                          <form method="post" action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>" data-confirm="<?php echo htmlspecialchars('Xóa vĩnh viễn tài khoản ' . $hang['email'] . '?', ENT_QUOTES, 'UTF-8'); ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>" />
+                            <input type="hidden" name="hanhdong" value="xoa" />
+                            <input type="hidden" name="userID" value="<?php echo (int) $hang['userID']; ?>" />
+                            <button class="admin-account-delete" type="submit" <?php echo !$accountToolsReady || $hang['status'] !== 'locked' ? 'disabled' : ''; ?> title="Khóa tài khoản trước khi xóa; chỉ xóa tài khoản chưa có dữ liệu học hoặc tài nguyên cá nhân.">Xóa</button>
+                          </form>
+                          </div>
                         <?php endif; ?>
                       </td>
                     </tr>
@@ -249,6 +228,7 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
                 <?php endif; ?>
               </tbody>
             </table>
+            <?php adminRenderPagination($userPagination, 'Phân trang người dùng'); ?>
             <div id="D_Quanlynguoidung_KhongTimThay" class="D_Quanlynguoidung_KhongTimThay" style="display: none;">
               Không tìm thấy người dùng nào phù hợp với bộ lọc hoặc từ khóa tìm kiếm.
             </div>
@@ -256,6 +236,34 @@ $tongSoNguoiDung = count($ketQuaDanhSach);
         </main>
       </div>
     </div>
+
+    <dialog id="admin-create-dialog" class="admin-account-dialog" aria-labelledby="admin-create-title">
+      <form method="post" action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>">
+        <div class="admin-account-dialog-header"><h2 id="admin-create-title">Tạo tài khoản</h2><button type="button" class="admin-dialog-close" aria-label="Đóng">×</button></div>
+        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>" />
+        <input type="hidden" name="hanhdong" value="them" />
+        <div class="admin-list-field"><label for="admin-full-name">Họ và tên</label><input id="admin-full-name" name="full_name" required minlength="2" maxlength="100" autocomplete="name" /></div>
+        <div class="admin-list-field"><label for="admin-new-email">Email</label><input type="email" id="admin-new-email" name="email" required maxlength="50" autocomplete="off" /></div>
+        <div class="admin-account-form-grid">
+          <div class="admin-list-field"><label for="admin-new-password">Mật khẩu</label><input type="password" id="admin-new-password" name="password" required minlength="8" maxlength="72" autocomplete="new-password" /></div>
+          <div class="admin-list-field"><label for="admin-confirm-password">Xác nhận mật khẩu</label><input type="password" id="admin-confirm-password" name="password_confirm" required minlength="8" maxlength="72" autocomplete="new-password" /></div>
+        </div>
+        <div class="admin-list-field"><label for="admin-new-role">Vai trò</label><select id="admin-new-role" name="new_role"><option value="user">Học viên (User)</option><option value="admin">Quản trị viên (Admin)</option></select></div>
+        <div class="admin-account-dialog-footer"><button type="button" class="admin-dialog-close admin-list-reset">Hủy</button><button class="admin-filter-submit" type="submit">Tạo tài khoản</button></div>
+      </form>
+    </dialog>
+    <dialog id="admin-role-dialog" class="admin-account-dialog" aria-labelledby="admin-role-title">
+      <form method="post" action="<?php echo htmlspecialchars(adminPageUrl(), ENT_QUOTES, 'UTF-8'); ?>" data-confirm="Xác nhận thay đổi quyền của tài khoản này?">
+        <div class="admin-account-dialog-header"><h2 id="admin-role-title">Điều chỉnh vai trò</h2><button type="button" class="admin-dialog-close" aria-label="Đóng">×</button></div>
+        <p id="admin-role-email" class="admin-context-description"></p>
+        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>" />
+        <input type="hidden" name="hanhdong" value="doiquyen" />
+        <input type="hidden" name="userID" id="admin-role-user-id" />
+        <div class="admin-list-field"><label for="admin-role-value">Vai trò</label><select id="admin-role-value" name="new_role"><option value="user">Học viên (User)</option><option value="admin">Quản trị viên (Admin)</option></select></div>
+        <p class="admin-context-description">Quản trị viên có quyền quản lý tài khoản và nội dung hệ thống.</p>
+        <div class="admin-account-dialog-footer"><button type="button" class="admin-dialog-close admin-list-reset">Hủy</button><button class="admin-filter-submit" type="submit">Lưu vai trò</button></div>
+      </form>
+    </dialog>
 
     <!-- Script đường dẫn tuyệt đối chuẩn xác -->
     <script src="/JS/D_Quanlynguoidung.js"></script>

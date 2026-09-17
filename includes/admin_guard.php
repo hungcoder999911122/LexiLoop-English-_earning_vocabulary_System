@@ -4,8 +4,9 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
+require_once dirname(__DIR__) . '/Connect.php';
+require_once __DIR__ . '/database_objects.php';
+$link = getDatabaseConnection();
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: /pages/admin/D_DangNhapAdmin.php');

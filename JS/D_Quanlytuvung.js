@@ -1,74 +1,20 @@
 $(function () {
-  // Hàm áp dụng đồng thời cả Bộ lọc nguồn, Bộ lọc chủ đề/bộ từ và Từ khóa tìm kiếm
-  function D_Quanlytuvung_ApDungBoLoc() {
-    var nguon = $("#D_Quanlytuvung_LocNguon").val() || "tat_ca";
-    var chuDeVal = $("#D_Quanlytuvung_LocChuDe").val() || "tat_ca";
-    var tuKhoa = ($("#D_Quanlytuvung_TimKiemTopbar").val() || "").toLowerCase().trim();
-    var soDongKhop = 0;
-
-    $("#D_Quanlytuvung_ThanBang tr").not(".D_Quanlytuvung_DongTrong").each(function () {
-      var hangSource = $(this).attr("data-source") || "";
-      var hangTopicId = $(this).attr("data-topicid") || "0";
-      var hangChuDe = ($(this).attr("data-chude") || "").toLowerCase();
-      var hangDisplayTopic = ($(this).attr("data-displaytopic") || "").toLowerCase();
-      var hangTu = ($(this).attr("data-tuvung") || "").toLowerCase();
-      var hangPhienAm = ($(this).attr("data-phienam") || "").toLowerCase();
-      var hangNghia = ($(this).attr("data-nghia") || "").toLowerCase();
-      var hangViDu = ($(this).attr("data-vidu") || "").toLowerCase();
-      var hangCreator = ($(this).attr("data-creator") || "").toLowerCase();
-      var hangCreatorEmail = ($(this).attr("data-creatoremail") || "").toLowerCase();
-
-      // 1. Khớp nguồn (Hệ thống vs Cá nhân)
-      var khopNguon = (nguon === "tat_ca" || hangSource === nguon);
-
-      // 2. Khớp chủ đề / bộ từ
-      var khopChuDe = true;
-      if (chuDeVal !== "tat_ca") {
-        if (chuDeVal.indexOf("topic_") === 0) {
-          var topicId = chuDeVal.replace("topic_", "");
-          khopChuDe = (hangTopicId === topicId);
-        } else if (chuDeVal.indexOf("set_") === 0) {
-          var setName = ($("#D_Quanlytuvung_LocChuDe option:selected").attr("data-name") || "").toLowerCase();
-          khopChuDe = (hangSource === "personal" && (hangDisplayTopic.indexOf(setName) > -1 || hangChuDe.indexOf(setName) > -1));
-        }
-      }
-
-      // 3. Khớp từ khóa tìm kiếm
-      var khopTuKhoa = (
-        tuKhoa === "" ||
-        hangTu.indexOf(tuKhoa) > -1 ||
-        hangPhienAm.indexOf(tuKhoa) > -1 ||
-        hangNghia.indexOf(tuKhoa) > -1 ||
-        hangViDu.indexOf(tuKhoa) > -1 ||
-        hangDisplayTopic.indexOf(tuKhoa) > -1 ||
-        hangCreator.indexOf(tuKhoa) > -1 ||
-        hangCreatorEmail.indexOf(tuKhoa) > -1
-      );
-
-      var hopLe = khopNguon && khopChuDe && khopTuKhoa;
-      $(this).toggle(hopLe);
-      if (hopLe) soDongKhop++;
-    });
-
-    if (soDongKhop === 0 && $("#D_Quanlytuvung_ThanBang tr").not(".D_Quanlytuvung_DongTrong").length > 0) {
-      $("#D_Quanlytuvung_KhongTimThay").show();
-    } else {
-      $("#D_Quanlytuvung_KhongTimThay").hide();
+  // Chọn đồng thời nhiều điều kiện rồi nhấn Áp dụng; tránh tải lại sau mỗi select.
+  function capNhatChuDeTheoNguon() {
+    var nguon = $("#D_Quanlytuvung_LocNguon").val();
+    var $chuDe = $("#D_Quanlytuvung_LocChuDe");
+    var dangChon = $chuDe.val() || "tat_ca";
+    if (nguon === "personal" && dangChon.indexOf("topic_") === 0) {
+      $chuDe.val("tat_ca");
     }
+    $chuDe.find("optgroup").each(function () {
+      // Bộ từ là nhóm thành viên, không quyết định nguồn của từng từ bên trong.
+      var hopLe = $(this).attr("data-source") === "personal" || nguon === "tat_ca" || $(this).attr("data-source") === nguon;
+      $(this).prop("disabled", !hopLe).prop("hidden", !hopLe);
+    });
   }
-
-  // Sự kiện thay đổi bộ lọc nguồn
-  $("#D_Quanlytuvung_LocNguon").on("change", function () {
-    var nguon = $(this).val();
-    // Tự động filter dropdown chủ đề tương ứng nếu cần
-    D_Quanlytuvung_ApDungBoLoc();
-  });
-
-  // Sự kiện thay đổi bộ lọc chủ đề
-  $("#D_Quanlytuvung_LocChuDe").on("change", D_Quanlytuvung_ApDungBoLoc);
-
-  // Sự kiện gõ tìm kiếm từ khóa trên Topbar
-  $("#D_Quanlytuvung_TimKiemTopbar").on("input keyup", D_Quanlytuvung_ApDungBoLoc);
+  $("#D_Quanlytuvung_LocNguon").on("change", capNhatChuDeTheoNguon);
+  capNhatChuDeTheoNguon();
 
   function D_Quanlytuvung_MoModalThem() {
     $("#D_Quanlytuvung_TieuDeModal").text("Thêm từ vựng mới");

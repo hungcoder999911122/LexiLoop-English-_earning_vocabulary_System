@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
+require_once dirname(__DIR__, 2) . '/Connect.php';
+require_once dirname(__DIR__, 2) . '/includes/database_objects.php';
+$link = getDatabaseConnection();
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

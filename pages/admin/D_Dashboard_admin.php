@@ -1,22 +1,89 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/admin_guard.php');
+require_once dirname(__DIR__, 2) . '/includes/admin_guard.php';
 
-$soNguoiDung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_users')[0]['value'] ?? 0);
+// Khai báo rõ kết nối dùng chung trước khi gọi View/Stored Procedure.
+$link = getDatabaseConnection();
+require_once dirname(__DIR__, 2) . '/includes/admin_pagination.php';
+
+$thongKeTaiKhoan = dbSelectView($link, "SELECT CURRENT_DATE() AS today,
+    COALESCE(SUM(role = 'admin'), 0) AS admins,
+    COALESCE(SUM(role = 'user'), 0) AS learners FROM vw_users")[0];
+$soQuanTriVien = (int) $thongKeTaiKhoan['admins'];
+$soHocVien = (int) $thongKeTaiKhoan['learners'];
+$ngayHienTai = $thongKeTaiKhoan['today'];
+$tuNgayHoatDong = date('Y-m-d', strtotime($ngayHienTai . ' -6 days'));
+$denNgayHoatDong = date('Y-m-d', strtotime($ngayHienTai . ' +1 day'));
 $soChuDe = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_topic_catalog')[0]['value'] ?? 0);
 $soBoTu = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_vocabulary_sets')[0]['value'] ?? 0);
 $soTuVung = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_vocabulary_catalog')[0]['value'] ?? 0);
-$soQuizXong = (int) (dbSelectView($link, 'SELECT COUNT(*) AS value FROM vw_quiz_results WHERE finished_at IS NOT NULL')[0]['value'] ?? 0);
+// Một phiên học/ôn có từ đã học hoặc một quiz hoàn thành là một lượt.
+// UNION ALL giữ từng lượt; COUNT(DISTINCT) chỉ loại trùng khi đếm học viên.
+// Không loại lịch sử đã học chỉ vì tài khoản hiện bị khóa; chỉ loại vai trò admin.
+$luotHocTheoNgay = dbSelectView($link, "SELECT activity.study_date,
+    COUNT(*) AS study_count, COUNT(DISTINCT activity.user_id) AS learner_count
+    FROM (
+        SELECT user_id, session_date AS study_date FROM vw_learning_sessions
+        WHERE session_date >= ? AND session_date < ? AND words_studied > 0
+        UNION ALL
+        SELECT user_id, DATE(finished_at) AS study_date FROM vw_quiz_results
+        WHERE finished_at >= ? AND finished_at < ?
+    ) activity INNER JOIN vw_users u ON u.userID = activity.user_id
+    WHERE u.role = 'user' GROUP BY activity.study_date", 'ssss',
+    [$tuNgayHoatDong, $denNgayHoatDong, $tuNgayHoatDong, $denNgayHoatDong]);
+$luotHocTheoNgay = array_column($luotHocTheoNgay, null, 'study_date');
+$soLuotHocHomNay = (int) ($luotHocTheoNgay[$ngayHienTai]['study_count'] ?? 0);
+$soHocVienHomNay = (int) ($luotHocTheoNgay[$ngayHienTai]['learner_count'] ?? 0);
+$soDangKyHomNay = (int) dbSelectView($link, "SELECT COUNT(*) AS value FROM vw_users
+    WHERE role = 'user' AND created_at >= ? AND created_at < ?", 'ss', [$ngayHienTai, $denNgayHoatDong])[0]['value'];
+
+// Bộ lọc chỉ áp dụng cho hai biểu đồ báo cáo, độc lập với hôm nay/7 ngày.
+$baoCaoSoNgay = adminQueryText('days', '30');
+$baoCaoSoNgay = in_array($baoCaoSoNgay, ['7', '30', '90'], true) ? (int) $baoCaoSoNgay : 30;
+$baoCaoTuNgay = date('Y-m-d', strtotime($ngayHienTai . ' -' . ($baoCaoSoNgay - 1) . ' days'));
+$baoCaoDenNgay = $denNgayHoatDong;
+$baoCaoThamSo = [$baoCaoTuNgay, $baoCaoDenNgay, $baoCaoTuNgay, $baoCaoDenNgay];
+
+// Mỗi học viên chỉ đóng góp một lần cho mỗi chủ đề, kể cả học cả hai chế độ.
+$chuDeNoiBat = dbSelectView($link, "SELECT t.topicID, t.topicName, COUNT(DISTINCT a.user_id) AS learners
+    FROM (
+        SELECT user_id, topic_id FROM vw_learning_sessions
+        WHERE session_date >= ? AND session_date < ? AND words_studied > 0 AND topic_id IS NOT NULL
+        UNION ALL
+        SELECT user_id, topic_id FROM vw_quiz_results
+        WHERE finished_at >= ? AND finished_at < ? AND topic_id IS NOT NULL
+    ) a INNER JOIN vw_users u ON u.userID = a.user_id
+    INNER JOIN vw_topic_catalog t ON t.topicID = a.topic_id
+    WHERE u.role = 'user' GROUP BY t.topicID, t.topicName
+    ORDER BY learners DESC, t.topicID ASC LIMIT 5", 'ssss', $baoCaoThamSo);
+$chuDeDinhCao = $chuDeNoiBat ? max(array_column($chuDeNoiBat, 'learners')) : 1;
+
+// Đếm phiên/bài thực sự phát sinh, không đếm các lần lưu tiến trình tự động.
+$phanBoHoc = dbSelectView($link, "SELECT COUNT(*) AS total,
+    COALESCE(SUM(a.activity_type = 'flashcard'), 0) AS flashcard,
+    COALESCE(SUM(a.activity_type = 'quiz'), 0) AS quiz
+    FROM (
+        SELECT user_id, 'flashcard' AS activity_type FROM vw_learning_sessions
+        WHERE session_date >= ? AND session_date < ? AND words_studied > 0
+        UNION ALL
+        SELECT user_id, 'quiz' AS activity_type FROM vw_quiz_results
+        WHERE finished_at >= ? AND finished_at < ?
+    ) a INNER JOIN vw_users u ON u.userID = a.user_id WHERE u.role = 'user'", 'ssss', $baoCaoThamSo)[0];
+$tongLuotBaoCao = (int) $phanBoHoc['total'];
+$flashcardPhanTram = $tongLuotBaoCao > 0 ? (int) $phanBoHoc['flashcard'] * 100 / $tongLuotBaoCao : 0;
+$flashcardCssPhanTram = number_format($flashcardPhanTram, 4, '.', '');
 
 $hoatDongTuan = [];
 $nhanNgay = [];
 for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i day"));
-    $rows = dbSelectView($link, 'SELECT COALESCE(SUM(words_studied), 0) AS value FROM vw_learning_sessions WHERE session_date = ?', 's', [$date]);
-    $hoatDongTuan[] = (int) ($rows[0]['value'] ?? 0);
-    $nhanNgay[] = date('d/m', strtotime("-$i day"));
+    $date = date('Y-m-d', strtotime($ngayHienTai . " -$i day"));
+    $hoatDongTuan[] = (int) ($luotHocTheoNgay[$date]['study_count'] ?? 0);
+    $nhanNgay[] = date('d/m', strtotime($date));
 }
 $dinhCao = max(max($hoatDongTuan), 1);
-$ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, actor_name, target_name, score_text FROM vw_system_recent_activity ORDER BY thoiGian DESC LIMIT 8');
+$activityPagination = adminPaginateView($link, 'SELECT COUNT(*) AS total FROM vw_system_recent_activity',
+    'SELECT loai, activity_id, tieuDe, chiTiet, thoiGian, actor_name, target_name, score_text FROM vw_system_recent_activity ORDER BY thoiGian DESC, loai, activity_id DESC',
+    'activity_page', 4);
+$ketQuaHoatDong = $activityPagination['rows'];
 ?>
 <!doctype html>
 <html lang="vi">
@@ -33,6 +100,8 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
       href="/CSS/D_Dashboard_admin.css"
     />
     <script src="/JS/jquery-4.0.0.min.js"></script>
+    <link rel="stylesheet" href="/CSS/admin-pagination.css" />
+    <link rel="stylesheet" href="/CSS/admin-sidebar.css" />
   </head>
 
   <body>
@@ -53,7 +122,7 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
 
       <div class="D_Dashboard_admin_Body">
         <!-- Sidebar Navigation -->
-        <nav class="D_Dashboard_admin_Sidebar">
+        <nav class="D_Dashboard_admin_Sidebar admin-sidebar" aria-label="Điều hướng quản trị">
           <div class="sidebar-section-title">QUẢN TRỊ HỆ THỐNG</div>
           <a
             href="D_Dashboard_admin.php"
@@ -104,20 +173,34 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
 
           <!-- Cards Stat Row -->
           <div class="D_Dashboard_admin_HangTheSo">
-            <div class="D_Dashboard_admin_TheSo stat-card-users">
-              <div class="stat-card-icon">👥</div>
-              <div class="stat-card-info">
-                <p class="D_Dashboard_admin_NhanTheSo">Người dùng đăng ký</p>
-                <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soNguoiDung); ?></p>
+            <section class="D_Dashboard_admin_TheSo dashboard-split-card dashboard-account-card" aria-labelledby="dashboard-accounts-title">
+              <div class="dashboard-card-heading"><h2 id="dashboard-accounts-title" class="dashboard-card-title">Tài khoản</h2><span class="dashboard-card-icon" aria-hidden="true">👥</span></div>
+              <div class="dashboard-card-pair">
+                <a href="D_Quanlynguoidung.php?role=admin" class="dashboard-mini-stat">
+                  <span class="D_Dashboard_admin_NhanTheSo">Quản trị viên</span>
+                  <strong class="D_Dashboard_admin_SoLieu"><?php echo number_format($soQuanTriVien); ?></strong>
+                </a>
+                <a href="D_Quanlynguoidung.php?role=user" class="dashboard-mini-stat">
+                  <span class="D_Dashboard_admin_NhanTheSo">Học viên</span>
+                  <strong class="D_Dashboard_admin_SoLieu"><?php echo number_format($soHocVien); ?></strong>
+                </a>
               </div>
-            </div>
-            <div class="D_Dashboard_admin_TheSo stat-card-topics">
-              <div class="stat-card-icon">📚</div>
-              <div class="stat-card-info">
-                <p class="D_Dashboard_admin_NhanTheSo">Chủ đề & Bộ từ</p>
-                <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soChuDe); ?> <span style="font-size: 13px; font-weight: normal; color: #526d60;">(<?php echo $soBoTu; ?> bộ từ user)</span></p>
+              <p class="dashboard-card-note">Bao gồm tài khoản đang khóa</p>
+            </section>
+            <section class="D_Dashboard_admin_TheSo dashboard-split-card dashboard-content-card" aria-labelledby="dashboard-content-title">
+              <div class="dashboard-card-heading"><h2 id="dashboard-content-title" class="dashboard-card-title">Chủ đề & Bộ từ</h2><span class="dashboard-card-icon" aria-hidden="true">📚</span></div>
+              <div class="dashboard-card-pair">
+                <a href="D_Quanlychude.php?tab=system" class="dashboard-mini-stat">
+                  <span class="D_Dashboard_admin_NhanTheSo">Chủ đề hệ thống</span>
+                  <strong class="D_Dashboard_admin_SoLieu"><?php echo number_format($soChuDe); ?></strong>
+                </a>
+                <a href="D_Quanlychude.php?tab=usersets" class="dashboard-mini-stat">
+                  <span class="D_Dashboard_admin_NhanTheSo">Bộ từ cá nhân</span>
+                  <strong class="D_Dashboard_admin_SoLieu"><?php echo number_format($soBoTu); ?></strong>
+                </a>
               </div>
-            </div>
+              <p class="dashboard-card-note">Hai nguồn nội dung học tập</p>
+            </section>
             <div class="D_Dashboard_admin_TheSo stat-card-vocab">
               <div class="stat-card-icon">🔤</div>
               <div class="stat-card-info">
@@ -125,11 +208,24 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
                 <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soTuVung); ?></p>
               </div>
             </div>
-            <div class="D_Dashboard_admin_TheSo stat-card-quiz">
-              <div class="stat-card-icon">🎯</div>
+            <div class="D_Dashboard_admin_TheSo stat-card-activity">
               <div class="stat-card-info">
-                <p class="D_Dashboard_admin_NhanTheSo">Quiz hoàn thành</p>
-                <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soQuizXong); ?></p>
+                <div class="dashboard-study-heading">
+                  <h2 class="dashboard-card-title">Hoạt động hôm nay</h2>
+                  <span class="dashboard-study-icon" aria-hidden="true">📖</span>
+                </div>
+                <div class="dashboard-today-pair">
+                  <div class="dashboard-today-stat">
+                    <p class="dashboard-today-label">Lượt học</p>
+                    <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soLuotHocHomNay); ?> <span class="dashboard-stat-unit">lượt</span></p>
+                    <p class="dashboard-card-note">Từ <?php echo number_format($soHocVienHomNay); ?> học viên</p>
+                  </div>
+                  <div class="dashboard-today-stat">
+                    <p class="dashboard-today-label">Đăng ký mới</p>
+                    <p class="D_Dashboard_admin_SoLieu"><?php echo number_format($soDangKyHomNay); ?> <span class="dashboard-stat-unit">tài khoản</span></p>
+                    <p class="dashboard-card-note">Học viên tạo hôm nay</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -140,17 +236,17 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
             <div class="D_Dashboard_admin_HopBieuDo">
               <div class="chart-header">
                 <div>
-                  <h2 class="D_Dashboard_admin_TieuDeHop">Biểu đồ từ vựng học theo tuần</h2>
-                  <p class="chart-subtitle">Tổng số lượt từ vựng được học và ôn tập trong 7 ngày gần nhất</p>
+                  <h2 class="D_Dashboard_admin_TieuDeHop">Lượt học trong 7 ngày</h2>
+                  <p class="chart-subtitle">Phiên Flashcard có từ đã học và quiz hoàn thành. Cột đậm là hôm nay.</p>
                 </div>
               </div>
               <div class="D_Dashboard_admin_BieuDoCot">
                 <?php foreach ($hoatDongTuan as $idx => $tong):
-                    $phanTram = max((int) round(($tong / $dinhCao) * 100), 6);
+                    $phanTram = (int) round(($tong / $dinhCao) * 100);
                 ?>
                   <div class="bar-column-wrapper">
                     <div class="bar-value"><?php echo $tong; ?></div>
-                    <div class="D_Dashboard_admin_Cot" style="height: <?php echo $phanTram; ?>%" title="<?php echo $tong; ?> từ (<?php echo $nhanNgay[$idx]; ?>)"></div>
+                    <div class="D_Dashboard_admin_Cot<?php echo $idx === 6 ? ' dashboard-bar-today' : ''; ?>" style="height: <?php echo $phanTram; ?>%" title="<?php echo $tong; ?> lượt học (<?php echo $nhanNgay[$idx]; ?>)"></div>
                     <span class="bar-label"><?php echo $nhanNgay[$idx]; ?></span>
                   </div>
                 <?php endforeach; ?>
@@ -158,10 +254,10 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
             </div>
 
             <!-- Hoạt động gần đây -->
-            <div class="D_Dashboard_admin_HopHoatDong">
+            <div class="D_Dashboard_admin_HopHoatDong" id="admin-activity">
               <div class="activity-header-box">
                 <h2 class="D_Dashboard_admin_TieuDeHop">Hoạt động gần đây</h2>
-                <span class="activity-live-badge">Trực tiếp</span>
+                <span class="activity-live-badge">Gần đây</span>
               </div>
               <p class="chart-subtitle">Ghi nhận tiến trình học, quiz và tài khoản mới nhất</p>
 
@@ -245,10 +341,77 @@ $ketQuaHoatDong = dbSelectView($link, 'SELECT loai, tieuDe, chiTiet, thoiGian, a
                   <?php endforeach; ?>
                 <?php endif; ?>
               </div>
+              <?php adminRenderPagination($activityPagination, 'Phân trang hoạt động', [], 'admin-activity'); ?>
             </div>
           </div>
+          <section class="dashboard-reports" id="dashboard-reports" aria-labelledby="dashboard-reports-title">
+            <div class="dashboard-report-heading">
+              <div>
+                <h2 id="dashboard-reports-title" class="D_Dashboard_admin_TieuDeHop">Báo cáo sử dụng</h2>
+                <p class="chart-subtitle"><?php echo date('d/m/Y', strtotime($baoCaoTuNgay)); ?> – <?php echo date('d/m/Y', strtotime($ngayHienTai)); ?> · Chỉ tính hoạt động của học viên</p>
+              </div>
+              <form id="dashboard-report-filter" method="get" action="/pages/admin/D_Dashboard_admin.php#dashboard-reports">
+                <?php if ($activityPagination['page'] > 1): ?><input type="hidden" name="activity_page" value="<?php echo (int) $activityPagination['page']; ?>" /><?php endif; ?>
+                <label for="dashboard-report-days">Thời gian thống kê</label>
+                <select id="dashboard-report-days" name="days">
+                  <?php foreach ([7, 30, 90] as $option): ?>
+                    <option value="<?php echo $option; ?>" <?php echo $baoCaoSoNgay === $option ? 'selected' : ''; ?>><?php echo $option; ?> ngày gần nhất</option>
+                  <?php endforeach; ?>
+                </select>
+                <noscript><button class="quick-action-btn" type="submit">Áp dụng</button></noscript>
+              </form>
+            </div>
+            <div class="dashboard-report-grid">
+              <section class="D_Dashboard_admin_HopBieuDo" aria-labelledby="dashboard-topics-title">
+                <h3 id="dashboard-topics-title" class="D_Dashboard_admin_TieuDeHop">Chủ đề nổi bật</h3>
+                <p class="chart-subtitle">5 chủ đề có nhiều học viên tham gia nhất. Cột cao và đậm hơn có nhiều học viên hơn; mỗi người tính một lần trên mỗi chủ đề.</p>
+                <?php if (!$chuDeNoiBat): ?>
+                  <p class="dashboard-report-empty">Chưa có hoạt động học theo chủ đề trong khoảng thời gian này.</p>
+                <?php else: ?>
+                  <ol class="dashboard-topic-chart">
+                    <?php foreach ($chuDeNoiBat as $index => $topic):
+                      // Chỉ định dạng biểu đồ; giữ nguyên số học viên và thứ tự từ View.
+                      $topicRatio = (int) $topic['learners'] / $chuDeDinhCao;
+                      $topicHeight = number_format(190 * $topicRatio, 4, '.', '');
+                      $topicLightness = number_format(76 - 44 * $topicRatio, 2, '.', '');
+                      $topicUrl = 'D_Quanlytuvung.php?source=system&category=topic_' . (int) $topic['topicID'];
+                      $topicLabel = $topic['topicName'] . ': ' . (int) $topic['learners'] . ' học viên';
+                    ?>
+                      <li>
+                        <div class="dashboard-topic-plot">
+                          <div class="dashboard-topic-value"><span class="dashboard-topic-rank">#<?php echo $index + 1; ?></span><strong><?php echo number_format((int) $topic['learners']); ?></strong></div>
+                          <a class="dashboard-topic-column" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" style="--topic-height: <?php echo $topicHeight; ?>px; --topic-color: hsl(153 62% <?php echo $topicLightness; ?>%);" title="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>"></a>
+                        </div>
+                        <a class="dashboard-topic-name" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?></a>
+                      </li>
+                    <?php endforeach; ?>
+                  </ol>
+                  <p class="dashboard-report-note">Số trên mỗi cột là học viên riêng biệt, không phải tổng lượt học. Bấm cột hoặc tên để xem từ vựng của chủ đề.</p>
+                <?php endif; ?>
+              </section>
+              <section class="D_Dashboard_admin_HopBieuDo" aria-labelledby="dashboard-distribution-title">
+                <h3 id="dashboard-distribution-title" class="D_Dashboard_admin_TieuDeHop">Phân bố các chức năng học </h3>
+                <p class="chart-subtitle">Bao gồm chủ đề hệ thống, bộ từ cá nhân và ôn tập.</p>
+                <?php if ($tongLuotBaoCao === 0): ?>
+                  <p class="dashboard-report-empty">Chưa có lượt học trong khoảng thời gian này.</p>
+                <?php else: ?>
+                  <div class="dashboard-distribution-chart">
+                    <div class="dashboard-donut" role="img" aria-label="Flashcard: <?php echo (int) $phanBoHoc['flashcard']; ?> phiên; Quiz: <?php echo (int) $phanBoHoc['quiz']; ?> bài." style="background: conic-gradient(#0e7748 0% <?php echo $flashcardCssPhanTram; ?>%, #2563eb <?php echo $flashcardCssPhanTram; ?>% 100%);">
+                      <div class="dashboard-donut-center"><strong><?php echo number_format($tongLuotBaoCao); ?></strong><span>lượt học</span></div>
+                    </div>
+                    <ul class="dashboard-distribution-legend">
+                      <li><span class="dashboard-legend-dot dashboard-legend-flashcard" aria-hidden="true"></span><span>Flashcard</span><strong><?php echo number_format((int) $phanBoHoc['flashcard']); ?> phiên · <?php echo number_format($flashcardPhanTram, 1, ',', '.'); ?>%</strong></li>
+                      <li><span class="dashboard-legend-dot dashboard-legend-quiz" aria-hidden="true"></span><span>Quiz</span><strong><?php echo number_format((int) $phanBoHoc['quiz']); ?> bài · <?php echo number_format(100 - $flashcardPhanTram, 1, ',', '.'); ?>%</strong></li>
+                    </ul>
+                  </div>
+                <?php endif; ?>
+                <p class="dashboard-report-note">Một phiên học/ôn có từ đã học hoặc một quiz hoàn thành tính một lượt, một học piên có thể tạo nhiều lượt.</p>
+              </section>
+            </div>
+          </section>
         </main>
       </div>
     </div>
+    <script src="/JS/D_Dashboard_admin.js"></script>
   </body>
 </html>
