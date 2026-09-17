@@ -261,7 +261,7 @@ $ketQuaHoatDong = $activityPagination['rows'];
               </div>
               <p class="chart-subtitle">Ghi nhận tiến trình học, quiz và tài khoản mới nhất</p>
 
-              <div class="D_Dashboard_admin_DanhSachHoatDong">
+              <div class="D_Dashboard_admin_DanhSachHoatDong activity-timeline">
                 <?php if (count($ketQuaHoatDong) === 0): ?>
                   <div class="D_Dashboard_admin_DongHoatDong empty-state">
                     <span>Chưa có lịch sử hoạt động nào trong hệ thống.</span>
@@ -323,19 +323,21 @@ $ketQuaHoatDong = $activityPagination['rows'];
                               break;
                       }
                   ?>
-                    <div class="D_Dashboard_admin_DongHoatDong">
-                      <div class="activity-icon-badge <?php echo $iconClass; ?>">
-                        <?php echo $icon; ?>
+                    <div class="D_Dashboard_admin_DongHoatDong timeline-item">
+                      <div class="timeline-indicator">
+                        <div class="activity-icon-badge <?php echo $iconClass; ?>">
+                          <?php echo $icon; ?>
+                        </div>
                       </div>
-                      <div class="activity-text">
+                      <div class="activity-text timeline-content">
                         <div class="activity-title-line">
                           <span class="activity-label"><?php echo $labelPrefix; ?></span>
                           <strong class="activity-subject"><?php echo htmlspecialchars($titleText); ?></strong>
+                          <span class="activity-time-inline">• <?php echo date("H:i, d/m", strtotime($hd["thoiGian"])); ?></span>
                         </div>
                         <?php if (!empty($detailText)): ?>
                           <div class="activity-detail-line"><?php echo htmlspecialchars($detailText); ?></div>
                         <?php endif; ?>
-                        <span class="D_Dashboard_admin_ThoiGian"><?php echo date("d/m/Y H:i", strtotime($hd["thoiGian"])); ?></span>
                       </div>
                     </div>
                   <?php endforeach; ?>
@@ -368,25 +370,37 @@ $ketQuaHoatDong = $activityPagination['rows'];
                 <?php if (!$chuDeNoiBat): ?>
                   <p class="dashboard-report-empty">Chưa có hoạt động học theo chủ đề trong khoảng thời gian này.</p>
                 <?php else: ?>
-                  <ol class="dashboard-topic-chart">
+                  <ul class="dashboard-topic-chart-horizontal">
                     <?php foreach ($chuDeNoiBat as $index => $topic):
-                      // Chỉ định dạng biểu đồ; giữ nguyên số học viên và thứ tự từ View.
+                      // Tính toán width cho thanh biểu đồ
                       $topicRatio = (int) $topic['learners'] / $chuDeDinhCao;
-                      $topicHeight = number_format(190 * $topicRatio, 4, '.', '');
+                      $topicWidth = number_format(100 * $topicRatio, 2, '.', '');
                       $topicLightness = number_format(76 - 44 * $topicRatio, 2, '.', '');
                       $topicUrl = 'D_Quanlytuvung.php?source=system&category=topic_' . (int) $topic['topicID'];
                       $topicLabel = $topic['topicName'] . ': ' . (int) $topic['learners'] . ' học viên';
                     ?>
-                      <li>
-                        <div class="dashboard-topic-plot">
-                          <div class="dashboard-topic-value"><span class="dashboard-topic-rank">#<?php echo $index + 1; ?></span><strong><?php echo number_format((int) $topic['learners']); ?></strong></div>
-                          <a class="dashboard-topic-column" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" style="--topic-height: <?php echo $topicHeight; ?>px; --topic-color: hsl(153 62% <?php echo $topicLightness; ?>%);" title="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>"></a>
+                      <li class="dashboard-topic-horizontal-item">
+                        <div class="topic-info-wrap">
+                          <div class="topic-name-wrap">
+                            <span class="dashboard-topic-rank">#<?php echo $index + 1; ?></span>
+                            <a class="dashboard-topic-name-hz" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?>">
+                              <?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?>
+                            </a>
+                          </div>
+                          <div class="dashboard-topic-value-hz">
+                            <strong><?php echo number_format((int) $topic['learners']); ?></strong> <span class="dashboard-stat-unit">học viên</span>
+                          </div>
                         </div>
-                        <a class="dashboard-topic-name" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($topic['topicName'], ENT_QUOTES, 'UTF-8'); ?></a>
+                        <div class="dashboard-topic-bar-track">
+                          <a class="dashboard-topic-bar-fill" href="<?php echo htmlspecialchars($topicUrl, ENT_QUOTES, 'UTF-8'); ?>" 
+                             style="width: <?php echo $topicWidth; ?>%; --topic-color: hsl(153 62% <?php echo $topicLightness; ?>%);" 
+                             title="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>" 
+                             aria-label="<?php echo htmlspecialchars($topicLabel, ENT_QUOTES, 'UTF-8'); ?>"></a>
+                        </div>
                       </li>
                     <?php endforeach; ?>
-                  </ol>
-                  <p class="dashboard-report-note">Số trên mỗi cột là học viên riêng biệt, không phải tổng lượt học. Bấm cột hoặc tên để xem từ vựng của chủ đề.</p>
+                  </ul>
+                  <p class="dashboard-report-note">Số trên mỗi thanh là học viên riêng biệt, không phải tổng lượt học. Bấm thanh hoặc tên để xem từ vựng của chủ đề.</p>
                 <?php endif; ?>
               </section>
               <section class="D_Dashboard_admin_HopBieuDo" aria-labelledby="dashboard-distribution-title">
