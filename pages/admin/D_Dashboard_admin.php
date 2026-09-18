@@ -147,10 +147,6 @@ $ketQuaHoatDong = $activityPagination['rows'];
             <span class="menu-icon">🔤</span>
             <span>Từ vựng</span>
           </a>
-          <a href="D_Thongkehethong.php" class="D_Dashboard_admin_MucMenu">
-            <span class="menu-icon">📈</span>
-            <span>Thống kê</span>
-          </a>
           <a href="D_Caidathethong.php" class="D_Dashboard_admin_MucMenu">
             <span class="menu-icon">⚙️</span>
             <span>Cài đặt</span>
