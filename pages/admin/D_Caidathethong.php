@@ -6,39 +6,49 @@ $link = getDatabaseConnection();
 
 $thongBao = '';
 $loaiThongBao = '';
-// Thêm smtp_app_password vào mảng email để xử lý lưu DB
-$cacTruongEmail = ['smtp_server', 'smtp_port', 'smtp_security', 'notify_email', 'reminder_enabled', 'smtp_app_password'];
+
 $cacTruongWeb = ['site_name', 'site_slogan', 'site_language', 'maintenance_mode'];
-// Thêm mảng cấu hình học tập
-$cacTruongHocTap = ['quiz_default_questions', 'xp_per_quiz', 'daily_word_limit', 'spaced_repetition_intervals'];
+// Cấu hình học tập (đã bỏ xp_per_quiz)
+$cacTruongHocTap = ['quiz_default_questions', 'daily_word_limit', 'spaced_repetition_intervals'];
 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = (string) ($_POST['hanhdong'] ?? '');
         
         $fields = [];
-        if ($action === 'luu_web') $fields = $cacTruongWeb;
-        if ($action === 'luu_email') $fields = $cacTruongEmail;
-        if ($action === 'luu_hoctap') $fields = $cacTruongHocTap;
-
-        if ($action === 'luu_web' && trim((string) ($_POST['site_name'] ?? '')) === '') {
-            throw new RuntimeException('Vui lòng nhập tên website.');
+        if ($action === 'luu_web') {
+            $fields = $cacTruongWeb;
+            if (trim((string) ($_POST['site_name'] ?? '')) === '') {
+                throw new RuntimeException('Vui lòng nhập tên website.');
+            }
+            
+            // Xử lý upload ảnh logo
+            if (isset($_FILES['site_logo']) && $_FILES['site_logo']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = dirname(__DIR__, 2) . '/assets/images/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $fileInfo = pathinfo($_FILES['site_logo']['name']);
+                $ext = strtolower($fileInfo['extension']);
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'svg'])) {
+                    $newFileName = 'logo.' . $ext;
+                    $targetPath = $uploadDir . $newFileName;
+                    if (move_uploaded_file($_FILES['site_logo']['tmp_name'], $targetPath)) {
+                        dbCallProcedure($link, 'CALL sp_save_system_setting(?, ?, ?)', 'iss', [$adminUserId, 'site_logo', '/assets/images/' . $newFileName]);
+                    }
+                }
+            }
+        }
+        if ($action === 'luu_hoctap') {
+            $fields = $cacTruongHocTap;
         }
 
         if (!empty($fields)) {
             foreach ($fields as $key) {
                 // Xử lý Checkbox
-                if (in_array($key, ['maintenance_mode', 'reminder_enabled'], true)) {
+                if ($key === 'maintenance_mode') {
                     $value = isset($_POST[$key]) ? '1' : '0';
-                } 
-                // Xử lý mật khẩu SMTP: Nếu trống thì bỏ qua không lưu đè
-                else if ($key === 'smtp_app_password') {
-                    $value = trim((string) ($_POST[$key] ?? ''));
-                    if ($value === '') {
-                        continue; 
-                    }
-                } 
-                else {
+                } else {
                     $value = trim((string) ($_POST[$key] ?? ''));
                 }
                 
@@ -56,17 +66,9 @@ try {
 }
 
 $caiDat = [];
-// Sử dụng View để lấy dữ liệu thay vì select bảng trực tiếp
+// Sử dụng View để lấy dữ liệu
 foreach (dbSelectView($link, 'SELECT setting_key, setting_value FROM vw_system_settings') as $row) {
     $caiDat[$row['setting_key']] = $row['setting_value'];
-}
-
-// Thử lấy log cài đặt qua View mới (nếu bảng chưa tồn tại thì bỏ qua mượt mà)
-$lichSuCaiDat = [];
-try {
-    $lichSuCaiDat = dbSelectView($link, 'SELECT * FROM vw_system_settings_logs ORDER BY created_at DESC LIMIT 20');
-} catch (Throwable $e) {
-    // Bỏ qua lỗi nếu View chưa được tạo
 }
 
 function layGiaTri($caiDat, $key, $macDinh = '') {
@@ -157,15 +159,13 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
           <!-- Tabs Navigation -->
           <div class="admin-tabs-nav">
             <button class="admin-tab-btn active" data-tab="chung">🌐 Chung</button>
-            <button class="admin-tab-btn" data-tab="email">✉️ Máy chủ Email</button>
             <button class="admin-tab-btn" data-tab="hoctap">🧠 Cấu hình Học tập</button>
-            <button class="admin-tab-btn" data-tab="lichsu">🛡️ Lịch sử Cài đặt</button>
           </div>
 
           <div class="admin-tabs-container">
             <!-- TAB 1: Cấu hình Website -->
             <div class="tab-content active" id="tab-chung">
-              <form class="D_Caidathethong_Panel" method="post" action="D_Caidathethong.php#chung">
+              <form class="D_Caidathethong_Panel" method="post" action="D_Caidathethong.php#chung" enctype="multipart/form-data">
                 <div class="panel-header">
                   <div>
                     <h2 class="D_Caidathethong_TieuDePanel">Cấu hình chung Website</h2>
@@ -173,94 +173,69 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
                   </div>
                 </div>
                 <input type="hidden" name="hanhdong" value="luu_web" />
+                
                 <div class="form-group">
                   <label class="D_Caidathethong_Nhan">Tên website <span class="required">*</span></label>
                   <input type="text" name="site_name" class="D_Caidathethong_ONhap" value="<?php echo layGiaTri($caiDat, 'site_name', 'LexiLoop'); ?>" required />
                 </div>
+                
                 <div class="form-group">
-                  <label class="D_Caidathethong_Nhan">Slogan website</label>
+                  <label class="D_Caidathethong_Nhan">Slogan</label>
                   <input type="text" name="site_slogan" class="D_Caidathethong_ONhap" placeholder="Nền tảng học từ vựng thông minh..." value="<?php echo layGiaTri($caiDat, 'site_slogan', ''); ?>" />
                 </div>
+
                 <div class="form-group">
-                  <label class="D_Caidathethong_Nhan">Ngôn ngữ giao diện mặc định</label>
-                  <input type="text" name="site_language" class="D_Caidathethong_ONhap" value="<?php echo layGiaTri($caiDat, 'site_language', 'Tiếng Việt (vi-VN)'); ?>" />
+                  <label class="D_Caidathethong_Nhan">Logo</label>
+                  <div class="D_Caidathethong_LogoUploadWrapper">
+                    <div class="D_Caidathethong_LogoPreviewBox" id="D_Caidathethong_LogoPreview">
+                      <?php $currentLogo = layGiaTri($caiDat, 'site_logo', ''); ?>
+                      <?php if($currentLogo): ?>
+                        <img src="<?php echo $currentLogo; ?>" alt="Site Logo">
+                      <?php else: ?>
+                        <span>Tải ảnh lên</span>
+                      <?php endif; ?>
+                    </div>
+                    <label class="D_Caidathethong_NutTrang" style="display: inline-block; cursor: pointer;">
+                      Chọn file
+                      <input type="file" name="site_logo" id="site_logo_input" accept="image/*" style="display: none;" />
+                    </label>
+                  </div>
                 </div>
+
+                <div class="form-group">
+                  <label class="D_Caidathethong_Nhan">Ngôn ngữ mặc định</label>
+                  <select name="site_language" class="D_Caidathethong_ONhap">
+                    <option value="vi" <?php echo layGiaTri($caiDat, 'site_language', 'vi') === 'vi' ? 'selected' : ''; ?>>Tiếng Việt</option>
+                    <option value="en" <?php echo layGiaTri($caiDat, 'site_language', 'vi') === 'en' ? 'selected' : ''; ?>>Tiếng Anh</option>
+                  </select>
+                </div>
+                
                 <div class="form-group-checkbox warning-box">
                   <label class="D_Caidathethong_OCheckbox">
                     <input type="checkbox" id="D_Caidathethong_BatBaoTri" name="maintenance_mode" <?php echo (($caiDat['maintenance_mode'] ?? '0') === '1') ? 'checked' : ''; ?> />
-                    <span><strong>Bật chế độ bảo trì toàn hệ thống</strong> (Tạm dừng người dùng truy cập)</span>
+                    <span><strong>Bật chế độ bảo trì</strong></span>
                   </label>
                 </div>
+                
                 <div class="D_Caidathethong_HangNut">
-                  <button class="D_Caidathethong_NutChinh" type="submit">Lưu cấu hình Website</button>
+                  <button class="D_Caidathethong_NutChinh" type="submit">Lưu cấu hình</button>
                 </div>
               </form>
             </div>
 
-            <!-- TAB 2: Cấu hình Email -->
-            <div class="tab-content" id="tab-email">
-              <form class="D_Caidathethong_Panel" method="post" action="D_Caidathethong.php#email">
-                <div class="panel-header">
-                  <div>
-                    <h2 class="D_Caidathethong_TieuDePanel">Cấu hình máy chủ Email (SMTP)</h2>
-                    <p class="panel-subtitle">Dùng để gửi mã xác thực OTP và email nhắc nhở ôn tập</p>
-                  </div>
-                </div>
-                <input type="hidden" name="hanhdong" value="luu_email" />
-                <div class="form-group">
-                  <label class="D_Caidathethong_Nhan">SMTP Server</label>
-                  <input type="text" name="smtp_server" class="D_Caidathethong_ONhap" placeholder="smtp.gmail.com" value="<?php echo layGiaTri($caiDat, 'smtp_server', 'smtp.gmail.com'); ?>" />
-                </div>
-                <div class="D_Caidathethong_HangHai">
-                  <div class="form-group">
-                    <label class="D_Caidathethong_Nhan">Cổng (Port)</label>
-                    <input type="text" name="smtp_port" class="D_Caidathethong_ONhap" placeholder="587" value="<?php echo layGiaTri($caiDat, 'smtp_port', '587'); ?>" />
-                  </div>
-                  <div class="form-group">
-                    <label class="D_Caidathethong_Nhan">Bảo mật</label>
-                    <input type="text" name="smtp_security" class="D_Caidathethong_ONhap" placeholder="TLS / SSL" value="<?php echo layGiaTri($caiDat, 'smtp_security', 'tls'); ?>" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="D_Caidathethong_Nhan">Email gửi thông báo (Sender)</label>
-                  <input type="email" name="notify_email" class="D_Caidathethong_ONhap" placeholder="noreply@lexiloop.edu.vn" value="<?php echo layGiaTri($caiDat, 'notify_email', 'noreply@lexiloop.edu.vn'); ?>" />
-                </div>
-                <div class="form-group">
-                  <label class="D_Caidathethong_Nhan">Mật khẩu ứng dụng (App Password)</label>
-                  <input type="password" name="smtp_app_password" class="D_Caidathethong_ONhap" placeholder="Để trống nếu không muốn đổi mật khẩu hiện tại" />
-                </div>
-                <div class="form-group-checkbox">
-                  <label class="D_Caidathethong_OCheckbox">
-                    <input type="checkbox" id="D_Caidathethong_BatNhacNho" name="reminder_enabled" <?php echo (($caiDat['reminder_enabled'] ?? '0') === '1') ? 'checked' : ''; ?> />
-                    <span>Bật tự động gửi email nhắc nhở ôn tập hàng ngày</span>
-                  </label>
-                </div>
-                <div class="D_Caidathethong_HangNut">
-                  <button class="D_Caidathethong_NutTrang" type="button" id="D_Caidathethong_BtnKiemTraEmail">Kiểm tra kết nối</button>
-                  <button class="D_Caidathethong_NutChinh" type="submit">Lưu cấu hình Email</button>
-                </div>
-              </form>
-            </div>
-
-            <!-- TAB 3: Cấu hình Học tập -->
+            <!-- TAB 2: Cấu hình Học tập -->
             <div class="tab-content" id="tab-hoctap">
               <form class="D_Caidathethong_Panel" method="post" action="D_Caidathethong.php#hoctap">
                 <div class="panel-header">
                   <div>
                     <h2 class="D_Caidathethong_TieuDePanel">Luật và Tham số Học tập (Business Rules)</h2>
-                    <p class="panel-subtitle">Cấu hình các thông số phục vụ cho thuật toán hiển thị từ vựng và cấp phát điểm XP</p>
+                    <p class="panel-subtitle">Cấu hình các thông số phục vụ cho thuật toán hiển thị từ vựng</p>
                   </div>
                 </div>
                 <input type="hidden" name="hanhdong" value="luu_hoctap" />
-                <div class="D_Caidathethong_HangHai">
-                  <div class="form-group">
-                    <label class="D_Caidathethong_Nhan">Số câu hỏi mặc định / 1 Quiz</label>
-                    <input type="number" name="quiz_default_questions" class="D_Caidathethong_ONhap" placeholder="15" value="<?php echo layGiaTri($caiDat, 'quiz_default_questions', '15'); ?>" min="5" max="100" />
-                  </div>
-                  <div class="form-group">
-                    <label class="D_Caidathethong_Nhan">Điểm thưởng (XP) hoàn thành Quiz</label>
-                    <input type="number" name="xp_per_quiz" class="D_Caidathethong_ONhap" placeholder="50" value="<?php echo layGiaTri($caiDat, 'xp_per_quiz', '50'); ?>" min="0" />
-                  </div>
+                <div class="form-group">
+                  <label class="D_Caidathethong_Nhan">Số câu hỏi mặc định / 1 Quiz</label>
+                  <input type="number" name="quiz_default_questions" class="D_Caidathethong_ONhap" placeholder="15" value="<?php echo layGiaTri($caiDat, 'quiz_default_questions', '15'); ?>" min="5" max="100" />
                 </div>
                 <div class="form-group">
                   <label class="D_Caidathethong_Nhan">Giới hạn số từ mới hàng ngày (Tránh Spam)</label>
@@ -272,51 +247,9 @@ function layGiaTri($caiDat, $key, $macDinh = '') {
                   <p class="panel-subtitle" style="margin-top: 6px;">Các giá trị cách nhau bằng dấu phẩy. VD: 1,3,7 (Ôn lại sau 1 ngày, 3 ngày, 7 ngày).</p>
                 </div>
                 <div class="D_Caidathethong_HangNut">
-                  <button class="D_Caidathethong_NutChinh" type="submit">Lưu cấu hình Học tập</button>
+                  <button class="D_Caidathethong_NutChinh" type="submit">Lưu cấu hình</button>
                 </div>
               </form>
-            </div>
-
-            <!-- TAB 4: Lịch sử Cài đặt (Audit Logs) -->
-            <div class="tab-content" id="tab-lichsu">
-              <div class="D_Caidathethong_Panel">
-                <div class="panel-header">
-                  <div>
-                    <h2 class="D_Caidathethong_TieuDePanel">Lịch sử thay đổi cài đặt (Audit Logs)</h2>
-                    <p class="panel-subtitle">Dữ liệu được ghi nhận tự động bởi Trigger trong Database (Bảo mật chống chối bỏ)</p>
-                  </div>
-                </div>
-                <div class="audit-table-wrapper">
-                  <?php if (empty($lichSuCaiDat)): ?>
-                    <p style="color: var(--color-text-muted); font-size: 14px; text-align: center; padding: 20px;">
-                      Chưa có dữ liệu lịch sử hoặc chưa thiết lập Trigger/View `vw_system_settings_logs` trong CSDL.
-                    </p>
-                  <?php else: ?>
-                    <table class="audit-table">
-                      <thead>
-                        <tr>
-                          <th>Thời gian</th>
-                          <th>Tài khoản (Admin ID)</th>
-                          <th>Cài đặt bị đổi</th>
-                          <th>Giá trị cũ</th>
-                          <th>Giá trị mới</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <?php foreach ($lichSuCaiDat as $log): ?>
-                          <tr>
-                            <td><?php echo htmlspecialchars($log['created_at']); ?></td>
-                            <td><?php echo htmlspecialchars($log['changed_by'] ?? 'System'); ?></td>
-                            <td><code><?php echo htmlspecialchars($log['setting_key']); ?></code></td>
-                            <td class="old-val"><?php echo htmlspecialchars($log['old_value'] ?? 'NULL'); ?></td>
-                            <td class="new-val"><?php echo htmlspecialchars($log['new_value'] ?? 'NULL'); ?></td>
-                          </tr>
-                        <?php endforeach; ?>
-                      </tbody>
-                    </table>
-                  <?php endif; ?>
-                </div>
-              </div>
             </div>
           </div>
         </main>

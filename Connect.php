@@ -71,4 +71,7 @@ function getDatabaseConnection(): mysqli
     }
     return $connection;
 }
+
+// Gọi logic quản lý cấu hình (và kiểm tra bảo trì)
+require_once __DIR__ . '/includes/system_config.php';
 ?>

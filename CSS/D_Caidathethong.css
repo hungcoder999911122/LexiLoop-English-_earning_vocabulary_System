@@ -513,3 +513,30 @@ body {
   color: var(--color-success);
   font-weight: 600;
 }
+
+.D_Caidathethong_LogoUploadWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.D_Caidathethong_LogoPreviewBox {
+  width: 150px;
+  height: 150px;
+  border: 2px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  background-color: var(--color-surface);
+}
+
+.D_Caidathethong_LogoPreviewBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

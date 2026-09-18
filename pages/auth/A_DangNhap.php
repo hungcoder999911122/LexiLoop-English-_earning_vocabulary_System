@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Đăng nhập - LexiLoop</title>
+	<title>Đăng nhập - <?= htmlspecialchars($sysSiteName ?? 'LexiLoop') ?></title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -82,8 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 			<!-- Header / Brand -->
 			<div class="login-header">
 				<a href="/pages/main/B_homepage.html" class="login-logo">
-					<span class="login-logo-icon">🌿</span>
-					<span class="login-logo-text">LexiLoop</span>
+					<?php if (!empty($sysSiteLogo)): ?>
+						<img src="<?= htmlspecialchars($sysSiteLogo) ?>" alt="Logo" style="height: 32px; object-fit: contain; max-width: 40px; margin-right: 8px;">
+					<?php else: ?>
+						<span class="login-logo-icon">🌿</span>
+					<?php endif; ?>
+					<span class="login-logo-text"><?= htmlspecialchars($sysSiteName ?? 'LexiLoop') ?></span>
 				</a>
 				<h1 class="login-title">Chào mừng trở lại!</h1>
 				<p class="login-subtitle">Đăng nhập để tiếp tục hành trình học từ vựng mỗi ngày</p>

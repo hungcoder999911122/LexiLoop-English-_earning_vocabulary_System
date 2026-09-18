@@ -25,8 +25,12 @@ function isSidebarActive(string $pageName, string $currentPage): string
 
     <!-- Logo: dùng đường dẫn tương đối phù hợp cho pages/main và pages/user -->
     <a href="../user/C_Dashboard_user.php" class="sidebar-logo">
-        <span class="logo-badge" aria-hidden="true">🌿</span>
-        <span>LexiLoop</span>
+        <?php if (!empty($sysSiteLogo)): ?>
+            <img src="<?= htmlspecialchars($sysSiteLogo) ?>" alt="Logo" style="height: 32px; object-fit: contain; max-width: 40px;">
+        <?php else: ?>
+            <span class="logo-badge" aria-hidden="true">🌿</span>
+        <?php endif; ?>
+        <span><?= htmlspecialchars($sysSiteName) ?></span>
     </a>
 
     <!-- Điều hướng chính -->

@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" type="text/css" href="/CSS/Style.css">
     <link rel="stylesheet" type="text/css" href="/CSS/A_DangKy.css">
     <script src="/JS/jquery-4.0.0.min.js"></script>
-    <title> Đăng ký </title>
+    <title>Đăng ký - <?= htmlspecialchars($sysSiteName ?? 'LexiLoop') ?></title>
 </head>
 
 <body>

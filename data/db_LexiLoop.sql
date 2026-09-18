@@ -197,7 +197,6 @@ CREATE TABLE `system_settings` (
 --
 INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) VALUES 
 ('quiz_default_questions', '15'),
-('xp_per_quiz', '50'),
 ('daily_word_limit', '30'),
 ('spaced_repetition_intervals', '1,3,7,21');
 
