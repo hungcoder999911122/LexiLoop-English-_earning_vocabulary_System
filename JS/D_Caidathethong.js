@@ -1,4 +1,34 @@
 $(function () {
+  // --- TABS LOGIC ---
+  const $tabBtns = $(".admin-tab-btn");
+  const $tabContents = $(".tab-content");
+
+  function switchTab(tabId) {
+    // Xóa active cũ
+    $tabBtns.removeClass("active");
+    $tabContents.removeClass("active");
+
+    // Thêm active mới
+    $(`.admin-tab-btn[data-tab="${tabId}"]`).addClass("active");
+    $(`#tab-${tabId}`).addClass("active");
+
+    // Cập nhật hash trên URL để khi load lại trang không bị mất tab đang đứng
+    window.location.hash = tabId;
+  }
+
+  // Lắng nghe sự kiện click
+  $tabBtns.on("click", function () {
+    const tabId = $(this).data("tab");
+    switchTab(tabId);
+  });
+
+  // Kiểm tra hash lúc mới load trang
+  const currentHash = window.location.hash.substring(1);
+  if (currentHash && $(`#tab-${currentHash}`).length) {
+    switchTab(currentHash);
+  }
+
+  // --- FORM LOGIC ---
   var $formEmail = $('input[name="hanhdong"][value="luu_email"]').closest("form");
   var $formWeb = $('input[name="hanhdong"][value="luu_web"]').closest("form");
 

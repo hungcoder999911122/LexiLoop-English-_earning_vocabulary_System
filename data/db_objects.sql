@@ -1293,12 +1293,16 @@ BEGIN
     DELETE FROM `Topics` WHERE `topicID` = p_topic_id;
 END$$
 
-CREATE PROCEDURE `sp_save_system_setting`(IN p_actor_id INT, IN p_key VARCHAR(50), IN p_value TEXT)
+CREATE PROCEDURE `sp_save_system_setting`(IN p_actor_id INT, IN p_key VARCHAR(100), IN p_value TEXT)
 MODIFIES SQL DATA
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM `Users` WHERE `userID` = p_actor_id AND `role` = 'admin' AND `status` = 'active') THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
     END IF;
+    
+    -- Lưu biến session để Trigger có thể đọc được ID của Admin đang thao tác
+    SET @current_admin_id = p_actor_id;
+    
     INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES (p_key, p_value)
     ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 END$$
@@ -1500,3 +1504,61 @@ DELIMITER ;
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_save_personal_vocabulary` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_delete_personal_vocabularies` TO 'app_user'@'%';
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_set_vocabulary_statuses` TO 'app_user'@'%';
+
+-- ==============================================================================
+-- KỊCH BẢN TẠO CÁC ĐỐI TƯỢNG CSDL CHO MODULE CÀI ĐẶT (ĐỒ ÁN MÔN HQTCSDL)
+-- Chứa: Table, View, Trigger, Function
+-- ==============================================================================
+
+DELIMITER //
+-- VIEW: Truy xuất dữ liệu cài đặt (Đã dùng ở D_Caidathethong.php)
+CREATE OR REPLACE VIEW vw_system_settings_logs AS
+SELECT 
+    log_id,
+    setting_key,
+    old_value,
+    new_value,
+    changed_by,
+    created_at
+FROM system_settings_logs
+ORDER BY created_at DESC//
+
+-- 3. TRIGGER: Tự động ghi log khi có thay đổi cấu hình (Audit Trail)
+-- Trigger này thỏa mãn tiêu chí thiết kế an toàn CSDL của môn học
+DROP TRIGGER IF EXISTS trg_audit_system_settings//
+CREATE TRIGGER trg_audit_system_settings
+AFTER UPDATE ON system_settings
+FOR EACH ROW
+BEGIN
+    -- Chỉ ghi log nếu giá trị thực sự bị thay đổi
+    IF OLD.setting_value != NEW.setting_value THEN
+        INSERT INTO system_settings_logs (setting_key, old_value, new_value, changed_by, created_at)
+        VALUES (
+            NEW.setting_key,
+            OLD.setting_value,
+            NEW.setting_value,
+            @current_admin_id, -- Biến session được thiết lập trong Procedure sp_save_system_setting
+            NOW()
+        );
+    END IF;
+END//
+
+-- 4. FUNCTION: Hàm lấy nhanh một cấu hình hệ thống
+-- Tránh việc phải viết SELECT ... FROM system_settings WHERE ... liên tục
+DROP FUNCTION IF EXISTS fn_get_setting_value//
+CREATE FUNCTION fn_get_setting_value(p_key VARCHAR(100))
+RETURNS TEXT
+READS SQL DATA
+BEGIN
+    DECLARE v_value TEXT;
+    SELECT setting_value INTO v_value 
+    FROM system_settings 
+    WHERE setting_key = p_key 
+    LIMIT 1;
+    
+    RETURN v_value;
+END//
+
+DELIMITER ;
+
+

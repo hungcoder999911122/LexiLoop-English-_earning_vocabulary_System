@@ -192,6 +192,30 @@ CREATE TABLE `system_settings` (
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping default data for table `system_settings`
+--
+INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) VALUES 
+('quiz_default_questions', '15'),
+('xp_per_quiz', '50'),
+('daily_word_limit', '30'),
+('spaced_repetition_intervals', '1,3,7,21');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_settings_logs` (AUDIT LOG)
+--
+
+CREATE TABLE `system_settings_logs` (
+  `log_id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `setting_key` varchar(100) NOT NULL,
+  `old_value` text,
+  `new_value` text,
+  `changed_by` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- --------------------------------------------------------
 
 --
