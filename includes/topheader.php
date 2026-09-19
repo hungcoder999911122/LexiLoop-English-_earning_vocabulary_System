@@ -81,22 +81,14 @@ $headerInitials = substr($headerInitials, 0, 2);
                     <span class="top-header-avatar" aria-hidden="true">
                         <?= htmlspecialchars($headerInitials) ?>
                     </span>
-
-                    <span class="top-header-user-name">
-                        <?= htmlspecialchars($headerUserName) ?>
-                    </span>
+                    
+                    <a href="../user/C_Hosocanhan.php">
+                        <span class="top-header-user-name">
+                            <?= htmlspecialchars($headerUserName) ?>
+                        </span>
+                    </a>
                 </summary>
 
-                <nav class="top-header-account-menu" aria-label="Tài khoản">
-                    <a href="../user/C_Hosocanhan.php">Hồ sơ</a>
-                    <a href="../auth/A_Caidattaikhoan.php">Cài đặt</a>
-
-                    <a
-                        href="../auth/A_DangXuat.php"
-                        data-action="logout">
-                        Đăng xuất
-                    </a>
-                </nav>
             </details>
         <?php else: ?>
             <a href="../auth/A_DangNhap.php" class="login-btn">
