@@ -1,0 +1,464 @@
+/* =========================================================
+   LEXILOOP ADMIN - STATISTICS STYLESHEET
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --admin-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #0e7748;
+  --color-primary-dark: #0a5c37;
+  --color-primary-light: #e6f7ef;
+  --color-accent: #2563eb;
+  
+  --color-bg: #f8faf9;
+  --color-surface: #ffffff;
+  --color-border: #e2ebe6;
+  --color-border-dark: #cbdcd3;
+  
+  --color-text-main: #0f241d;
+  --color-text-sub: #526d60;
+  --color-text-muted: #799587;
+  
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  
+  --sidebar-w: 250px;
+  --topbar-h: 68px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--admin-font);
+  color: var(--color-text-main);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+}
+
+.D_Thongkehethong_Wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar */
+.D_Thongkehethong_Topbar {
+  height: var(--topbar-h);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.D_Thongkehethong_Logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+}
+
+.logo-emoji {
+  font-size: 24px;
+}
+
+.badge-admin {
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.D_Thongkehethong_TopbarPhai {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.D_Thongkehethong_UserMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.D_Thongkehethong_Avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0e7748 0%, #15803d 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+/* Layout Body */
+.D_Thongkehethong_Body {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar */
+.D_Thongkehethong_Sidebar {
+  width: var(--sidebar-w);
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  min-height: calc(100vh - var(--topbar-h));
+  padding: 24px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.8px;
+  padding: 0 14px 10px 14px;
+}
+
+.D_Thongkehethong_MucMenu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  color: var(--color-text-sub);
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.menu-icon {
+  font-size: 18px;
+}
+
+.D_Thongkehethong_MucMenu:hover {
+  background-color: var(--color-bg);
+  color: var(--color-primary-dark);
+}
+
+.D_Thongkehethong_DangChon {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.D_Thongkehethong_GachNgang {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 16px 8px;
+}
+
+.D_Thongkehethong_DangXuat:hover {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* Main Content */
+.D_Thongkehethong_NoiDung {
+  flex: 1;
+  padding: 32px 36px;
+  max-width: 1300px;
+}
+
+.D_Thongkehethong_HangTieuDe {
+  margin-bottom: 24px;
+}
+
+.D_Thongkehethong_TieuDe {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.5px;
+}
+
+.D_Thongkehethong_MoTaTrang {
+  font-size: 13.5px;
+  color: var(--color-text-sub);
+  margin-top: 4px;
+}
+
+/* Stat Cards */
+.D_Thongkehethong_HangTheSo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.D_Thongkehethong_TheSo {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon {
+  font-size: 26px;
+  padding: 12px;
+  background-color: var(--color-bg);
+  border-radius: 12px;
+}
+
+.D_Thongkehethong_NhanTheSo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.D_Thongkehethong_SoLieu {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.5px;
+}
+
+/* Grid for charts & tables */
+.D_Thongkehethong_HangBieuDo {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+
+.D_Thongkehethong_HopBieuDo {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 24px 26px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.D_Thongkehethong_TieuDeHop {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 20px;
+}
+
+/* Bar Chart */
+.D_Thongkehethong_BieuDoCot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 220px;
+  padding: 20px 10px 10px 10px;
+  background-color: #fafcfb;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  gap: 12px;
+}
+
+.bar-column-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.bar-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.D_Thongkehethong_Cot {
+  width: 100%;
+  max-width: 38px;
+  background: linear-gradient(180deg, #15803d 0%, #0e7748 100%);
+  border-radius: 8px 8px 3px 3px;
+  transition: all 0.3s ease;
+  min-height: 8px;
+}
+
+.D_Thongkehethong_Cot:hover {
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  transform: scaleY(1.03);
+}
+
+.bar-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* Table */
+.D_Thongkehethong_Bang {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.D_Thongkehethong_Bang thead th {
+  background-color: #fafcfb;
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.D_Thongkehethong_Bang tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.D_Thongkehethong_Bang tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rank-badge {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 24px;
+  margin-right: 8px;
+}
+
+.rank-1 { background-color: #fef3c7; color: #d97706; }
+.rank-2 { background-color: #e2e8f0; color: #475569; }
+.rank-3 { background-color: #ffedd5; color: #c2410c; }
+
+.badge-count {
+  display: inline-block;
+  padding: 4px 10px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .D_Thongkehethong_HangTheSo {
+    grid-template-columns: 1fr;
+  }
+  .D_Thongkehethong_HangBieuDo {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .D_Thongkehethong_Sidebar {
+    width: 76px;
+    padding: 20px 8px;
+  }
+  .sidebar-section-title,
+  .D_Thongkehethong_MucMenu span:last-child {
+    display: none;
+  }
+  .D_Thongkehethong_MucMenu {
+    justify-content: center;
+  }
+  .D_Thongkehethong_NoiDung {
+    padding: 20px 16px;
+  }
+}
+
+/* Báo cáo phân tích: bộ lọc, so sánh kỳ và bảng chi tiết. */
+.D_Thongkehethong_NoiDung { min-width: 0; width: 100%; }
+.D_Thongkehethong_Sidebar { flex-shrink: 0; }
+.D_Thongkehethong_HangTheSo { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.D_Thongkehethong_TheSo { align-items: flex-start; padding: 20px; }
+.stats-filter { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; margin-bottom: 24px; background: #e6f7ef; border: 1px solid var(--color-border); border-radius: 14px; }
+.stats-filter label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.stats-filter select, .stats-filter button { font: inherit; font-size: 13px; border-radius: 8px; padding: 10px 12px; border: 1px solid var(--color-border-dark); }
+.stats-filter select { background: white; max-width: 100%; }
+.stats-filter button { background: var(--color-primary); color: white; cursor: pointer; margin-left: 6px; }
+.stats-filter button:hover { background: var(--color-primary-dark); }
+.stats-filter p { font-size: 13px; line-height: 1.8; }
+.stats-filter small { color: var(--color-text-sub); }
+.stats-change { color: var(--color-primary-dark); font-size: 12px; font-weight: 600; margin: 10px 0 6px; }
+.stats-note { color: var(--color-text-sub); font-size: 12px; line-height: 1.7; }
+.stats-section { margin-top: 24px; }
+.stats-section .D_Thongkehethong_TieuDeHop { margin-bottom: 8px; }
+.stats-table-scroll { overflow-x: auto; margin-top: 16px; }
+.stats-table-scroll table { min-width: 580px; }
+.stats-empty { padding: 24px 0; color: var(--color-text-sub); font-size: 13px; }
+@media (max-width: 1200px) { .D_Thongkehethong_HangTheSo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .D_Thongkehethong_HangTheSo { grid-template-columns: 1fr; }
+  .stats-filter { flex-direction: column; align-items: flex-start; padding: 16px; }
+  .stats-filter button { margin: 8px 0 0; }
+  .D_Thongkehethong_HopBieuDo { padding: 20px 16px; }
+  .D_Thongkehethong_Topbar { padding: 0 16px; }
+  .admin-name { display: none; }
+}
+
+/* Biểu đồ tròn dùng CSS, dữ liệu tính trên server từ View kết quả Quiz. */
+.stats-quiz-panel .D_Thongkehethong_TieuDeHop { margin-bottom: 24px; }
+.stats-quiz-layout { display: flex; align-items: center; justify-content: center; gap: 56px; }
+.stats-donut { width: 220px; height: 220px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.stats-donut-center { width: 154px; height: 154px; border-radius: 50%; background: var(--color-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.stats-donut-center strong { font-size: 32px; font-weight: 800; }
+.stats-donut-center span { font-size: 12px; color: var(--color-text-sub); }
+.stats-legend { list-style: none; display: grid; gap: 24px; }
+.stats-legend li { display: flex; gap: 12px; align-items: flex-start; }
+.stats-legend li > div { display: grid; gap: 6px; font-size: 13px; }
+.stats-legend strong { color: var(--color-text-sub); font-size: 12px; font-weight: 600; }
+.stats-dot { width: 12px; height: 12px; margin-top: 3px; border-radius: 50%; flex-shrink: 0; }
+.stats-dot-0 { background: #d97706; }
+.stats-dot-1 { background: #2563eb; }
+.stats-dot-2 { background: #0e7748; }
+@media (max-width: 700px) {
+  .stats-quiz-layout { flex-direction: column; gap: 24px; }
+  .stats-legend { width: 100%; max-width: 300px; }
+}
+
+/* Quiz và Flashcard cùng hàng; xếp dọc khi không đủ chỗ. */
+.stats-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.stats-chart-grid > section { min-width: 0; }
+.stats-chart-grid .D_Thongkehethong_TieuDeHop { margin-bottom: 24px; }
+.stats-chart-grid .stats-quiz-layout { flex-direction: column; gap: 24px; }
+.stats-chart-grid .stats-legend { width: 100%; max-width: 300px; gap: 16px; }
+.stats-dot-remembered { background: #0e7748; }
+.stats-dot-not-remembered { background: #d97706; }
+.stats-assessment-note { margin-top: 24px; }
+@media (max-width: 1000px) { .stats-chart-grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,122 @@
+.C_Flashcard_body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.C_Flashcard_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-bottom: 2px solid #000000;
+}
+
+.C_Flashcard_logo {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.C_Flashcard_progress {
+    font-size: 14px;
+    color: #444444;
+}
+
+.C_Flashcard_bannerBox {
+    width: 100%;
+    padding: 12px 20px;
+    border: 1.5px solid #000000;
+    background-color: #f7f7f7;
+    font-size: 13px;
+    color: #333333;
+    box-sizing: border-box;
+}
+
+.C_Flashcard_main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.C_Flashcard_cardBox {
+    width: 460px;
+    height: 270px;
+    border: 2px solid #000000;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.C_Flashcard_word {
+    margin: 0 0 15px 0;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.C_Flashcard_hint {
+    margin: 0;
+    font-size: 12px;
+    color: #666666;
+}
+
+.C_Flashcard_btnGroup {
+    display: flex;
+    gap: 30px;
+    margin-top: 30px;
+    width: 460px;
+    justify-content: space-between;
+}
+
+.C_Flashcard_btn {
+    width: 215px;
+    height: 48px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1.5px solid #000000;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.C_Flashcard_btnWhite {
+    background-color: #ffffff;
+}
+
+.C_Flashcard_btnWhite:hover {
+    background-color: #f0f0f0;
+}
+
+.C_Flashcard_btnGray {
+    background-color: #d9d9d9;
+}
+
+.C_Flashcard_btnGray:hover {
+    background-color: #c4c4c4;
+}
+
+/* Nút Đăng ký ở dưới cùng */
+.C_Flashcard_ctaContainer {
+    margin-top: 35px;
+}
+
+.C_Flashcard_btnCta {
+    width: 320px;
+    height: 45px;
+    background-color: #ffffff;
+    border: 1.5px solid #000000;
+    font-size: 13px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.C_Flashcard_btnCta:hover {
+    background-color: #f5f5f5;
+}

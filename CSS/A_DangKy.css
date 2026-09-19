@@ -1,0 +1,139 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial, sans-serif;
+}
+
+body {
+	background-image: url('../assets/images/bg_Dangky_Dangnhap.png');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	padding: 20px 0;
+}
+
+/* Khung trắng bo góc trung tâm */
+.box {
+	background: rgba(255, 255, 255, 0.92);
+	padding: 40px 35px;
+	border-radius: 16px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+	width: 100%;
+	max-width: 420px;
+	backdrop-filter: blur(8px);
+}
+
+	/* Tiêu đề */
+	.box h2 {
+		text-align: center;
+		font-size: 28px;
+		color: #1b4332;
+		margin-bottom: 8px;
+	}
+
+	.box p.sub-title {
+		text-align: center;
+		font-size: 16px;
+		font-weight: bold;
+		color: #2d6a4f;
+		margin-bottom: 24px;
+		line-height: 1.4;
+	}
+
+	/* Định dạng nhãn (Label) */
+	.box label {
+		display: block;
+		font-size: 15px;
+		font-weight: 600;
+		color: #333;
+		margin-bottom: 6px;
+		margin-top: 14px;
+	}
+
+	/* Tất cả các ô nhập liệu (Sửa lỗi ô Họ Tên bị nhỏ) */
+	.box input[type="text"],
+	.box input[type="email"],
+	.box input[type="password"] {
+		width: 100%;
+		padding: 12px 14px;
+		border: 1px solid #d0d7de;
+		border-radius: 8px;
+		font-size: 14px;
+		outline: none;
+		transition: all 0.2s ease-in-out;
+		background-color: #f8fafc;
+	}
+
+		.box input[type="text"]:focus,
+		.box input[type="email"]:focus,
+		.box input[type="password"]:focus {
+			border-color: #2d6a4f;
+			background-color: #fff;
+			box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+		}
+
+/* Lựa chọn Đồng ý điều khoản */
+.checkbox-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 18px 0;
+}
+
+	.checkbox-group input[type="checkbox"] {
+		width: 16px;
+		height: 16px;
+		cursor: pointer;
+	}
+
+	.checkbox-group label {
+		margin: 0;
+		font-size: 14px;
+		font-weight: normal;
+		color: #444;
+		cursor: pointer;
+	}
+
+/* Nút Đăng ký */
+.box input[type="submit"],
+.box button[type="submit"] {
+	width: 100%;
+	padding: 12px;
+	background-color: #2d6a4f;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: background 0.3s;
+	margin-top: 10px;
+}
+
+	.box input[type="submit"]:hover,
+	.box button[type="submit"]:hover {
+		background-color: #1b4332;
+	}
+
+/* Dòng chuyển hướng sang Đăng nhập */
+.login-link {
+	text-align: center;
+	margin-top: 16px;
+}
+
+	.login-link a {
+		color: #2d6a4f;
+		text-decoration: none;
+		font-weight: bold;
+		font-size: 15px;
+	}
+
+		.login-link a:hover {
+			text-decoration: underline;
+		}

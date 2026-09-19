@@ -1,0 +1,686 @@
+/* ==========================================================================
+   1. THIẾT LẬP CHUNG & KHUNG BỐ CỤC CHÍNH (LAYOUT BASE)
+   ========================================================================== */
+
+/* Khung nền trang & biến màu sắc dùng chung */
+.C_Botuvung_body {
+  --set-text: #19251e;
+  --set-muted: #69766e;
+  --set-border: #dfe8e2;
+  margin: 0;
+  min-height: 100vh;
+  background: #f5f8f6;
+}
+
+/* Reset box-sizing chuẩn */
+.C_Botuvung_body *,
+.C_Botuvung_body *::before,
+.C_Botuvung_body *::after {
+  box-sizing: border-box;
+}
+
+/* Header dùng chung nằm ngoài vùng nội dung, chừa sidebar 245px */
+.C_Botuvung_body > .top-header {
+  width: calc(100% - 245px);
+  margin-left: 245px;
+}
+
+/* Vùng nội dung chính của trang */
+.C_Botuvung_main {
+  width: calc(100% - 245px);
+  min-height: calc(100vh - 76px);
+  margin-left: 245px;
+  padding: 30px clamp(24px, 3.5vw, 54px) 50px;
+}
+
+
+/* ==========================================================================
+   2. KHỐI BANNER GIỚI THIỆU (INTRO BANNER)
+   ========================================================================== */
+
+/* Banner giới thiệu đầu trang */
+.C_Botuvung_intro {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  overflow: hidden;
+  padding: 28px 30px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(130deg, #175d3d, #2e9660);
+  box-shadow: 0 10px 26px rgba(23, 93, 61, .14);
+}
+
+/* Họa tiết vòng tròn trang trí ở nền banner */
+.C_Botuvung_intro::after {
+  position: absolute;
+  right: 18%;
+  bottom: -75px;
+  width: 180px;
+  height: 180px;
+  border: 30px solid rgba(255, 255, 255, .07);
+  border-radius: 50%;
+  content: "";
+}
+
+/* Dòng chữ nhỏ (nhãn phụ) phía trên tiêu đề */
+.C_Botuvung_eyebrow {
+  display: block;
+  color: #75b590;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.C_Botuvung_intro .C_Botuvung_eyebrow {
+  color: #c8ead7;
+}
+
+/* Tiêu đề trong banner */
+.C_Botuvung_intro h2 {
+  position: relative;
+  z-index: 1;
+  margin: 7px 0 6px;
+  color: #fff;
+  font-size: clamp(23px, 2vw, 30px);
+}
+
+/* Đoạn mô tả trong banner */
+.C_Botuvung_intro p {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 14px;
+}
+
+/* Nút tạo bộ từ vựng mới */
+.C_Botuvung_createButton {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 19px;
+  border: 0;
+  border-radius: 12px;
+  color: #17603d;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(11, 58, 35, .16);
+}
+
+.C_Botuvung_createButton:hover {
+  transform: translateY(-2px);
+}
+
+
+/* ==========================================================================
+   3. HỘP THÔNG BÁO (ALERTS)
+   ========================================================================== */
+
+.C_Botuvung_alert {
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: 1px solid;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.C_Botuvung_alert--success {
+  border-color: #b7dfc6;
+  color: #17643d;
+  background: #edf9f1;
+}
+
+.C_Botuvung_alert--error {
+  border-color: #efc2c0;
+  color: #9d342f;
+  background: #fff3f2;
+}
+
+
+/* ==========================================================================
+   4. THANH CÔNG CỤ & TÌM KIẾM (TOOLBAR & SEARCH)
+   ========================================================================== */
+
+.C_Botuvung_toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 25px 0 18px;
+}
+
+/* Form ô tìm kiếm */
+.C_Botuvung_searchForm {
+  display: flex;
+  width: min(100%, 520px);
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding-left: 14px;
+  border: 1px solid var(--set-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(31, 62, 43, .035);
+}
+
+.C_Botuvung_searchForm > span {
+  color: #718078;
+  font-size: 22px;
+}
+
+.C_Botuvung_searchForm input {
+  min-width: 0;
+  flex: 1;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: var(--set-text);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+}
+
+.C_Botuvung_searchForm button {
+  align-self: stretch;
+  margin: 0;
+  padding: 0 18px;
+  border-radius: 0 11px 11px 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Thống kê tóm tắt số lượng */
+.C_Botuvung_summary {
+  flex: 0 0 auto;
+  color: var(--set-muted);
+  font-size: 13px;
+}
+
+.C_Botuvung_summary strong {
+  color: #19824e;
+  font-size: 17px;
+}
+
+
+/* ==========================================================================
+   5. DANH SÁCH THẺ BỘ TỪ VỰNG (CARD GRID & CARDS)
+   ========================================================================== */
+
+/* Lưới hiển thị các thẻ */
+.C_Botuvung_grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Thẻ thông tin bộ từ vựng cơ bản */
+.C_Botuvung_card {
+  --card-color: #288f59;
+  --card-soft: #e9f7ef;
+  display: flex;
+  min-width: 0;
+  min-height: 240px;
+  flex-direction: column;
+  padding: 20px 20px 0;
+  overflow: hidden;
+  border: 1px solid var(--set-border);
+  border-top: 3px solid var(--card-color);
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(31, 62, 43, .055);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.C_Botuvung_card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(31, 62, 43, .09);
+}
+
+/* Các biến thể màu sắc của thẻ */
+.C_Botuvung_card--blue {
+  --card-color: #278ccc;
+  --card-soft: #eaf5fc;
+}
+
+.C_Botuvung_card--violet {
+  --card-color: #8a5bd1;
+  --card-soft: #f2ecfb;
+}
+
+.C_Botuvung_card--orange {
+  --card-color: #df862a;
+  --card-soft: #fff2e5;
+}
+
+/* Phần trên cùng bên trong thẻ */
+.C_Botuvung_cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Biểu tượng thư mục */
+.C_Botuvung_folderIcon {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--card-color);
+  background: var(--card-soft);
+  font-size: 23px;
+}
+
+/* Huy hiệu đếm số từ */
+.C_Botuvung_wordCount {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: var(--card-color);
+  background: var(--card-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Tiêu đề thẻ */
+.C_Botuvung_card h3 {
+  margin: 16px 0 7px;
+  overflow: hidden;
+  color: var(--set-text);
+  font-size: 17px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Đoạn mô tả thẻ (tối đa 2 dòng) */
+.C_Botuvung_card p {
+  display: -webkit-box;
+  min-height: 42px;
+  margin-bottom: 13px;
+  overflow: hidden;
+  color: var(--set-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Thông tin ngày/tháng ở chân thẻ */
+.C_Botuvung_cardMeta {
+  margin-bottom: 16px;
+  color: #929d96;
+  font-size: 10px;
+}
+
+/* Khu vực các nút thao tác dưới đáy thẻ */
+.C_Botuvung_cardActions {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 7px;
+  margin: auto -20px 0;
+  padding: 9px 14px 9px 20px;
+  border-top: 1px solid #edf1ee;
+}
+
+/* Link chuyển đến trang quản lý bộ từ */
+.C_Botuvung_manageLink {
+  margin-right: auto;
+  color: var(--card-color);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Hành động học mở trang chọn Flashcard hoặc Quiz cho đúng bộ hiện tại. */
+.C_Botuvung_learnButton {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--card-color);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Nút icon thao tác nhỏ (sửa, xóa...) */
+.C_Botuvung_iconButton {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border-radius: 9px;
+  color: #526159;
+  background: #f1f5f2;
+  font-size: 16px;
+}
+
+.C_Botuvung_iconButton:hover {
+  color: #1f7148;
+  background: #e7f4ec;
+}
+
+/* Nút dạng nguy hiểm (xóa) */
+.C_Botuvung_iconButton--danger:hover {
+  color: #ae3d37;
+  background: #fcebea;
+}
+
+.C_Botuvung_deleteForm {
+  margin: 0;
+}
+
+
+/* ==========================================================================
+   6. TRẠNG THÁI TRỐNG & PHÂN TRANG (EMPTY STATE & PAGINATION)
+   ========================================================================== */
+
+/* Trạng thái chưa có dữ liệu */
+.C_Botuvung_emptyState {
+  display: flex;
+  min-height: 350px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 35px;
+  border: 1px dashed #cbdad1;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+}
+
+.C_Botuvung_emptyIcon {
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  color: #258a55;
+  background: #e8f6ed;
+  font-size: 31px;
+}
+
+.C_Botuvung_emptyState h3 {
+  margin: 0 0 7px;
+  font-size: 19px;
+}
+
+.C_Botuvung_emptyState p {
+  max-width: 420px;
+  margin-bottom: 19px;
+  font-size: 13px;
+}
+
+.C_Botuvung_secondaryLink {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--set-border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Phân trang */
+.C_Botuvung_pagination {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 25px;
+}
+
+.C_Botuvung_pagination a {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--set-border);
+  border-radius: 9px;
+  color: #5d6c63;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.C_Botuvung_pagination a.is-active {
+  border-color: #218a52;
+  color: #fff;
+  background: #218a52;
+}
+
+
+/* ==========================================================================
+   7. HỘP THOẠI MODAL (POPUP FORM)
+   ========================================================================== */
+
+.C_Botuvung_modal[hidden] {
+  display: none;
+}
+
+.C_Botuvung_modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+/* Lớp phủ mờ phía sau modal */
+.C_Botuvung_modalBackdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(17, 31, 23, .52);
+  backdrop-filter: blur(3px);
+}
+
+/* Thân hộp thoại modal */
+.C_Botuvung_dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 500px);
+  padding: 25px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(13, 39, 24, .25);
+}
+
+.C_Botuvung_dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.C_Botuvung_dialogHeader h2 {
+  margin: 5px 0 0;
+  font-size: 22px;
+}
+
+.C_Botuvung_closeButton {
+  width: 35px;
+  height: 35px;
+  margin: 0;
+  padding: 0;
+  border-radius: 9px;
+  color: #59675f;
+  background: #f0f4f1;
+  font-size: 23px;
+  line-height: 1;
+}
+
+/* Trường nhập liệu form trong modal */
+.C_Botuvung_dialog label {
+  display: block;
+  margin: 15px 0 7px;
+  color: #34443a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.C_Botuvung_dialog label span {
+  color: #ba403a;
+}
+
+.C_Botuvung_dialog input,
+.C_Botuvung_dialog textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d6e1da;
+  border-radius: 10px;
+  outline: none;
+  color: var(--set-text);
+  background: #fbfdfc;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.C_Botuvung_dialog input:focus,
+.C_Botuvung_dialog textarea:focus {
+  border-color: #3a9d67;
+  box-shadow: 0 0 0 3px rgba(58, 157, 103, .12);
+}
+
+.C_Botuvung_characterCount {
+  margin-top: 5px;
+  color: #8a968f;
+  font-size: 10px;
+  text-align: right;
+}
+
+/* Các nút hành động trong modal (Hủy / Lưu) */
+.C_Botuvung_formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.C_Botuvung_cancelButton,
+.C_Botuvung_submitButton {
+  min-height: 41px;
+  margin: 0;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.C_Botuvung_cancelButton {
+  color: #526159;
+  background: #edf2ef;
+}
+
+.C_Botuvung_submitButton {
+  background: #218a52;
+}
+
+/* Lớp ẩn giao diện chỉ dành cho thiết bị đọc màn hình (Accessibility) */
+.C_Botuvung_srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Khóa cuộn trang khi mở modal */
+.C_Botuvung_modalOpen {
+  overflow: hidden;
+}
+
+
+/* ==========================================================================
+   8. GIAO DIỆN TƯƠNG THÍCH ĐA THIẾT BỊ (RESPONSIVE / MEDIA QUERIES)
+   ========================================================================== */
+
+/* Màn hình máy tính nhỏ / Tablet xoay ngang (<= 1100px) */
+@media (max-width: 1100px) {
+  .C_Botuvung_grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tablet xoay dọc / Điện thoại lớn (<= 767px): Thu hẹp sidebar về toàn màn hình */
+@media (max-width: 767px) {
+  .C_Botuvung_body > .top-header {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .C_Botuvung_main {
+    width: 100%;
+    margin-left: 0;
+    padding: 20px 16px 36px;
+  }
+
+  .C_Botuvung_intro {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 24px 21px;
+  }
+
+  .C_Botuvung_toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .C_Botuvung_searchForm {
+    width: 100%;
+  }
+
+  .C_Botuvung_summary {
+    align-self: flex-end;
+  }
+}
+
+/* Điện thoại di động (<= 560px) */
+@media (max-width: 560px) {
+  .C_Botuvung_grid {
+    grid-template-columns: 1fr;
+  }
+
+  .C_Botuvung_searchForm button {
+    padding: 0 12px;
+  }
+
+  .C_Botuvung_dialog {
+    padding: 21px 17px;
+  }
+}
+
+/* Tắt hiệu ứng chuyển động cho người dùng nhạy cảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  .C_Botuvung_card,
+  .C_Botuvung_createButton {
+    transition: none;
+  }
+}

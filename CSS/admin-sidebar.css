@@ -1,0 +1,33 @@
+/* Sidebar dùng chung cho các trang quản trị; nằm dưới thanh đầu trang. */
+.admin-sidebar {
+  position: sticky;
+  top: var(--topbar-h, 68px);
+  align-self: flex-start;
+  flex: 0 0 250px;
+  width: 250px;
+  height: calc(100vh - var(--topbar-h, 68px));
+  height: calc(100dvh - var(--topbar-h, 68px));
+  min-height: 0;
+  padding: 24px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  background: var(--color-surface, #fff);
+  border-right: 1px solid var(--color-border, #e2ebe6);
+  z-index: 20;
+}
+
+/* Không ép menu nhỏ lại khi màn hình thấp; cho phép cuộn riêng sidebar. */
+.admin-sidebar > * { flex-shrink: 0; }
+.admin-sidebar > a { min-height: 44px; }
+.admin-sidebar + main { min-width: 0; }
+
+@media (max-width: 900px) {
+  .admin-sidebar { flex-basis: 76px; width: 76px; padding: 20px 8px; }
+  .admin-sidebar .sidebar-section-title,
+  .admin-sidebar > a > span:last-child { display: none; }
+  .admin-sidebar > a { justify-content: center; padding: 11px 8px; }
+}

@@ -1,0 +1,441 @@
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body,
+.C_HocFlashcard_body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================
+   BỐ CỤC CHUNG
+   ========================================= */
+.C_HocFlashcard_header,
+.C_HocFlashcard_footerBox,
+.C_HocFlashcard_btnGroup {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.C_HocFlashcard_cardArea,
+.C_HocFlashcard_main,
+.C_HocFlashcard_cardBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.C_HocFlashcard_navBtn,
+.C_HocFlashcard_badgeR,
+.C_HocFlashcard_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =========================================
+   HEADER & PROGRESS BAR
+   ========================================= */
+.C_HocFlashcard_header {
+    padding: 16px 40px;
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.C_HocFlashcard_logo {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--color-primary-dark);
+}
+
+.C_HocFlashcard_progressText {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.C_HocFlashcard_headerActions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.C_HocFlashcard_exitButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid #e2b8b8;
+    border-radius: 10px;
+    color: #a83a3a;
+    background: #fff7f7;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.C_HocFlashcard_exitButton:hover {
+    border-color: #cf7777;
+    background: #ffeded;
+    color: #8b1e1e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(168, 58, 58, 0.15);
+}
+
+.C_HocFlashcard_exitButton:active {
+    transform: translateY(0);
+}
+
+.C_HocFlashcard_progressBarWrapper {
+    max-width: 780px;
+    width: 100%;
+    margin: 20px auto 0;
+    padding: 0 20px;
+}
+
+.C_HocFlashcard_progressBar {
+    width: 100%;
+    height: 8px;
+    border-radius: 10px;
+    background-color: var(--color-border);
+    overflow: hidden;
+}
+
+.C_HocFlashcard_progressFill {
+    width: 0%; 
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+/* =========================================
+   CARD AREA
+   ========================================= */
+.C_HocFlashcard_main {
+    flex: 1;
+    padding: 20px 20px 40px;
+}
+
+.C_HocFlashcard_cardArea {
+    flex-direction: row;
+    gap: 24px;
+    width: 100%;
+}
+
+.C_HocFlashcard_navBtn {
+    width: 46px;
+    height: 46px;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_HocFlashcard_navBtn:hover:not(:disabled) {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+
+.C_HocFlashcard_navBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Thẻ lật Flashcard */
+.C_HocFlashcard_cardBox {
+    position: relative;
+    width: 480px;
+    max-width: 100%;
+    height: 280px;
+    perspective: 1000px;
+}
+
+.C_HocFlashcard_cardInner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+}
+
+.C_HocFlashcard_cardBox.is-flipped .C_HocFlashcard_cardInner {
+    transform: rotateY(180deg);
+}
+
+.C_HocFlashcard_cardFront,
+.C_HocFlashcard_cardBack {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(31, 45, 36, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.C_HocFlashcard_cardBack {
+    transform: rotateY(180deg);
+    background-color: var(--color-surface);
+}
+
+.C_HocFlashcard_cardFront:hover,
+.C_HocFlashcard_cardBack:hover {
+    box-shadow: 0 12px 32px rgba(31, 45, 36, 0.1);
+}
+
+.C_HocFlashcard_badgeR {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    background-color: #FFF1E4;
+    color: #C75A24;
+    border: 1px solid #F6D2B5;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.C_HocFlashcard_word {
+    margin: 0 0 12px;
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.5px;
+    text-align: center;
+    padding: 0 20px;
+}
+
+/* Thông tin phát âm nằm trong Flashcard */
+.C_HocFlashcard_pronunciationArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.C_HocFlashcard_pronunciation {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 17px;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.C_HocFlashcard_audioButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0;
+    padding: 6px 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.C_HocFlashcard_audioButton:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+/*
+ * Bắt buộc có rule này.
+ * Nếu không, display: inline-flex phía trên có thể ghi đè
+ * thuộc tính hidden của HTML.
+ */
+.C_HocFlashcard_audioButton[hidden] {
+    display: none;
+}
+
+.C_HocFlashcard_hint {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+/* ================================
+   BUTTON GROUP
+   ================================ */
+.C_HocFlashcard_btnGroup {
+    gap: 16px;
+    margin-top: 28px;
+    width: 480px;
+    max-width: 100%;
+}
+
+.C_HocFlashcard_btn {
+    flex: 1;
+    height: 50px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    outline: none;
+    border: 1px solid var(--color-border);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_HocFlashcard_btnWhite {
+    background-color: var(--color-white);
+    color: var(--color-text);
+}
+.C_HocFlashcard_btnWhite:hover {
+    background-color: #FFF1E4;
+    border-color: #F6D2B5;
+    color: #C75A24;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+
+.C_HocFlashcard_btnGray {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+.C_HocFlashcard_btnGray:hover {
+    background-color: #cce9d8;
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+
+/* ================================
+   FOOTER
+   ================================ */
+.C_HocFlashcard_footerWrapper {
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px 30px;
+}
+
+.C_HocFlashcard_footerBox {
+    width: 100%;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 14px 24px;
+    box-shadow: 0 4px 12px rgba(31, 45, 36, 0.04);
+}
+
+.C_HocFlashcard_stats { font-size: 14px; font-weight: 600; color: var(--color-text-muted); }
+
+.C_HocFlashcard_btnKetThuc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background-color: var(--color-white);
+    border: 1px solid #dceae1;
+    border-radius: 20px;
+    color: #4a5c50;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.C_HocFlashcard_btnKetThuc:hover {
+    background-color: #ffebee;
+    border-color: #ffcdd2;
+    color: #c62828;
+    transform: translateY(-1px);
+}
+
+.C_HocFlashcard_btnKetThuc.C_HocFlashcard_btnCompleted {
+    background: linear-gradient(135deg, #2d7a56 0%, #1f4e38 100%);
+    border-color: #1f4e38;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(45, 122, 86, 0.25);
+}
+
+.C_HocFlashcard_btnKetThuc.C_HocFlashcard_btnCompleted:hover {
+    background: linear-gradient(135deg, #236345 0%, #173b2a 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(45, 122, 86, 0.35);
+}
+
+/* 
+* RESPONISVE
+*/
+
+@media (max-width: 640px) {
+    .C_HocFlashcard_header {
+        padding: 14px 16px;
+    }
+
+    .C_HocFlashcard_logo {
+        font-size: 18px;
+    }
+
+    .C_HocFlashcard_cardArea {
+        gap: 10px;
+    }
+
+    .C_HocFlashcard_cardBox {
+        width: min(100%, 300px);
+        height: 250px;
+    }
+
+    .C_HocFlashcard_navBtn {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+    }
+
+    .C_HocFlashcard_word {
+        font-size: 28px;
+    }
+
+    .C_HocFlashcard_footerBox {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px;
+    }
+}

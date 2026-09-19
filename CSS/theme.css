@@ -1,0 +1,300 @@
+/* =====================================================================
+   DARK MODE BỔ SUNG
+   File này được nạp sau CSS từng trang để thay thế các màu hard-code cũ.
+   Chỉ dùng màu xanh than, xanh lá và màu nhấn vừa phải của LexiLoop.
+   ===================================================================== */
+
+html.dark-mode body {
+    background: var(--color-background);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(input, select, textarea) {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(input, select, textarea)::placeholder {
+    color: var(--color-text-muted);
+}
+
+html.dark-mode .C_Dashboard_user_body {
+    --db-text: var(--color-text);
+    --db-muted: var(--color-text-muted);
+    --db-border: var(--color-border);
+    background: var(--color-background) !important;
+}
+
+html.dark-mode :is(
+    .C_Dashboard_user_statsCard,
+    .C_Dashboard_user_panel,
+    .C_Dashboard_user_statItem,
+    .C_Dashboard_user_quickCard
+) {
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text);
+}
+
+/* Tách bốn KPI thành bốn thẻ riêng trong dark mode; nền card cũ có gap 1px
+   khiến các ô bị dính vào nhau và khó phân biệt khi màu đều tối. */
+html.dark-mode .C_Dashboard_user_statsCard {
+    gap: 10px;
+    padding: 10px;
+    overflow: visible;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+html.dark-mode .C_Dashboard_user_statItem {
+    min-height: 108px;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 14px;
+    box-shadow: inset 3px 0 0 var(--stat-color), 0 8px 18px rgba(0, 0, 0, .16);
+}
+
+html.dark-mode :is(
+    .C_Dashboard_user_sectionHeader h3,
+    .C_Dashboard_user_quickCard strong,
+    .C_Dashboard_user_activityInfo strong
+) {
+    color: var(--color-text);
+}
+
+/* Thanh tìm kiếm Bộ từ vựng: nền nằm ở form cha, không phải riêng input. */
+html.dark-mode .C_Botuvung_searchForm {
+    border-color: var(--color-border);
+    background: var(--color-surface-elevated);
+    box-shadow: none;
+}
+
+html.dark-mode .C_Botuvung_searchForm > span {
+    color: var(--color-text-muted);
+}
+
+html.dark-mode .C_Botuvung_searchForm input {
+    background: transparent;
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Botuvung_searchForm button {
+    background: #286b48;
+    color: #f4fff7;
+}
+
+html.dark-mode .C_Botuvung_searchForm button:hover {
+    background: #338457;
+}
+
+/* Khối chọn bộ từ ở Góc rèn luyện phải đổi nền cùng với select/fixed topic. */
+html.dark-mode .C_Gocrenluyen_filters {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    box-shadow: none;
+}
+
+html.dark-mode :is(
+    .C_Gocrenluyen_filterGroup label,
+    .C_Gocrenluyen_fixedTopic span
+) {
+    color: var(--color-text-muted);
+}
+
+html.dark-mode .C_Gocrenluyen_filterGroup select {
+    border-color: var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Gocrenluyen_fixedTopic {
+    border-color: #3d7757;
+    background: #1b4932;
+}
+
+html.dark-mode .C_Gocrenluyen_fixedTopic strong {
+    color: var(--color-primary-dark);
+}
+
+/* Nút Học từ mới/Ôn tập ở trang Chủ đề: giảm chói khi hover nhưng vẫn rõ vai trò. */
+html.dark-mode .topic-action-learn {
+    border-color: #3d7757;
+    background: #1b4932;
+    color: var(--color-primary-dark);
+}
+
+html.dark-mode .topic-action-learn:hover {
+    background: #245d40;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .22);
+}
+
+html.dark-mode .topic-action-review {
+    border-color: #805b29;
+    background: #543716;
+    color: #ffd89c;
+}
+
+html.dark-mode .topic-action-review:hover {
+    background: #67451d;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .22);
+}
+
+html.dark-mode :is(
+    .C_Dashboard_user_quickCard small,
+    .C_Dashboard_user_activityInfo small,
+    .C_Dashboard_user_targetNote,
+    .C_Dashboard_user_eyebrow
+) {
+    color: var(--color-text-muted);
+}
+
+html.dark-mode :is(
+    .C_Dashboard_user_activityRow,
+    .C_Dashboard_user_targetProgress
+) {
+    border-color: var(--color-border);
+    background-color: var(--color-surface-elevated);
+}
+
+/* Giữ hai card nhận diện của Dashboard, nhưng hạ độ sáng để dịu mắt ban đêm. */
+html.dark-mode .C_Dashboard_user_welcomeCard {
+    background: radial-gradient(circle at 88% 15%, rgba(255,255,255,.10) 0 74px, transparent 75px), linear-gradient(135deg, #164a35, #25744f);
+}
+
+html.dark-mode .C_Dashboard_user_streakCard {
+    background: linear-gradient(145deg, #9d531c, #bd6a20);
+}
+
+/* Các trang quản lý bộ từ và rèn luyện trước đây dùng nhiều mã màu trực tiếp. */
+html.dark-mode :is(.C_Botuvung_body, .C_Gocrenluyen_body) {
+    --set-text: var(--color-text);
+    --set-muted: var(--color-text-muted);
+    --set-border: var(--color-border);
+    --practice-text: var(--color-text);
+    --practice-muted: var(--color-text-muted);
+    --practice-border: var(--color-border);
+    background: var(--color-background);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(
+    .C_Botuvung_card,
+    .C_Botuvung_emptyState,
+    .C_Botuvung_dialog,
+    .C_Gocrenluyen_sourceCard,
+    .C_Gocrenluyen_modes,
+    .C_Gocrenluyen_words,
+    .C_Gocrenluyen_emptySource,
+    .C_Gocrenluyen_tableResponsive
+) {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(
+    .C_Botuvung_cardMeta,
+    .C_Botuvung_wordCount,
+    .C_Gocrenluyen_sourceInfo
+) {
+    color: var(--color-text-muted);
+}
+
+/* Màu riêng cho bảng: từ chính sáng nổi bật, nhãn không giữ nền trắng của light mode. */
+html.dark-mode .C_Gocrenluyen_table th {
+    background: #243b40;
+    color: #d0e6da;
+    border-bottom: 1px solid #45625a;
+}
+html.dark-mode .C_Gocrenluyen_table td {
+    color: #edf7f1;
+    border-bottom-color: #345049;
+}
+html.dark-mode .C_Gocrenluyen_table .C_Gocrenluyen_word { color: #adf2c5; }
+html.dark-mode .C_Gocrenluyen_table td small { color: #adc3b8; }
+html.dark-mode .C_Gocrenluyen_table .C_Gocrenluyen_example { color: #b9cdc3 !important; }
+html.dark-mode .C_Gocrenluyen_posTag {
+    background: #343456;
+    color: #ded5ff;
+    border: 1px solid #5e587c;
+}
+html.dark-mode .C_Gocrenluyen_status {
+    background: #293e48;
+    color: #c7dce8;
+    border: 1px solid #48626f;
+}
+html.dark-mode .C_Gocrenluyen_status--learning {
+    background: #503a1d;
+    color: #ffdb9e;
+    border-color: #806132;
+}
+html.dark-mode .C_Gocrenluyen_status--mastered {
+    background: #204b35;
+    color: #aaf0c1;
+    border-color: #397952;
+}
+html.dark-mode .C_Gocrenluyen_wordToolbar label { color: var(--color-text); }
+html.dark-mode .C_Gocrenluyen_wordResults { color: var(--color-text-muted); }
+html.dark-mode .C_Gocrenluyen_wordToolbar input[type="search"],
+html.dark-mode .C_Gocrenluyen_wordToolbar select {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+html.dark-mode .C_Gocrenluyen_wordToolbar button { background: #286b48; border-color: #459366; }
+html.dark-mode .C_Gocrenluyen_wordToolbar button:hover { background: #338457; }
+html.dark-mode .C_Gocrenluyen_pagination a {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+html.dark-mode .C_Gocrenluyen_pagination a.is-active { background: #286b48; border-color: #459366; }
+
+html.dark-mode :is(
+    .C_Lichsuontap_chartCard,
+    .C_Lichsuontap_tableCard,
+    .C_Tuvungcuatoi_tableCard,
+    .C_Tuvungcuatoi_formCard,
+    .C_Tuvungcuatoi_formModalContainer,
+    .C_Tuvungcuatoi_stats article,
+    .C_Hosocanhan_profileSection,
+    .C_Hosocanhan_card,
+    .A_Caidattaikhoan_card
+) {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(
+    .C_Lichsuontap_table tbody tr:hover td,
+    .C_Tuvungcuatoi_table tbody tr:hover td,
+    .C_Tuvungcuatoi_pagination button
+) {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode :is(
+    .C_Lichsuontap_td,
+    .C_Lichsuontap_th,
+    .C_Tuvungcuatoi_td,
+    .C_Tuvungcuatoi_th,
+    .C_Tuvungcuatoi_label,
+    .C_Tuvungcuatoi_word
+) {
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+
+html.dark-mode .C_Tuvungcuatoi_bulkBar {
+    background: #1b4932;
+    border-color: #3d7757;
+}
+
+/* Giữ focus nhìn rõ khi dùng bàn phím ở cả hai giao diện. */
+html.dark-mode :is(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+}

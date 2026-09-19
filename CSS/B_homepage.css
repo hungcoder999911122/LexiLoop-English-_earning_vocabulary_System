@@ -1,0 +1,593 @@
+/* Để khi click menu nó cuộn mượt */
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+
+}
+
+/* ========================================
+   B HOMEPAGE
+   ======================================== */
+
+
+/* ========================================
+   1. HEADER & NAVIGATION
+   ======================================== */
+
+header {
+    background-color: var(--color-white);
+    
+    position: fixed;                                    /* Chuyển position: fixed lên thẻ header */
+    top: 0;
+    left: 0;
+    width: 100%;                                        /* Bắt buộc để header trải dài toàn màn hình */
+    z-index: 1000;                                      /* Đảm bảo thanh nav luôn nổi lên trên cùng, không bị các khối khác đè lên */
+    
+    /* Tùy chọn: Thêm viền hoặc bóng đổ nhẹ để phân biệt rõ với nội dung cuộn bên dưới */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); 
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    max-width: 1200px;
+    margin: 0 auto;                                     /* khối nav căn giữa màn hình */
+
+    padding: 20px 30px;
+}
+
+/*LOGO  */
+.logo {
+    display: block;
+
+    margin: 0 0 20px;
+    padding: 4px 12px;
+
+    color: var(--color-primary-dark);
+
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+/* ----------------------------- */
+
+/* THANH ĐIỀU HƯỚNG CHÍNH */
+.nav-list {
+    display: flex;
+    align-items: center;
+
+    gap: 30px;
+
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-list a {
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 500;
+}
+.nav-list a:hover {
+    color: var(--color-primary);
+}
+
+/* THANH ĐIỀU HƯỚNG XÁC THỰC */
+.nav-auth {
+    display: flex;
+    align-items: center;
+    
+    gap: 15px;
+
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-auth a {
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.nav-auth a:hover {
+    color: var(--color-primary);
+}
+/*---------------------------------- */
+
+body {
+    /* Đẩy toàn bộ nội dung xuống để không bị header che mất. 
+       Bạn có thể điều chỉnh con số 85px này cho khớp với chiều cao thực tế của header */
+    padding-top: 125px; 
+}
+/* ========================================
+   2. HERO
+   ======================================== */
+
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    max-width: 1200px;
+    height: auto;
+    margin: 0 auto;
+    padding: 80px 30px;
+    border-radius: 24px;
+    
+     /*  */
+    background: linear-gradient(
+        135deg,
+        var(--color-primary-light),
+        var(--color-white)
+    );  
+}
+
+/* Thiết kế nội dung cho hero */
+.hero-content {
+    flex: 1;
+}
+
+/* Thiết kế ảnh cho phần hero */
+.hero-visual {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-image {
+    /* 1. Giảm width để ảnh thon lại (từ 75% xuống thấp hơn) */
+    width: 60%; 
+    /* 2. Set chiều cao cố định để tăng độ cao (thay vì dùng auto) */
+    height: 480px; 
+    /* 3. Bắt buộc: Chống méo hình khi thay đổi tỷ lệ */
+    object-fit: cover; 
+    /* Thiết kế thẩm mỹ đồng bộ với giao diện chung */
+    border-radius: 20px; 
+    box-shadow: 0 12px 32px rgba(31, 45, 36, 0.1); 
+    /* Hiệu ứng mượt mà khi load ảnh hoặc tương tác */
+    transition: transform 0.3s ease;
+}
+
+/* (Tùy chọn) Thêm hiệu ứng nổi lên nhẹ khi người dùng trỏ chuột vào ảnh */
+.hero-image:hover {
+    transform: translateY(-5px);
+}
+.hero-eyebrow {
+    margin-bottom: 15px;
+
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-primary);
+
+    text-transform: uppercase; 
+}
+
+.hero h1 {
+    max-width: 600px;
+
+    margin: 0 0 20px;
+
+    font-size: 48px;
+    /* khoảng cách giữa các dòng */
+    line-height: 1.2;
+}
+
+.hero-description {
+    max-width: 550px;
+
+    margin: 0 0 30px;
+
+    font-size: 18px;
+    line-height: 1.6;
+
+    color: var(--color-text);
+}
+
+.hero-cta {
+    display: inline-block;
+
+    padding: 12px 24px;
+
+    background-color: var(--color-primary);
+    color: var(--color-white);
+
+    border-radius: 120px;
+
+    font-weight: 600;
+
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hiệu ứng này lên cho nút CTA   */
+.hero-cta:hover {
+    transform: translateY(-4px) scale(1.03);
+
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+/* ========================================
+   3. HOW IT WORKS
+   ======================================== */
+
+.how-it-works {
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding: 80px 30px;
+
+    background-color: var(--color-white);
+
+    border-radius: 24px;
+}
+
+.how-it-works-header {
+    max-width: 650px;
+    margin: 0 auto 60px;
+    text-align: center;
+}
+
+.section-eyebrow {
+    margin-bottom: 10px;
+
+    font-size: 14px;    
+    font-weight: 600;
+
+    color: var(--color-primary);
+
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.how-it-works-header h2 {
+    margin-bottom: 15px;
+
+    font-size: 36px;
+    line-height: 1.2;
+}
+
+.how-it-works-header > p:last-child {
+    font-size: 17px;
+    line-height: 1.6;
+
+    color: var(--color-text-muted);
+}
+
+/* Sử dụng flex cho how-it-work */
+.how-it-works-content {
+    display: flex;
+    justify-content: space-between;
+
+    position: relative;
+}
+
+/* Tạo time line cho how-it-work */
+.how-it-works-content::before {
+    content: "";
+
+    position: absolute;
+
+    top: 25px;
+    left: 16.67%;
+    right: 16.67%;
+
+    height: 2px;
+
+    background-color: var(--color-border);
+    z-index: 0;
+}
+
+.step {
+    position: relative;
+    z-index: 1;
+
+    flex: 1;
+    text-align: center;
+
+    padding: 0 15px;
+}
+
+/* Thiết kế số cho Time line how-it-work     */
+.step-number {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 50px;
+    height: 50px;
+
+    margin: 0 auto 20px;
+
+    background-color: var(--color-primary-light);
+
+    border: 2px solid var(--color-primary);
+    border-radius: 50%;
+
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.step-content h3 {
+    margin: 0 0 10px;
+
+    font-size: 21px;
+    line-height: 1.3;
+}
+
+.step-content {
+    padding: 24px;
+    min-height: 180px;  
+
+    background-color: var(--color-white);
+
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+}
+
+/* ========================================
+   4. FEATURES - CÁC TÍNH NĂNG NỔI BẬT
+   ======================================== */
+
+.features {
+    width: min(1200px, calc(100% - 48px));
+    margin: 32px auto;
+    padding: 44px 32px;
+
+    background-color: var(--color-surface);
+
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+
+    box-shadow: 0 6px 18px rgba(31, 45, 36, 0.05);
+}
+
+.features .section-label {
+    margin: 0 0 10px;
+
+    color: var(--color-primary);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.features h2 {
+    margin: 0 0 12px;
+    color: rgb(9, 57, 9);
+}
+
+.features .section-description {
+    max-width: 680px;
+    margin: 0 0 40px;
+
+    color: var(--color-text-muted);
+}
+
+.features-list {
+    width: 100%;
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.feature-card {
+    padding: 20px 18px;
+
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+
+    text-align: left;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(31, 45, 36, 0.08);
+}
+
+.feature-icon {
+    width: 48px;
+    height: 48px;
+
+    margin: 0 0 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--color-primary-light);
+    border-radius: 10px;
+
+    font-size: 22px;
+}
+
+.feature-card h3 {
+    margin: 0 0 6px;
+
+    font-size: 18px;
+    line-height: 1.35;
+
+    color: var(--color-text);
+}
+
+.feature-card p {
+    margin: 0;
+
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+/* ------------------------------------------------------ */
+
+/* ========================================
+   5. CTA Cuối
+   ======================================== */
+.cta-section {
+    width: min(1200px, calc(100% - 48px));
+    margin: 32px auto 64px;
+    padding: 36px 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+
+    background-color: rgb(9, 107, 50);
+    border-radius: 18px;
+}
+
+.cta-content {
+    max-width: 620px;
+}
+
+.cta-content h2 {
+    margin: 0 0 10px;
+
+    color: var(--color-white);
+    font-size: 30px;
+    line-height: 1.3;
+}
+
+.cta-content p {
+    margin: 0;
+
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}
+
+.cta-button {
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    min-width: 210px;
+    padding: 14px 24px;
+
+    background-color: var(--color-white);
+    color: var(--color-primary);
+
+    border-radius: 999px;
+
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.cta-button span {
+    font-size: 20px;
+
+    transition: transform 0.2s ease;
+}
+
+.cta-button:hover span {
+    transform: translateX(3px);
+}
+
+/* ------------------------------------------------------ */
+
+/* ========================================
+   6. FOOTER
+   ======================================== */
+
+.site-footer {
+    margin-top: 40px;
+
+    background-color: var(--color-primary-dark);
+    color: var(--color-white);
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    padding: 50px 30px 25px;
+
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+}
+
+/* BRAND */
+.footer-brand h3 {
+    margin: 0 0 12px;
+
+    font-size: 22px;
+    color: var(--color-white);
+}
+
+.footer-brand p {
+    max-width: 400px;
+
+    margin: 0;
+
+    font-size: 15px;
+    line-height: 1.6;
+
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* NAVIGATION
+.footer-nav {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+} */
+
+/* .footer-nav a {
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 15px;
+    font-weight: 500;
+
+    transition: color 0.2s ease;
+} */
+
+/* .footer-nav a:hover {
+    color: var(--color-white);
+} */
+
+/* COPYRIGHT */
+.footer-copyright {
+    grid-column: 1 / -1;
+
+    padding-top: 20px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer-copyright p {
+    margin: 0;
+
+    font-size: 14px;
+
+    color: rgba(255, 255, 255, 0.7);
+}

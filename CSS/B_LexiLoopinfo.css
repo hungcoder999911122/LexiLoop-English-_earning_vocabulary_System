@@ -1,0 +1,98 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111111;
+    background-color: #ffffff;
+}
+
+/* Header */
+.B_LexiLoopinfo_Header {
+    display: flex;
+    align-items: center;
+    padding: 20px 40px;
+    border-bottom: 2px solid #000000;
+}
+
+.B_LexiLoopinfo_Logo {
+    font-size: 22px;
+    font-weight: bold;
+    color: #000000;
+    text-decoration: none;
+}
+
+/* Noi dung chinh */
+.B_LexiLoopinfo_NoiDung {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.B_LexiLoopinfo_TieuDe {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.B_LexiLoopinfo_MoTa {
+    color: #555555;
+    margin-bottom: 40px;
+}
+
+.B_LexiLoopinfo_AnhMinhHoa {
+    border: 2px dashed #999999;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999999;
+    margin-bottom: 50px;
+}
+
+/* Danh sach the gioi thieu */
+.B_LexiLoopinfo_DanhSachThe {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.B_LexiLoopinfo_The {
+    flex: 1;
+    border: 1px solid #000000;
+    padding: 20px;
+    text-align: left;
+}
+
+.B_LexiLoopinfo_The h3 {
+    margin-bottom: 10px;
+}
+
+.B_LexiLoopinfo_The p {
+    color: #555555;
+    font-size: 14px;
+}
+
+/* Nut Bat dau ngay */
+.B_LexiLoopinfo_Nut {
+    display: inline-block;
+    padding: 14px 30px;
+    background-color: #e0e0e0;
+    border: 1px solid #000000;
+    color: #000000;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.B_LexiLoopinfo_Nut:hover {
+    background-color: #cccccc;
+}
+
+@media (max-width: 700px) {
+    .B_LexiLoopinfo_DanhSachThe {
+        flex-direction: column;
+    }
+}

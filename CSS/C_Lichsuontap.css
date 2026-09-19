@@ -1,0 +1,318 @@
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+/*
+    Màu sắc dùng chung được khai báo tại CSS/Style.css.
+    Không khai báo :root tại file trang để tránh hai trang dùng hai bộ màu khác nhau.
+*/
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body,
+.C_Lichsuontap_body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+}
+
+/* =========================================
+   CONTENT
+   ========================================= */
+
+.C_Lichsuontap_filterSelect {
+    height: 42px;
+    padding: 0 32px 0 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    background-color: var(--color-white);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Lichsuontap_filterSelect:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.C_Lichsuontap_main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 30px 60px;
+}
+
+/* =========================================
+   BARS CHART CARD
+   ========================================= */
+.C_Lichsuontap_chartCard,
+.C_Lichsuontap_tableCard {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
+}
+
+.C_Lichsuontap_chartCard {
+    padding: 26px 30px 20px;
+    margin-bottom: 28px;
+}
+
+.C_Lichsuontap_chartHeader { margin-bottom: 24px; }
+.C_Lichsuontap_chartTitle { margin: 0; font-size: 18px; font-weight: 700; }
+
+.C_Lichsuontap_totalBadge {
+    font-size: 13px;
+    padding: 5px 12px;
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.C_Lichsuontap_chartArea { width: 100%; padding-top: 24px; }
+
+.C_Lichsuontap_barsContainer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 210px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 2px;
+}
+
+.C_Lichsuontap_barGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.C_Lichsuontap_barWrapper {
+    position: relative;
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.C_Lichsuontap_barValue {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.C_Lichsuontap_bar {
+    position: relative;
+    width: 44px;
+    background-color: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.C_Lichsuontap_bar:hover {
+    background-color: var(--color-primary);
+    transform: scaleY(1.04);
+}
+
+.C_Lichsuontap_bar::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--color-primary-dark);
+    color: var(--color-white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, top 0.2s ease;
+}
+
+.C_Lichsuontap_bar:hover::after { opacity: 1; top: -36px; }
+.C_Lichsuontap_barLabel { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
+
+/* =========================================
+   TABLE
+   ========================================= */
+.C_Lichsuontap_tableCard {
+    padding: 24px 30px;
+}
+
+.C_Lichsuontap_tableHeader { margin-bottom: 18px; }
+.C_Lichsuontap_sectionTitle { font-size: 18px; font-weight: 700; margin: 0; }
+.C_Lichsuontap_tableResponsive { width: 100%; overflow-x: auto; }
+
+.C_Lichsuontap_table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.C_Lichsuontap_th,
+.C_Lichsuontap_td {
+    border-bottom: 1px solid var(--color-border);
+    padding: 16px;
+    font-size: 14px;
+}
+
+.C_Lichsuontap_th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.C_Lichsuontap_td { transition: background-color 0.2s ease; }
+.C_Lichsuontap_table tbody tr:hover td { background-color: #f7faf8; }
+.C_Lichsuontap_table tbody tr:last-child td { border-bottom: none; }
+
+/* Badges */
+.activity-badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    margin-right: 8px;
+}
+
+.activity-quiz      { background-color: #FFF1E4; color: #C75A24; border: 1px solid #F6D2B5; }
+.activity-flashcard { background-color: var(--color-primary-light); color: var(--color-primary-dark); }
+.result-tag         { font-weight: 700; color: var(--color-primary-dark); }
+.time-text          { color: var(--color-text-muted); font-size: 13px; }
+.time-text strong { display: block; color: var(--color-text); font-size: 13px; white-space: nowrap; }
+.time-text small { display: block; margin-top: 4px; color: var(--color-text-muted); white-space: nowrap; }
+
+.C_Lichsuontap_pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 22px;
+}
+
+.C_Lichsuontap_pagination a,
+.C_Lichsuontap_pagination span {
+    display: grid;
+    place-items: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    color: var(--color-text);
+    background: var(--color-white);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.C_Lichsuontap_pagination span.is-disabled {
+    color: #aab4ad;
+    background: #f4f6f5;
+    cursor: not-allowed;
+}
+
+.C_Lichsuontap_pagination a:hover,
+.C_Lichsuontap_pagination a.is-active {
+    border-color: var(--color-primary);
+    color: var(--color-white);
+    background: var(--color-primary);
+}
+
+@media (max-width: 860px) {
+    /* .sidebar { width: 76px; padding: 20px 10px; }
+    .sidebar-logo span:last-child, .sidebar-link span:last-child { display: none; }
+    .page-content { margin-left: 76px; } */
+    .C_Lichsuontap_bar { width: 30px; }
+}
+
+/* =========================================================
+   BIỂU ĐỒ NHIỀU CỘT: 30 NGÀY / TẤT CẢ THỜI GIAN
+   ========================================================= */
+
+/*
+ * Chỉ phần biểu đồ được cuộn ngang.
+ * Card, sidebar và bảng lịch sử không bị tràn màn hình.
+ */
+.C_Lichsuontap_chartArea {
+    overflow-x: auto;
+
+    /* Cuộn mượt trên thiết bị cảm ứng */
+    -webkit-overflow-scrolling: touch;
+
+    padding-bottom: 8px;
+}
+
+/*
+ * Mỗi nhóm cột không bị co lại quá mức.
+ * Điều này giúp nhãn ngày và cột vẫn dễ đọc.
+ */
+.C_Lichsuontap_barGroup {
+    flex: 0 0 44px;
+}
+
+/*
+ * Khi có trên 7 cột:
+ * - Container có độ rộng tối thiểu lớn hơn card.
+ * - Browser sẽ tạo thanh cuộn ngang bên trong chartArea.
+ * - Các cột vẫn giữ được kích thước rõ ràng.
+ */
+.C_Lichsuontap_barsContainer--scrollable {
+    justify-content: flex-start;
+    gap: 14px;
+
+    min-width: 1100px;
+
+    padding: 0 16px;
+}
+
+/*
+ * Nhãn dạng 01/09 hoặc 09/2026 dài hơn nhãn T2, T3...
+ * Cho phép nhãn hiển thị gọn trên một dòng.
+ */
+.C_Lichsuontap_barsContainer--scrollable
+.C_Lichsuontap_barLabel {
+    white-space: nowrap;
+
+    font-size: 12px;
+}
+
+/* Làm thanh cuộn gọn hơn trên Chrome/Edge */
+.C_Lichsuontap_chartArea::-webkit-scrollbar {
+    height: 8px;
+}
+
+.C_Lichsuontap_chartArea::-webkit-scrollbar-track {
+    border-radius: 10px;
+
+    background-color: #f1f5f9;
+}
+
+.C_Lichsuontap_chartArea::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+    background-color: var(--color-primary-light);
+}
+
+.C_Lichsuontap_chartArea::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-primary);
+}

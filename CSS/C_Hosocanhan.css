@@ -1,0 +1,314 @@
+/* =========================================
+   HỒ SƠ CÁ NHÂN - LEXILOOP
+   ========================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body,
+.C_Hosocanhan_body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+}
+
+.C_Hosocanhan_main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 30px 60px;
+}
+
+/* =========================================
+   THÔNG BÁO / ALERTS
+   ========================================= */
+.C_Hosocanhan_alert {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.C_Hosocanhan_alert_success {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-border);
+}
+
+.C_Hosocanhan_alert_error {
+    background-color: var(--color-danger-light);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+
+/* =========================================
+   THÔNG TIN HỒ SƠ & AVATAR
+   ========================================= */
+.C_Hosocanhan_profileSection {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    background-color: var(--color-surface);
+    padding: 32px 36px;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
+}
+
+.C_Hosocanhan_avatarWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.C_Hosocanhan_avatarCircle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    border: 3px solid var(--color-primary);
+    border-radius: 50%;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    background-color: var(--color-primary-light);
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(31, 45, 36, 0.08);
+}
+
+.C_Hosocanhan_avatarCircle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.C_Hosocanhan_btnAvatar {
+    padding: 8px 16px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.C_Hosocanhan_btnAvatar:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+    transform: translateY(-1px);
+}
+
+/* =========================================
+   FORM CONTROLS
+   ========================================= */
+.C_Hosocanhan_form {
+    flex: 1;
+}
+
+.C_Hosocanhan_formGroup {
+    margin-bottom: 18px;
+}
+
+.C_Hosocanhan_label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.C_Hosocanhan_input {
+    width: 100%;
+    height: 46px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: 15px;
+    color: var(--color-text);
+    background-color: var(--color-surface-elevated);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Hosocanhan_input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(45, 122, 86, 0.15);
+}
+
+.C_Hosocanhan_formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.C_Hosocanhan_btnSubmit {
+    padding: 0 28px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    border: none;
+    border-radius: 24px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(14, 119, 72, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Hosocanhan_btnSubmit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(14, 119, 72, 0.3);
+}
+
+.C_Hosocanhan_btnSubmit:active {
+    transform: translateY(0);
+}
+
+.C_Hosocanhan_spacer {
+    height: 36px;
+}
+
+/* =========================================
+   THÀNH TỰU HỌC TẬP
+   ========================================= */
+.C_Hosocanhan_sectionTitle {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 18px;
+    color: var(--color-text);
+}
+
+.C_Hosocanhan_achievementGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.C_Hosocanhan_card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 20px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.C_Hosocanhan_card:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 20px rgba(31, 45, 36, 0.08);
+}
+
+.C_Hosocanhan_cardLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.C_Hosocanhan_cardValue {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    line-height: 1.1;
+}
+
+/* =========================================
+   DARK MODE
+   ========================================= */
+html.dark-mode .C_Hosocanhan_profileSection,
+html.dark-mode .C_Hosocanhan_card {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+html.dark-mode .C_Hosocanhan_avatarCircle {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-elevated);
+    color: var(--color-primary-dark);
+}
+
+html.dark-mode .C_Hosocanhan_btnAvatar {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Hosocanhan_btnAvatar:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+}
+
+html.dark-mode .C_Hosocanhan_input {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Hosocanhan_input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(69, 200, 120, 0.2);
+}
+
+html.dark-mode .C_Hosocanhan_btnSubmit {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #208bd4 100%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+html.dark-mode .C_Hosocanhan_card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 900px) {
+    .C_Hosocanhan_profileSection {
+        flex-direction: column;
+        align-items: center;
+        padding: 24px;
+        gap: 24px;
+    }
+
+    .C_Hosocanhan_form {
+        width: 100%;
+    }
+
+    .C_Hosocanhan_formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .C_Hosocanhan_achievementGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 540px) {
+    .C_Hosocanhan_main {
+        padding: 20px 16px 40px;
+    }
+
+    .C_Hosocanhan_achievementGrid {
+        grid-template-columns: 1fr;
+    }
+}

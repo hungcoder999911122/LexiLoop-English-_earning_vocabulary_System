@@ -1,0 +1,374 @@
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+:root {
+    --color-primary: #2d7a56;
+    --color-primary-light: #e8f5ed;
+    --color-primary-dark: #1f4e38;
+    --color-secondary: #ffaa00;
+    --color-danger: #d9381e;
+    --color-surface: #ffffff;
+    --color-background: #edf6f0;
+    --color-border: #dceae1;
+    --color-white: #ffffff;
+    --color-text: #1f2d24;
+    --color-text-muted: #758071;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body, .C_Ontaphomnay_body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
+.C_Ontaphomnay_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.C_Ontaphomnay_logo {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+.C_Ontaphomnay_btnBack {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 8px 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.C_Ontaphomnay_btnBack:hover {
+    background-color: #f1f5f9;
+    color: var(--color-text);
+}
+
+/* =========================================
+   MAIN CONTENT
+   ========================================= */
+.C_Ontaphomnay_main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.C_Ontaphomnay_infoBox {
+    background-color: var(--color-white);
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    text-align: center;
+}
+
+.C_Ontaphomnay_subtitle {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--color-text);
+}
+
+.C_Ontaphomnay_subtitle strong {
+    color: var(--color-primary);
+    font-size: 1.25rem;
+}
+
+/* =========================================
+   CHART
+   ========================================= */
+.C_Ontaphomnay_chartBox {
+    background-color: var(--color-white);
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--color-border);
+}
+
+.C_Ontaphomnay_chartTitle {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin: 0 0 24px 0;
+    letter-spacing: 0.5px;
+}
+
+.C_Ontaphomnay_chartContainer {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 120px;
+    margin-bottom: 8px;
+}
+
+.chart-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.chart-value {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.chart-bar-bg {
+    width: 32px;
+    height: 80px;
+    background-color: transparent;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+}
+
+.chart-bar-fill {
+    width: 100%;
+    background-color: #b0bec5; /* Mặc định xám nhạt */
+    border-radius: 8px;
+    transition: height 0.5s ease-out;
+}
+
+/* Các màu cấp độ */
+.chart-bar-wrapper:nth-child(1) .chart-bar-fill { background-color: #90a4ae; } /* Lv0 */
+.chart-bar-wrapper:nth-child(2) .chart-bar-fill { background-color: #ffaa00; } /* Lv1 */
+.chart-bar-wrapper:nth-child(3) .chart-bar-fill { background-color: #fb8c00; } /* Lv2 */
+.chart-bar-wrapper:nth-child(4) .chart-bar-fill { background-color: #039be5; } /* Lv3+ */
+
+.chart-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+/* =========================================
+   TOPIC GRID
+   ========================================= */
+.C_Ontaphomnay_topicGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.C_Ontaphomnay_topicCard {
+    background-color: var(--color-white);
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Ontaphomnay_topicCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(45, 122, 86, 0.1);
+}
+
+.C_Ontaphomnay_topicHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.C_Ontaphomnay_topicCategory {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.C_Ontaphomnay_topicTitle {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.4;
+}
+
+.C_Ontaphomnay_topicBody {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: auto;
+}
+
+.C_Ontaphomnay_topicMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.C_Ontaphomnay_dueStatus {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.C_Ontaphomnay_dueStatus.is-due {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+.C_Ontaphomnay_dueStatus.is-overdue {
+    background-color: #fef2f2;
+    color: var(--color-danger);
+}
+
+/* =========================================
+   BUTTONS
+   ========================================= */
+.C_Ontaphomnay_btnAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 100%;
+}
+
+.C_Ontaphomnay_btnAction:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.C_Ontaphomnay_btnText {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+.C_Ontaphomnay_emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: var(--color-white);
+    border-radius: 16px;
+}
+
+.C_Ontaphomnay_emptyState img {
+    width: 120px;
+    height: auto;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+.C_Ontaphomnay_emptyState h2 {
+    margin: 0 0 12px 0;
+    color: var(--color-primary);
+}
+
+.C_Ontaphomnay_emptyState p {
+    color: var(--color-text-muted);
+    margin: 0 0 32px 0;
+}
+
+.C_Ontaphomnay_emptyState .C_Ontaphomnay_btnAction {
+    width: auto;
+}
+
+/* =========================================
+   SRS BANNER & FORM
+   ========================================= */
+.C_Ontaphomnay_bannerContainer {
+    margin-top: 40px;
+}
+
+.C_Ontaphomnay_bannerBox {
+    background-color: #fff9e6;
+    border: 1px solid #ffe499;
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 0.95rem;
+    color: #8c6b00;
+}
+
+.C_Ontaphomnay_srsPanel {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffe499;
+}
+
+.C_Ontaphomnay_srsForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.form-group input {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.form-group small {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.srs-message {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.srs-message.success { color: var(--color-primary); }
+.srs-message.error { color: var(--color-danger); }

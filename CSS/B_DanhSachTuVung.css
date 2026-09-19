@@ -1,0 +1,367 @@
+/* ======= LAYOUT CHÍNH ======= */
+.layout-wrapper {
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ======= MAIN CONTENT ======= */
+.main-content {
+    margin-left: 245px;
+
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: var(--color-background);
+}
+
+
+.login-btn{
+    min-width: 120px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 20px;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-primary);
+    border-radius: 24px;
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+/* Thêm hiệu ứng hover cho nút đăng nhập */
+.login-btn:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(31, 45, 36, 0.08);
+}
+
+.content-area {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.topic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;              /* Căn đáy nếu có nút bên phải */
+    
+    margin-bottom: 24px;
+    padding: 0 4px;                     /* Lùi vào một chút cho thẳng hàng với mép thẻ vocab-card */
+}
+
+.topic-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;                           /* Khoảng cách giữa H2 và P */
+}
+
+/* Định dạng chữ "Chủ đề: " */
+.topic-name {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+/* Định dạng Tên Topic đổ từ PHP (Màu xanh đậm nhấn mạnh) */
+.topic-name .dynamic-text {
+    font-weight: 800;
+    color: var(--color-primary-dark);
+}
+
+/* Định dạng chữ "Số lượng:" */
+.topic-count {
+    margin: 0;
+    font-size: 16px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Định dạng con số đổ từ PHP (Nổi bật dưới dạng huy hiệu - badge) */
+.topic-count .dynamic-badge {
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    background-color: var(--color-primary-light);
+    
+    padding: 2px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    display: inline-block;
+}
+
+/* THANH TÌM KIẾM VÀ LỌC */
+
+.vocabs-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    
+    width: 100%;
+    
+    /* Tạo khoảng cách rõ ràng: 24px cách tiêu đề ở trên, 24px cách bảng ở dưới */
+    margin-top: 0;
+    margin-bottom: 24px; 
+    
+    /* Khoảng cách giữa ô Search và bộ Filter để không bị dính vào nhau */
+    gap: 24px; 
+}
+
+/* --- Khối Tìm kiếm --- */
+.vocabs-search {
+    position: relative;
+    
+    /* flex: 1 giúp khối tìm kiếm tự động kéo dài lấp đầy không gian trống 
+       từ lề trái sang tận lề phải (chỉ chừa lại không gian cho khối Lọc) */
+    flex: 1; 
+    
+    /* Tùy chọn: Có thể giới hạn độ dài tối đa nếu màn hình quá rộng. 
+       Nếu muốn nó kéo dài vô tận đến bộ lọc thì xóa dòng max-width này đi */
+    max-width: 1000px; 
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+}
+
+.search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 44px;                             /* Chừa khoảng trống 44px bên trái cho kính lúp */
+    
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-surface);             /* Dùng nền trắng nổi bật trên nền xám của trang */
+    color: var(--color-text);
+    
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* --- Khối Lọc --- */
+.vocab-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    /* Ngăn không cho khối này bị ép nhỏ lại khi ô Search kéo dài ra */
+    flex-shrink: 0; 
+}
+
+.vocab-filter select {
+    min-width: 180px;
+    height: 48px;
+    padding: 0 16px;
+    
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    
+    font-size: 15px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vocab-filter select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* ======= KHU VỰC BẢNG TỪ VỰNG ======= */
+.vocab-card {
+    background-color: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.vocab-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.vocab-table th {
+    text-align: left;
+    padding: 15px 10px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.vocab-table td {
+    padding: 20px 10px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+/* Cột từ vựng & loại */
+.word-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.word-img-placeholder {
+    width: 40px;
+    height: 40px;
+    background-color: var(--color-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--color-text-muted);
+}
+
+.word-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.word-name {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.word-type {
+    font-size: 14px;
+    color: #9b51e0; /* Màu tím cho loại từ như trong mẫu */
+    font-weight: 500;
+}
+
+/* Cột Nghĩa và Phiên âm */
+.col-meaning, .col-ipa {
+    font-size: 15px;
+    color: var(--color-text);
+}
+
+/* Cột Ví dụ */
+.ex-en {
+    font-size: 15px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.ex-vi {
+    font-size: 14px;
+    color: var(--color-text-muted);
+}
+
+/* Tỷ lệ độ rộng các cột (Tham khảo) */
+.col-word { width: 25%; }
+.col-meaning { width: 20%; }
+.col-ipa { width: 20%; }
+.col-example { width: 35%; }
+
+/* ================================
+   PHÂN TRANG
+================================ */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    gap: 6px;
+
+    margin-top: 32px;
+}
+
+
+/* NÚT PHÂN TRANG */
+
+.pagination-button {
+    min-width: 38px;
+    height: 38px;
+
+    padding: 0 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--color-white);
+
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+
+    color: var(--color-text-muted);
+
+    font-size: 14px;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    box-sizing: border-box;
+
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+/* HOVER */
+
+.pagination-button:hover {
+    color: var(--color-primary);
+
+    background-color: var(--color-surface);
+
+    border-color: var(--color-primary);
+}
+
+
+/* TRANG HIỆN TẠI */
+
+.pagination-button.active {
+    color: var(--color-primary);
+
+    background-color: var(--color-primary-light);
+
+    border-color: var(--color-primary);
+}
+
+
+/* GIỮ TRẠNG THÁI ACTIVE KHI HOVER */
+
+.pagination-button.active:hover {
+    color: var(--color-primary-dark);
+
+    background-color: var(--color-primary-light);
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
