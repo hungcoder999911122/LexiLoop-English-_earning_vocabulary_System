@@ -293,17 +293,19 @@ CREATE TABLE `Users` (
   `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `daily_reminder_enabled` tinyint DEFAULT '1',
   `reminder_time` time DEFAULT '20:00:00',
-  `daily_target_words` int DEFAULT '20'
+  `daily_target_words` int DEFAULT '20',
+  `srs_base_ease` float DEFAULT '2.5',
+  `srs_min_interval` int DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `Users`
 --
 
-INSERT INTO `Users` (`userID`, `email`, `password_hash`, `full_name`, `avatar_url`, `role`, `status`, `created_at`, `update_at`, `daily_reminder_enabled`, `reminder_time`, `daily_target_words`) VALUES
-(1, 'admin@example.com', '$2y$10$SmbIcPwTzdkFP.Dx5H2tg.H6.6ouLNaAYrn2fyE7tdDiXeSBG95ge', 'Quản Trị Viên', NULL, 'admin', 'active', '2026-08-28 16:40:44', '2026-08-28 16:40:44', 1, '20:00:00', 20),
-(2, 'quan@gmail.com', '$2y$10$Z2/VG5nprFQcK/p6Gdaj0eYcCOx/q48FpHzysLHp04mFLgsJntsyC', 'Lê Quân', NULL, 'user', 'active', '2026-08-28 16:40:44', '2026-08-28 16:40:44', 1, '21:00:00', 15),
-(3, 'hungkill146@gmail.com', '$2y$10$Z2/VG5nprFQcK/p6Gdaj0eYcCOx/q48FpHzysLHp04mFLgsJntsyC', 'Nguyễn Tuấn Hùng', NULL, 'user', 'active', '2026-09-06 00:49:49', '2026-09-08 14:21:59', 1, '20:00:00', 20);
+INSERT INTO `Users` (`userID`, `email`, `password_hash`, `full_name`, `avatar_url`, `role`, `status`, `created_at`, `update_at`, `daily_reminder_enabled`, `reminder_time`, `daily_target_words`, `srs_base_ease`, `srs_min_interval`) VALUES
+(1, 'admin@example.com', '$2y$10$SmbIcPwTzdkFP.Dx5H2tg.H6.6ouLNaAYrn2fyE7tdDiXeSBG95ge', 'Quản Trị Viên', NULL, 'admin', 'active', '2026-08-28 16:40:44', '2026-08-28 16:40:44', 1, '20:00:00', 20, 2.5, 1),
+(2, 'quan@gmail.com', '$2y$10$Z2/VG5nprFQcK/p6Gdaj0eYcCOx/q48FpHzysLHp04mFLgsJntsyC', 'Lê Quân', NULL, 'user', 'active', '2026-08-28 16:40:44', '2026-08-28 16:40:44', 1, '21:00:00', 15, 2.5, 1),
+(3, 'hungkill146@gmail.com', '$2y$10$Z2/VG5nprFQcK/p6Gdaj0eYcCOx/q48FpHzysLHp04mFLgsJntsyC', 'Nguyễn Tuấn Hùng', NULL, 'user', 'active', '2026-09-06 00:49:49', '2026-09-08 14:21:59', 1, '20:00:00', 20, 2.5, 1);
 
 -- --------------------------------------------------------
 
