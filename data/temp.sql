@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- ENGLISH_LEARNING SYSTEM - Advanced Database Objects
 -- Target: MySQL 8.0 / InnoDB / database db_LexiLoop
 -- Prerequisite: import data/db_LexiLoop.sql first.
@@ -8,7 +8,7 @@
 
 USE `db_LexiLoop`;
 
--- Đồng nhất mã ký tự và quy tắc so sánh cho phiên import.
+-- Äá»“ng nháº¥t mÃ£ kÃ½ tá»± vÃ  quy táº¯c so sÃ¡nh cho phiÃªn import.
 SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 -- user_vocab_progress(user_id, vocabulary_id) is already UNIQUE in init data.
 -- Do not recreate the same index here; schema changes belong in migrations.
@@ -137,7 +137,7 @@ SELECT
     CASE
         WHEN t.`topicName` IS NOT NULL THEN t.`topicName`
         WHEN GROUP_CONCAT(DISTINCT vs.`name` SEPARATOR ', ') IS NOT NULL THEN GROUP_CONCAT(DISTINCT vs.`name` SEPARATOR ', ')
-        ELSE 'Cá nhân (Chưa gán bộ từ)'
+        ELSE 'CÃ¡ nhÃ¢n (ChÆ°a gÃ¡n bá»™ tá»«)'
     END AS `display_topic`
 FROM `vocabulary` v
 LEFT JOIN `Topics` t ON t.`topicID` = v.`topic_id`
@@ -266,7 +266,7 @@ SELECT
     vs.`user_id`, v.`id`, v.`word`, v.`pronunciation`, v.`part_of_speech`,
     v.`meaning`, v.`example_sentence`, v.`topic_id`, v.`created_by`,
     GROUP_CONCAT(vsi.`vocabulary_set_id` ORDER BY vsi.`vocabulary_set_id`) AS `set_ids`,
-    GROUP_CONCAT(vs.`name` ORDER BY vs.`name` SEPARATOR ' • ') AS `set_names`,
+    GROUP_CONCAT(vs.`name` ORDER BY vs.`name` SEPARATOR ' â€¢ ') AS `set_names`,
     COALESCE(p.`status`, 'new') AS `progress_status`, p.`next_review_date`
 FROM `vocabulary_set_items` vsi
 JOIN `vocabulary_sets` vs ON vs.`id` = vsi.`vocabulary_set_id`
@@ -279,7 +279,7 @@ GROUP BY vs.`user_id`, v.`id`, v.`word`, v.`pronunciation`, v.`part_of_speech`,
 
 CREATE VIEW `vw_user_recent_activity` AS
 SELECT qr.`id`, qr.`user_id`, 'quiz' AS `activity_type`,
-       COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `source_name`,
+       COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p tá»•ng há»£p') AS `source_name`,
        qr.`correct_answers`, qr.`total_questions`, NULL AS `words_studied`,
        COALESCE(qr.`finished_at`, qr.`started_at`) AS `activity_time`,
        GREATEST(0, TIMESTAMPDIFF(SECOND, qr.`started_at`, qr.`finished_at`)) AS `duration_seconds`, 1 AS `has_exact_time`
@@ -288,7 +288,7 @@ LEFT JOIN `Topics` t ON t.`topicID` = qr.`topic_id`
 LEFT JOIN `vocabulary_sets` vs ON vs.`id` = qr.`vocabulary_set_id`
 UNION ALL
 SELECT ls.`id`, ls.`user_id`, 'flashcard',
-       COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp'),
+       COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p tá»•ng há»£p'),
        NULL, NULL, ls.`words_studied`,
        COALESCE(ls.`finished_at`, ls.`started_at`, CAST(CONCAT(ls.`session_date`, ' 00:00:00') AS DATETIME)),
        COALESCE(ls.`duration_seconds`, 0), IF(ls.`finished_at` IS NULL AND ls.`started_at` IS NULL, 0, 1)
@@ -297,9 +297,9 @@ LEFT JOIN `Topics` t ON t.`topicID` = ls.`topic_id`
 LEFT JOIN `vocabulary_sets` vs ON vs.`id` = ls.`vocabulary_set_id`
 WHERE ls.`words_studied` > 0$$
 
--- Mỗi dòng là một từ duy nhất mà user đã luyện trong một ngày.
--- UNION (không phải UNION ALL) loại trùng khi cùng từ được học nhiều lần,
--- học bằng Flashcard rồi Quiz, hoặc xuất hiện ở cả chủ đề và bộ từ cá nhân.
+-- Má»—i dÃ²ng lÃ  má»™t tá»« duy nháº¥t mÃ  user Ä‘Ã£ luyá»‡n trong má»™t ngÃ y.
+-- UNION (khÃ´ng pháº£i UNION ALL) loáº¡i trÃ¹ng khi cÃ¹ng tá»« Ä‘Æ°á»£c há»c nhiá»u láº§n,
+-- há»c báº±ng Flashcard rá»“i Quiz, hoáº·c xuáº¥t hiá»‡n á»Ÿ cáº£ chá»§ Ä‘á» vÃ  bá»™ tá»« cÃ¡ nhÃ¢n.
 CREATE VIEW `vw_user_daily_unique_words` AS
 SELECT p.`user_id`, rl.`review_date` AS `activity_date`, p.`vocabulary_id`
 FROM `review_logs` rl
@@ -310,8 +310,8 @@ FROM `quiz_results` qr
 JOIN `quiz_answer_details` qad ON qad.`quiz_result_id` = qr.`id`
 WHERE qr.`finished_at` IS NOT NULL$$
 
--- View tổng hợp dùng chung cho Dashboard, streak và biểu đồ lịch sử.
--- Việc tính một lần tại DB giúp các trang không tự cộng theo quy tắc khác nhau.
+-- View tá»•ng há»£p dÃ¹ng chung cho Dashboard, streak vÃ  biá»ƒu Ä‘á»“ lá»‹ch sá»­.
+-- Viá»‡c tÃ­nh má»™t láº§n táº¡i DB giÃºp cÃ¡c trang khÃ´ng tá»± cá»™ng theo quy táº¯c khÃ¡c nhau.
 CREATE VIEW `vw_user_daily_learning_summary` AS
 SELECT `user_id`, `activity_date`, COUNT(*) AS `unique_words_count`
 FROM `vw_user_daily_unique_words`
@@ -355,11 +355,11 @@ UNION ALL
 SELECT 
     'quiz' AS `loai`,
     qr.`id` AS `activity_id`,
-    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p tá»•ng há»£p') AS `tieuDe`,
     CONCAT(qr.`correct_answers`, '/', qr.`total_questions`) AS `chiTiet`,
     COALESCE(qr.`finished_at`, qr.`started_at`) AS `thoiGian`,
     u.`full_name` AS `actor_name`,
-    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập') AS `target_name`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p') AS `target_name`,
     CONCAT(qr.`correct_answers`, '/', qr.`total_questions`) AS `score_text`
 FROM `quiz_results` qr
 LEFT JOIN `Users` u ON u.`userID` = qr.`user_id`
@@ -370,11 +370,11 @@ UNION ALL
 SELECT 
     'flashcard' AS `loai`,
     ls.`id` AS `activity_id`,
-    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập tổng hợp') AS `tieuDe`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p tá»•ng há»£p') AS `tieuDe`,
     CAST(ls.`words_studied` AS CHAR) AS `chiTiet`,
     COALESCE(ls.`finished_at`, ls.`started_at`, CAST(CONCAT(ls.`session_date`, ' 00:00:00') AS DATETIME)) AS `thoiGian`,
     u.`full_name` AS `actor_name`,
-    COALESCE(t.`topicName`, vs.`name`, 'Ôn tập') AS `target_name`,
+    COALESCE(t.`topicName`, vs.`name`, 'Ã”n táº­p') AS `target_name`,
     CAST(ls.`words_studied` AS CHAR) AS `score_text`
 FROM `learning_sessions` ls
 LEFT JOIN `Users` u ON u.`userID` = ls.`user_id`
@@ -404,9 +404,9 @@ BEGIN
     RETURN ROUND(v_successful * 100.0 / v_total, 2);
 END$$
 
--- Đếm chuỗi ngày có ít nhất một từ duy nhất được luyện bằng Flashcard hoặc Quiz.
--- Nếu hôm nay chưa học nhưng hôm qua có học, chuỗi vẫn được giữ đến hết hôm nay;
--- chỉ khi bỏ trọn một ngày thì chuỗi mới trở về 0.
+-- Äáº¿m chuá»—i ngÃ y cÃ³ Ã­t nháº¥t má»™t tá»« duy nháº¥t Ä‘Æ°á»£c luyá»‡n báº±ng Flashcard hoáº·c Quiz.
+-- Náº¿u hÃ´m nay chÆ°a há»c nhÆ°ng hÃ´m qua cÃ³ há»c, chuá»—i váº«n Ä‘Æ°á»£c giá»¯ Ä‘áº¿n háº¿t hÃ´m nay;
+-- chá»‰ khi bá» trá»n má»™t ngÃ y thÃ¬ chuá»—i má»›i trá»Ÿ vá» 0.
 CREATE FUNCTION `fn_get_current_streak`(p_user_id INT)
 RETURNS INT
 READS SQL DATA
@@ -538,7 +538,7 @@ BEGIN
     END IF;
 END$$
 
--- Centralizes the denormalized “last studied” values when a review is logged.
+-- Centralizes the denormalized â€œlast studiedâ€ values when a review is logged.
 CREATE TRIGGER `trg_update_last_studied_date`
 AFTER INSERT ON `review_logs`
 FOR EACH ROW
@@ -689,13 +689,6 @@ BEGIN
     DECLARE v_session_type VARCHAR(20);
     DECLARE v_streak INT DEFAULT 0;
     DECLARE v_session_id INT DEFAULT NULL;
-    DECLARE v_base_ease FLOAT DEFAULT 2.5;
-    DECLARE v_min_interval INT DEFAULT 1;
-    DECLARE v_old_interval INT DEFAULT 0;
-    DECLARE v_old_ease FLOAT DEFAULT 2.5;
-    DECLARE v_old_repetitions INT DEFAULT 0;
-    DECLARE v_repetitions INT DEFAULT 0;
-    DECLARE v_new_ease FLOAT;
 
     DECLARE status_cursor CURSOR FOR
         SELECT CAST(j.`vocabulary_key` AS UNSIGNED),
@@ -731,9 +724,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found';
     END IF;
     -- A consistent parent lock serializes concurrent learning writes per user.
-    SELECT `userID`, COALESCE(`srs_base_ease`, 2.5), COALESCE(`srs_min_interval`, 1) 
-      INTO v_locked_user_id, v_base_ease, v_min_interval 
-      FROM `Users` WHERE `userID` = p_user_id FOR UPDATE;
+    SELECT `userID` INTO v_locked_user_id FROM `Users` WHERE `userID` = p_user_id FOR UPDATE;
 
     IF p_source_type = 'topic' THEN
         IF NOT EXISTS(SELECT 1 FROM `Topics` WHERE `topicID` = p_source_id) THEN
@@ -780,64 +771,38 @@ BEGIN
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary is not in the authorized source';
         END IF;
 
-        -- SM-2 Algorithm Integration
-        SET v_old_interval = NULL;
-        SELECT `interval_days`, `ease_factor`, `repetitions`
-          INTO v_old_interval, v_old_ease, v_old_repetitions
-          FROM `user_vocab_progress`
-         WHERE `user_id` = p_user_id AND `vocabulary_id` = v_vocabulary_id;
-         
-        IF v_old_interval IS NULL THEN
-            SET v_old_interval = 0;
-            SET v_old_ease = v_base_ease;
-            SET v_old_repetitions = 0;
-        END IF;
-
+        -- Má»™t láº§n báº¥m "ÄÃ£ nhá»›" chÆ°a Ä‘á»§ Ä‘á»ƒ coi lÃ  Ä‘Ã£ thuá»™c. Tráº¡ng thÃ¡i
+        -- mastered chá»‰ Ä‘Æ°á»£c xÃ¡c láº­p sau khi sá»‘ láº§n láº·p Ä‘áº¡t ngÆ°á»¡ng SRS bÃªn dÆ°á»›i.
+        SET v_status = 'learning';
+        SET v_interval = IF(v_answer = 'da_nho', 7, 1);
         SET v_quality = IF(v_answer = 'da_nho', 5, 2);
-        SET v_new_ease = GREATEST(1.30, v_old_ease + (0.10 - (5 - v_quality) * (0.08 + (5 - v_quality) * 0.02)));
-
-        IF v_answer = 'chua_nho' THEN
-            SET v_repetitions = 0;
-            SET v_interval = v_min_interval;
-        ELSE
-            SET v_repetitions = v_old_repetitions + IF(p_is_final, 1, 0);
-            SET v_interval = CASE
-                WHEN v_repetitions = 0 THEN v_min_interval
-                WHEN v_repetitions = 1 THEN GREATEST(v_min_interval, 1)
-                WHEN v_repetitions = 2 THEN GREATEST(v_min_interval, 6)
-                ELSE GREATEST(v_min_interval, ROUND(GREATEST(v_old_interval, 1) * v_new_ease))
-            END;
-        END IF;
-
-        SET v_status = CASE
-            WHEN v_answer = 'chua_nho' THEN 'learning'
-            WHEN v_repetitions >= 5 THEN 'mastered'
-            ELSE 'learning'
-        END;
 
         INSERT INTO `user_vocab_progress`
-            (`user_id`, `vocabulary_id`, `status`, `ease_factor`, `interval_days`, `repetitions`,
+            (`user_id`, `vocabulary_id`, `status`, `interval_days`, `repetitions`,
              `next_review_date`, `last_reviewed_at`, `last_quality_rating`)
         VALUES
-            (p_user_id, v_vocabulary_id, v_status, v_new_ease, v_interval, v_repetitions,
+            (p_user_id, v_vocabulary_id, v_status, v_interval, IF(p_is_final, 1, 0),
              DATE_ADD(CURRENT_DATE, INTERVAL v_interval DAY), NOW(), v_quality)
         ON DUPLICATE KEY UPDATE
             `id` = LAST_INSERT_ID(`id`),
-            `ease_factor` = VALUES(`ease_factor`),
             `interval_days` = VALUES(`interval_days`),
-            `repetitions` = VALUES(`repetitions`),
+            `repetitions` = `repetitions` + IF(p_is_final, 1, 0),
             `status` = CASE
-                WHEN `status` = 'mastered' AND VALUES(`status`) = 'learning' THEN 'learning'
+                -- "ChÆ°a nhá»›" luÃ´n Ä‘Æ°a tá»« vá» tráº¡ng thÃ¡i Ä‘ang há»c.
+                WHEN v_answer = 'chua_nho' THEN 'learning'
+                -- Giá»¯ lá»±a chá»n "Thuá»™c" mÃ  user Ä‘Ã£ chá»§ Ä‘á»™ng Ä‘áº·t á»Ÿ trang cÃ¡ nhÃ¢n.
                 WHEN `status` = 'mastered' THEN 'mastered'
-                ELSE VALUES(`status`)
+                -- Vá»›i tiáº¿n Ä‘á»™ tá»± Ä‘á»™ng, cáº§n Ä‘á»§ sá»‘ láº§n láº·p má»›i Ä‘Æ°á»£c coi lÃ  Ä‘Ã£ thuá»™c.
+                WHEN `repetitions` >= 5 THEN 'mastered'
+                ELSE 'learning'
             END,
             `next_review_date` = VALUES(`next_review_date`),
             `last_reviewed_at` = NOW(), `last_quality_rating` = VALUES(`last_quality_rating`);
         SET v_progress_id = LAST_INSERT_ID();
 
-        -- Ghi nhận cả những thẻ đã đánh giá trong phiên kết thúc sớm. View
-        -- thống kê theo ngày sẽ loại trùng, nên lưu lại nhiều lần vẫn chỉ tính
-        -- một vocabulary_id cho KPI và streak của ngày đó.
+        -- Ghi nháº­n cáº£ nhá»¯ng tháº» Ä‘Ã£ Ä‘Ã¡nh giÃ¡ trong phiÃªn káº¿t thÃºc sá»›m. View
+        -- thá»‘ng kÃª theo ngÃ y sáº½ loáº¡i trÃ¹ng, nÃªn lÆ°u láº¡i nhiá»u láº§n váº«n chá»‰ tÃ­nh
+        -- má»™t vocabulary_id cho KPI vÃ  streak cá»§a ngÃ y Ä‘Ã³.
         INSERT INTO `review_logs` (`progress_id`, `review_date`, `quality_rating`, `response_time_ms`)
         VALUES (v_progress_id, CURRENT_DATE, v_quality, NULL);
         SET v_word_count = v_word_count + 1;
@@ -1335,7 +1300,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'admin required';
     END IF;
     
-    -- Lưu biến session để Trigger có thể đọc được ID của Admin đang thao tác
+    -- LÆ°u biáº¿n session Ä‘á»ƒ Trigger cÃ³ thá»ƒ Ä‘á»c Ä‘Æ°á»£c ID cá»§a Admin Ä‘ang thao tÃ¡c
     SET @current_admin_id = p_actor_id;
     
     INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES (p_key, p_value)
@@ -1389,9 +1354,9 @@ END$$
 
 
 
--- Helper chạy bên trong transaction của procedure gọi nó.
--- Khóa hai dòng Users theo userID tăng dần để tránh vòng chờ A->B, B->A.
--- Sau khi có khóa, đọc lại quyền hiện tại; không tin role lưu trong session PHP.
+-- Helper cháº¡y bÃªn trong transaction cá»§a procedure gá»i nÃ³.
+-- KhÃ³a hai dÃ²ng Users theo userID tÄƒng dáº§n Ä‘á»ƒ trÃ¡nh vÃ²ng chá» A->B, B->A.
+-- Sau khi cÃ³ khÃ³a, Ä‘á»c láº¡i quyá»n hiá»‡n táº¡i; khÃ´ng tin role lÆ°u trong session PHP.
 CREATE PROCEDURE sp_admin_lock_account_pair(IN p_actor_id INT, IN p_target_id INT)
 MODIFIES SQL DATA
 BEGIN
@@ -1413,9 +1378,9 @@ BEGIN
     IF p_actor_id = p_target_id THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'self account change denied';
     END IF;
-    -- Actor active/admin vẫn giữ khóa đến COMMIT và không được sửa chính mình.
-    -- Vì vậy luôn còn ít nhất một admin active sau thay đổi, kể cả khi hai admin
-    -- đồng thời yêu cầu hạ quyền/khóa nhau: người chạy sau phải kiểm tra lại quyền.
+    -- Actor active/admin váº«n giá»¯ khÃ³a Ä‘áº¿n COMMIT vÃ  khÃ´ng Ä‘Æ°á»£c sá»­a chÃ­nh mÃ¬nh.
+    -- VÃ¬ váº­y luÃ´n cÃ²n Ã­t nháº¥t má»™t admin active sau thay Ä‘á»•i, ká»ƒ cáº£ khi hai admin
+    -- Ä‘á»“ng thá»i yÃªu cáº§u háº¡ quyá»n/khÃ³a nhau: ngÆ°á»i cháº¡y sau pháº£i kiá»ƒm tra láº¡i quyá»n.
 END$$
 
 CREATE PROCEDURE sp_admin_create_account(
@@ -1440,7 +1405,7 @@ BEGIN
        OR p_role IS NULL OR p_role NOT IN ('user', 'admin') THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid account data';
     END IF;
-    -- UNIQUE(email) là lớp bảo vệ cuối cùng khi hai request cùng tạo một email.
+    -- UNIQUE(email) lÃ  lá»›p báº£o vá»‡ cuá»‘i cÃ¹ng khi hai request cÃ¹ng táº¡o má»™t email.
     INSERT INTO Users(full_name, email, password_hash, role, status)
     VALUES(TRIM(p_full_name), LOWER(TRIM(p_email)), p_password_hash, p_role, 'active');
     SET v_user_id = LAST_INSERT_ID();
@@ -1485,8 +1450,8 @@ BEGIN
     IF v_status <> 'locked' OR v_status IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'account must be locked';
     END IF;
-    -- Không xóa tài khoản có lịch sử hoặc tài nguyên cá nhân để tránh CASCADE
-    -- làm mất dữ liệu học/orphan từ cá nhân. Tài khoản này nên giữ trạng thái locked.
+    -- KhÃ´ng xÃ³a tÃ i khoáº£n cÃ³ lá»‹ch sá»­ hoáº·c tÃ i nguyÃªn cÃ¡ nhÃ¢n Ä‘á»ƒ trÃ¡nh CASCADE
+    -- lÃ m máº¥t dá»¯ liá»‡u há»c/orphan tá»« cÃ¡ nhÃ¢n. TÃ i khoáº£n nÃ y nÃªn giá»¯ tráº¡ng thÃ¡i locked.
     IF EXISTS(SELECT 1 FROM learning_sessions WHERE user_id = p_user_id)
        OR EXISTS(SELECT 1 FROM quiz_results WHERE user_id = p_user_id)
        OR EXISTS(SELECT 1 FROM user_vocab_progress WHERE user_id = p_user_id)
@@ -1501,7 +1466,7 @@ BEGIN
     COMMIT;
 END$$
 
--- PHP chỉ CALL để kiểm tra tính sẵn sàng, không truy vấn metadata trực tiếp.
+-- PHP chá»‰ CALL Ä‘á»ƒ kiá»ƒm tra tÃ­nh sáºµn sÃ ng, khÃ´ng truy váº¥n metadata trá»±c tiáº¿p.
 CREATE PROCEDURE sp_admin_account_capabilities()
 READS SQL DATA
 BEGIN
@@ -1541,12 +1506,12 @@ DELIMITER ;
 -- GRANT EXECUTE ON PROCEDURE `db_LexiLoop`.`sp_set_vocabulary_statuses` TO 'app_user'@'%';
 
 -- ==============================================================================
--- KỊCH BẢN TẠO CÁC ĐỐI TƯỢNG CSDL CHO MODULE CÀI ĐẶT (ĐỒ ÁN MÔN HQTCSDL)
--- Chứa: Table, View, Trigger, Function
+-- Ká»ŠCH Báº¢N Táº O CÃC Äá»I TÆ¯á»¢NG CSDL CHO MODULE CÃ€I Äáº¶T (Äá»’ ÃN MÃ”N HQTCSDL)
+-- Chá»©a: Table, View, Trigger, Function
 -- ==============================================================================
 
 DELIMITER //
--- VIEW: Truy xuất dữ liệu cài đặt (Đã dùng ở D_Caidathethong.php)
+-- VIEW: Truy xuáº¥t dá»¯ liá»‡u cÃ i Ä‘áº·t (ÄÃ£ dÃ¹ng á»Ÿ D_Caidathethong.php)
 CREATE OR REPLACE VIEW vw_system_settings_logs AS
 SELECT 
     log_id,
@@ -1558,28 +1523,28 @@ SELECT
 FROM system_settings_logs
 ORDER BY created_at DESC//
 
--- 3. TRIGGER: Tự động ghi log khi có thay đổi cấu hình (Audit Trail)
--- Trigger này thỏa mãn tiêu chí thiết kế an toàn CSDL của môn học
+-- 3. TRIGGER: Tá»± Ä‘á»™ng ghi log khi cÃ³ thay Ä‘á»•i cáº¥u hÃ¬nh (Audit Trail)
+-- Trigger nÃ y thá»a mÃ£n tiÃªu chÃ­ thiáº¿t káº¿ an toÃ n CSDL cá»§a mÃ´n há»c
 DROP TRIGGER IF EXISTS trg_audit_system_settings//
 CREATE TRIGGER trg_audit_system_settings
 AFTER UPDATE ON system_settings
 FOR EACH ROW
 BEGIN
-    -- Chỉ ghi log nếu giá trị thực sự bị thay đổi
+    -- Chá»‰ ghi log náº¿u giÃ¡ trá»‹ thá»±c sá»± bá»‹ thay Ä‘á»•i
     IF OLD.setting_value != NEW.setting_value THEN
         INSERT INTO system_settings_logs (setting_key, old_value, new_value, changed_by, created_at)
         VALUES (
             NEW.setting_key,
             OLD.setting_value,
             NEW.setting_value,
-            @current_admin_id, -- Biến session được thiết lập trong Procedure sp_save_system_setting
+            @current_admin_id, -- Biáº¿n session Ä‘Æ°á»£c thiáº¿t láº­p trong Procedure sp_save_system_setting
             NOW()
         );
     END IF;
 END//
 
--- 4. FUNCTION: Hàm lấy nhanh một cấu hình hệ thống
--- Tránh việc phải viết SELECT ... FROM system_settings WHERE ... liên tục
+-- 4. FUNCTION: HÃ m láº¥y nhanh má»™t cáº¥u hÃ¬nh há»‡ thá»‘ng
+-- TrÃ¡nh viá»‡c pháº£i viáº¿t SELECT ... FROM system_settings WHERE ... liÃªn tá»¥c
 DROP FUNCTION IF EXISTS fn_get_setting_value//
 CREATE FUNCTION fn_get_setting_value(p_key VARCHAR(100))
 RETURNS TEXT
