@@ -18,6 +18,7 @@ $topHeaderPageActions = $topHeaderPageActions ?? '';
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $headerUserName = $_SESSION['full_name'] ?? 'Người dùng';
+$headerAvatarUrl = $_SESSION['avatar_url'] ?? '';
 
 /* Tạo tối đa hai chữ cái đầu cho avatar. */
 $headerInitials = '';
@@ -78,8 +79,12 @@ $headerInitials = substr($headerInitials, 0, 2);
         <?php if ($isLoggedIn): ?>
             <details class="top-header-account">
                 <summary class="top-header-account-summary">
-                    <span class="top-header-avatar" aria-hidden="true">
-                        <?= htmlspecialchars($headerInitials) ?>
+                    <span class="top-header-avatar" aria-hidden="true" style="overflow:hidden;padding:0;">
+                        <?php if (!empty($headerAvatarUrl)): ?>
+                            <img src="<?= htmlspecialchars($headerAvatarUrl) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        <?php else: ?>
+                            <?= htmlspecialchars($headerInitials) ?>
+                        <?php endif; ?>
                     </span>
                     
                     <a href="../user/C_Hosocanhan.php">

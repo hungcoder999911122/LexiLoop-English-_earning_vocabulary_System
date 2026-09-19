@@ -114,7 +114,8 @@ GROUP BY up.`user_id`, up.`topic_id`, up.`topic_name`, tc.`category`$$
 -- Stable read contracts used while legacy pages are migrated away from tables.
 CREATE VIEW `vw_users` AS
 SELECT `userID`, `email`, `password_hash`, `full_name`, `avatar_url`, `role`, `status`,
-       `created_at`, `update_at`, `daily_reminder_enabled`, `reminder_time`, `daily_target_words`
+       `created_at`, `update_at`, `daily_reminder_enabled`, `reminder_time`, `daily_target_words`,
+       `date_of_birth`, `target_level`
 FROM `Users`$$
 
 CREATE VIEW `vw_topic_catalog` AS
@@ -461,7 +462,8 @@ END$$
 CREATE PROCEDURE `sp_auth_get_account_by_email`(IN p_email VARCHAR(50))
 READS SQL DATA
 BEGIN
-    SELECT `userID`, `email`, `password_hash`, `full_name`, `role`, `status`
+    SELECT `userID`, `email`, `password_hash`, `full_name`, `avatar_url`, `role`, `status`,
+           `date_of_birth`, `target_level`
       FROM `Users`
      WHERE `email` = LOWER(TRIM(p_email))
      LIMIT 1;
@@ -483,8 +485,9 @@ END$$
 CREATE PROCEDURE `sp_auth_get_account_by_id`(IN p_user_id INT)
 READS SQL DATA
 BEGIN
-    SELECT `userID`, `email`, `password_hash`, `full_name`, `role`, `status`,
-           `daily_reminder_enabled`, `reminder_time`, `daily_target_words`
+    SELECT `userID`, `email`, `password_hash`, `full_name`, `avatar_url`, `role`, `status`,
+           `daily_reminder_enabled`, `reminder_time`, `daily_target_words`,
+           `date_of_birth`, `target_level`
       FROM `Users`
      WHERE `userID` = p_user_id
      LIMIT 1;
@@ -529,16 +532,16 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'password hash is invalid';
     END IF;
 
+    IF NOT EXISTS (SELECT 1 FROM `Users` WHERE `userID` = p_user_id AND `status` = 'active') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found';
+    END IF;
+
     UPDATE `Users`
        SET `password_hash` = COALESCE(p_new_password_hash, `password_hash`),
            `daily_reminder_enabled` = IF(p_daily_reminder_enabled, 1, 0),
            `reminder_time` = p_reminder_time,
            `daily_target_words` = p_daily_target_words
      WHERE `userID` = p_user_id AND `status` = 'active';
-
-    IF ROW_COUNT() <> 1 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found';
-    END IF;
 END$$
 
 -- Integrity guard: the quality scale is 0..5 and response time cannot be negative.
@@ -1107,16 +1110,35 @@ BEGIN
     END IF;
 END$$
 
--- Admin-only vocabulary creation. The PHP layer must pass user ID from the
-CREATE PROCEDURE `sp_update_user_profile`(IN p_user_id INT, IN p_full_name VARCHAR(100), IN p_email VARCHAR(50))
+CREATE PROCEDURE `sp_update_user_profile`(
+    IN p_user_id INT,
+    IN p_full_name VARCHAR(100),
+    IN p_email VARCHAR(50),
+    IN p_avatar_url VARCHAR(250),
+    IN p_date_of_birth DATE,
+    IN p_target_level VARCHAR(50)
+)
 MODIFIES SQL DATA
 BEGIN
     IF CHAR_LENGTH(TRIM(p_full_name)) < 2 OR LOCATE('@', p_email) = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid profile data';
     END IF;
-    UPDATE `Users` SET `full_name` = TRIM(p_full_name), `email` = LOWER(TRIM(p_email))
-    WHERE `userID` = p_user_id AND `status` = 'active';
-    IF ROW_COUNT() <> 1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found'; END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Users` WHERE `userID` = p_user_id AND `status` = 'active') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM `Users` WHERE `email` = LOWER(TRIM(p_email)) AND `userID` <> p_user_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'email already exists';
+    END IF;
+
+    UPDATE `Users`
+       SET `full_name` = TRIM(p_full_name),
+           `email` = LOWER(TRIM(p_email)),
+           `avatar_url` = COALESCE(p_avatar_url, `avatar_url`),
+           `date_of_birth` = COALESCE(p_date_of_birth, `date_of_birth`),
+           `target_level` = COALESCE(p_target_level, `target_level`)
+     WHERE `userID` = p_user_id AND `status` = 'active';
 END$$
 
 CREATE PROCEDURE `sp_save_vocabulary_set`(

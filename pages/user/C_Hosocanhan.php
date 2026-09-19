@@ -9,6 +9,7 @@ $loai_thong_bao = '';
 $user_profile = [
     'C_Hosocanhan_full_name' => $_SESSION['full_name'] ?? '',
     'C_Hosocanhan_email' => $_SESSION['email'] ?? '',
+    'C_Hosocanhan_avatar_url' => $_SESSION['avatar_url'] ?? '',
     'C_Hosocanhan_ngay_sinh' => $_SESSION['user_profile_ngay_sinh'] ?? '2002-05-15',
     'C_Hosocanhan_trinh_do' => $_SESSION['user_profile_trinh_do'] ?? 'Trung cấp (B1)',
 ];
@@ -20,30 +21,117 @@ try {
         $email = trim($_POST['C_Hosocanhan_email'] ?? '');
         $ngay_sinh = trim($_POST['C_Hosocanhan_ngay_sinh'] ?? '');
         $trinh_do = trim($_POST['C_Hosocanhan_trinh_do'] ?? '');
-        if ($full_name === '') {
-            throw new InvalidArgumentException('Vui lòng nhập họ và tên!');
+
+        if (mb_strlen($full_name, 'UTF-8') < 2) {
+            throw new InvalidArgumentException('Vui lòng nhập họ và tên hợp lệ (ít nhất 2 ký tự)!');
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('Địa chỉ email không hợp lệ!');
         }
-        dbCallProcedure($link, 'CALL sp_update_user_profile(?, ?, ?)', 'iss', [$user_id, $full_name, $email]);
+
+        // Xử lý upload ảnh đại diện nếu người dùng chọn file
+        $avatar_url = null;
+        if (isset($_FILES['C_Hosocanhan_avatar_file']) && $_FILES['C_Hosocanhan_avatar_file']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['C_Hosocanhan_avatar_file'];
+            $maxFileSize = 5 * 1024 * 1024; // 5MB
+            if ($file['size'] > $maxFileSize) {
+                throw new InvalidArgumentException('Ảnh đại diện không được vượt quá 5MB.');
+            }
+
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array($ext, $allowedExts, true)) {
+                throw new InvalidArgumentException('Chỉ chấp nhận các định dạng ảnh: JPG, JPEG, PNG, GIF, WEBP.');
+            }
+
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($mimeType, $allowedMimes, true)) {
+                throw new InvalidArgumentException('Tệp tải lên không phải là hình ảnh hợp lệ.');
+            }
+
+            $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/images/avatars/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $newFileName = 'avatar_user_' . $user_id . '_' . time() . '.' . $ext;
+            $targetPath = $uploadDir . $newFileName;
+            $saved = is_uploaded_file($file['tmp_name'])
+                ? move_uploaded_file($file['tmp_name'], $targetPath)
+                : copy($file['tmp_name'], $targetPath);
+
+            if ($saved) {
+                $avatar_url = '/assets/images/avatars/' . $newFileName;
+                $_SESSION['avatar_url'] = $avatar_url;
+                $user_profile['C_Hosocanhan_avatar_url'] = $avatar_url;
+            } else {
+                throw new RuntimeException('Không thể lưu ảnh đại diện. Vui lòng thử lại.');
+            }
+        }
+
+        // Cập nhật thông tin vào cơ sở dữ liệu
+        dbCallProcedure(
+            $link,
+            'CALL sp_update_user_profile(?, ?, ?, ?, ?, ?)',
+            'isssss',
+            [
+                $user_id,
+                $full_name,
+                $email,
+                $avatar_url,
+                $ngay_sinh !== '' ? $ngay_sinh : null,
+                $trinh_do !== '' ? $trinh_do : null
+            ]
+        );
+
         $_SESSION['full_name'] = $_SESSION['user_name'] = $full_name;
         $_SESSION['email'] = $email;
-        $_SESSION['user_profile_ngay_sinh'] = $ngay_sinh;
-        $_SESSION['user_profile_trinh_do'] = $trinh_do;
+        if ($ngay_sinh !== '') {
+            $_SESSION['user_profile_ngay_sinh'] = $ngay_sinh;
+        }
+        if ($trinh_do !== '') {
+            $_SESSION['user_profile_trinh_do'] = $trinh_do;
+        }
+
         $thong_bao = 'Cập nhật thông tin hồ sơ thành công!';
         $loai_thong_bao = 'success';
     }
 
-    $users = dbSelectView($link, 'SELECT full_name, email FROM vw_users WHERE userID = ? LIMIT 1', 'i', [$user_id]);
+    // Tải thông tin mới nhất từ cơ sở dữ liệu
+    $users = dbSelectView(
+        $link,
+        'SELECT full_name, email, avatar_url, date_of_birth, target_level FROM vw_users WHERE userID = ? LIMIT 1',
+        'i',
+        [$user_id]
+    );
     if ($users) {
-        $user_profile['C_Hosocanhan_full_name'] = $users[0]['full_name'] ?? '';
-        $user_profile['C_Hosocanhan_email'] = $users[0]['email'] ?? '';
+        $row = $users[0];
+        $user_profile['C_Hosocanhan_full_name'] = $row['full_name'] ?? '';
+        $user_profile['C_Hosocanhan_email'] = $row['email'] ?? '';
+        if (!empty($row['avatar_url'])) {
+            $user_profile['C_Hosocanhan_avatar_url'] = $row['avatar_url'];
+            $_SESSION['avatar_url'] = $row['avatar_url'];
+        }
+        if (!empty($row['date_of_birth'])) {
+            $user_profile['C_Hosocanhan_ngay_sinh'] = $row['date_of_birth'];
+            $_SESSION['user_profile_ngay_sinh'] = $row['date_of_birth'];
+        }
+        if (!empty($row['target_level'])) {
+            $user_profile['C_Hosocanhan_trinh_do'] = $row['target_level'];
+            $_SESSION['user_profile_trinh_do'] = $row['target_level'];
+        }
     }
+
+    // Tính toán số liệu thống kê thành tựu học tập
     $progress = dbSelectView($link, "SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND status IN ('learning','mastered')", 'i', [$user_id]);
     $thanh_tuu['tong_tu_hoc'] = (int) ($progress[0]['total'] ?? 0);
+
     $streak = dbSelectView($link, 'SELECT fn_get_current_streak(?) AS value', 'i', [$user_id]);
     $thanh_tuu['chuoi_ngay'] = (int) ($streak[0]['value'] ?? 0);
+
     $quiz = dbSelectView($link, 'SELECT COUNT(*) AS total_quiz, AVG(score) AS avg_score FROM vw_quiz_results WHERE user_id = ?', 'i', [$user_id]);
     $thanh_tuu['quiz_hoan_thanh'] = (int) ($quiz[0]['total_quiz'] ?? 0);
     $thanh_tuu['diem_tb_quiz'] = isset($quiz[0]['avg_score']) ? round((float) $quiz[0]['avg_score']) . '%' : '0%';
@@ -52,7 +140,11 @@ try {
     $loai_thong_bao = 'error';
 } catch (Throwable $error) {
     error_log('Lỗi Hồ sơ cá nhân: ' . $error->getMessage());
-    $thong_bao = (int) $error->getCode() === 1062 ? 'Email này đã được sử dụng!' : 'Không thể xử lý hồ sơ lúc này.';
+    if (strpos($error->getMessage(), 'email already exists') !== false || (int) $error->getCode() === 1062) {
+        $thong_bao = 'Email này đã được sử dụng bởi tài khoản khác!';
+    } else {
+        $thong_bao = 'Không thể xử lý hồ sơ: ' . $error->getMessage();
+    }
     $loai_thong_bao = 'error';
 }
 
@@ -64,6 +156,7 @@ foreach (explode(' ', trim($user_profile['C_Hosocanhan_full_name'] ?: 'User')) a
 }
 $profileInitials = mb_substr($profileInitials, 0, 2, 'UTF-8') ?: 'U';
 $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
+$hasAvatar = !empty($user_profile['C_Hosocanhan_avatar_url']);
 ?>
 
 <!DOCTYPE html>
@@ -73,10 +166,10 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hồ sơ cá nhân - LexiLoop</title>
-    <link rel="stylesheet" href="../../CSS/Style.css">
-    <link rel="stylesheet" href="../../CSS/topheader.css">
-    <link rel="stylesheet" href="../../CSS/C_Hosocanhan.css">
-    <link rel="stylesheet" href="../../CSS/responsive.css">
+    <link rel="stylesheet" href="/CSS/Style.css">
+    <link rel="stylesheet" href="/CSS/topheader.css">
+    <link rel="stylesheet" href="/CSS/C_Hosocanhan.css">
+    <link rel="stylesheet" href="/CSS/responsive.css">
 </head>
 
 <body class="C_Hosocanhan_body">
@@ -84,7 +177,6 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
     <!-- =========================================
          SIDEBAR
          ========================================= -->
-    <!-- Sidebar dùng chung cho mọi trang người dùng -->
     <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/sidebar_user.php'; ?>
 
     <!-- =========================================
@@ -95,7 +187,7 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
         <!-- HEADER -->
         <?php
         $headerTitle = 'Hồ sơ cá nhân';
-        $topHeaderPageActions = '';
+        $topHeaderPageActions = '<a href="/pages/auth/A_Caidattaikhoan.php" class="top-header-btn-action" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--color-surface);border:1px solid var(--color-border);font-size:13px;font-weight:600;color:var(--color-text);text-decoration:none;">⚙️ Cài đặt tài khoản</a>';
 
         include $_SERVER['DOCUMENT_ROOT'] . '/includes/topheader.php';
         ?>
@@ -113,10 +205,16 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
 
                 <div class="C_Hosocanhan_avatarWrapper">
                     <div class="C_Hosocanhan_avatarCircle" id="C_Hosocanhan_avatarCircle">
-                        <span id="C_Hosocanhan_avatarInitials"><?php echo htmlspecialchars($profileInitials); ?></span>
-                        <img id="C_Hosocanhan_avatarPreview" src="" alt="Avatar" style="display:none;">
+                        <span id="C_Hosocanhan_avatarInitials" style="<?php echo $hasAvatar ? 'display:none;' : ''; ?>">
+                            <?php echo htmlspecialchars($profileInitials); ?>
+                        </span>
+                        <img id="C_Hosocanhan_avatarPreview" 
+                             src="<?php echo $hasAvatar ? htmlspecialchars($user_profile['C_Hosocanhan_avatar_url']) : ''; ?>" 
+                             alt="Avatar" 
+                             style="<?php echo $hasAvatar ? 'display:block;' : 'display:none;'; ?>">
                     </div>
-                    <input type="file" id="C_Hosocanhan_fileInput" name="C_Hosocanhan_avatar_file" accept="image/*" style="display:none;">
+                    <!-- Liên kết input file với form qua thuộc tính form="C_Hosocanhan_formThongTin" -->
+                    <input type="file" id="C_Hosocanhan_fileInput" name="C_Hosocanhan_avatar_file" accept="image/*" form="C_Hosocanhan_formThongTin" style="display:none;">
                     <button type="button" id="C_Hosocanhan_btnDoiAnh" class="C_Hosocanhan_btnAvatar">
                         Đổi ảnh đại diện
                     </button>
@@ -159,13 +257,13 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
                         </div>
 
                         <div class="C_Hosocanhan_formGroup">
-                            <label for="C_Hosocanhan_trinh_do" class="C_Hosocanhan_label">Trình độ</label>
+                            <label for="C_Hosocanhan_trinh_do" class="C_Hosocanhan_label">Trình độ mục tiêu</label>
                             <input
                                 type="text"
                                 id="C_Hosocanhan_trinh_do"
                                 name="C_Hosocanhan_trinh_do"
                                 class="C_Hosocanhan_input"
-                                placeholder="VD: B1, B2..."
+                                placeholder="VD: Sơ cấp (A2), Trung cấp (B1)..."
                                 value="<?php echo htmlspecialchars($user_profile['C_Hosocanhan_trinh_do']); ?>">
                         </div>
                     </div>
@@ -208,9 +306,9 @@ $profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
 
         </main>
     </div>
-    <script src="../../JS/jquery-4.0.0.min.js"></script>
-    <script src="../../JS/C_Hosocanhan.js"></script>
-    <script src="../../JS/auth.js"></script>
+    <script src="/JS/jquery-4.0.0.min.js"></script>
+    <script src="/JS/C_Hosocanhan.js"></script>
+    <script src="/JS/auth.js"></script>
 </body>
 
 </html>

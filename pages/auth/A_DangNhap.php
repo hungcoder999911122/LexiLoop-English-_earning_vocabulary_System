@@ -44,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 				$_SESSION['user_id']   = (int) $row['userID'];
 				$_SESSION['full_name'] = $row['full_name'];
+				$_SESSION['email']     = $row['email'];
+				$_SESSION['avatar_url'] = $row['avatar_url'] ?? '';
+				$_SESSION['user_profile_ngay_sinh'] = $row['date_of_birth'] ?? '2002-05-15';
+				$_SESSION['user_profile_trinh_do'] = $row['target_level'] ?? 'Trung cấp (B1)';
 				$_SESSION['role']      = $row['role'];
 				$_SESSION['auth_scope'] = 'user';
 

@@ -64,14 +64,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'isisi',
                 [$user_id, $new_hash, $reminderEnabled, $normalizedTime, $dailyTarget]
             );
-            $thongBao = "Cập nhật cài đặt thành công!";
+            $thongBao = !empty($new_hash) ? "Đổi mật khẩu và cập nhật cài đặt thành công!" : "Cập nhật cài đặt thành công!";
 
             // Tải lại thông tin mới
             $accounts = dbCallProcedure($link, 'CALL sp_auth_get_account_by_id(?)', 'i', [$user_id]);
             $userRow = $accounts[0] ?? $userRow;
+
+            // Xóa giá trị mật khẩu trên form sau khi cập nhật thành công
+            $current_pass = $new_pass = $new_pass_confirm = '';
         } catch (Throwable $error) {
             error_log('Lỗi cập nhật cài đặt: ' . $error->getMessage());
-            $loi = "Không thể cập nhật cài đặt lúc này.";
+            $loi = "Không thể cập nhật cài đặt lúc này: " . $error->getMessage();
         }
     }
 }
@@ -102,7 +105,7 @@ $curTarget = (int) ($userRow['daily_target_words'] ?? 20);
         <!-- TOPHEADER -->
         <?php
         $headerTitle = 'Cài đặt tài khoản';
-        $topHeaderPageActions = '';
+        $topHeaderPageActions = '<a href="/pages/user/C_Hosocanhan.php" class="top-header-btn-action" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--color-surface);border:1px solid var(--color-border);font-size:13px;font-weight:600;color:var(--color-text);text-decoration:none;">👤 Xem hồ sơ</a>';
         include $_SERVER['DOCUMENT_ROOT'] . '/includes/topheader.php';
         ?>
 
@@ -291,6 +294,7 @@ $curTarget = (int) ($userRow['daily_target_words'] ?? 20);
             var $reminder = $('#A_Caidattaikhoan_reminder');
             var $timeGroup = $('#A_Caidattaikhoan_timeGroup');
             var $hour = $('#hour');
+            var $form = $('.A_Caidattaikhoan_form');
 
             function syncReminderState() {
                 if ($reminder.is(':checked')) {
@@ -303,10 +307,44 @@ $curTarget = (int) ($userRow['daily_target_words'] ?? 20);
             $reminder.on('change', syncReminderState);
             syncReminderState();
 
-            var selectedHour = $hour.data('selected');
+            var selectedHour = $hour.attr('data-selected');
             if (selectedHour) {
                 $hour.val(selectedHour);
             }
+
+            // Client-side validation kiểm tra mật khẩu trước khi submit
+            $form.on('submit', function(e) {
+                var currentPass = $('#A_Caidattaikhoan_password').val().trim();
+                var newPass = $('#A_Caidattaikhoan_password_new').val().trim();
+                var confirmPass = $('#A_Caidattaikhoan_password_new_acp').val().trim();
+
+                if (currentPass !== '' || newPass !== '' || confirmPass !== '') {
+                    if (currentPass === '') {
+                        e.preventDefault();
+                        alert('Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu!');
+                        $('#A_Caidattaikhoan_password').focus();
+                        return false;
+                    }
+                    if (newPass === '') {
+                        e.preventDefault();
+                        alert('Vui lòng nhập mật khẩu mới!');
+                        $('#A_Caidattaikhoan_password_new').focus();
+                        return false;
+                    }
+                    if (newPass.length < 6) {
+                        e.preventDefault();
+                        alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                        $('#A_Caidattaikhoan_password_new').focus();
+                        return false;
+                    }
+                    if (newPass !== confirmPass) {
+                        e.preventDefault();
+                        alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+                        $('#A_Caidattaikhoan_password_new_acp').focus();
+                        return false;
+                    }
+                }
+            });
 
             // Tự động ẩn thông báo sau 4 giây
             var $alert = $('#A_Caidattaikhoan_alert');

@@ -294,6 +294,8 @@ CREATE TABLE `Users` (
   `daily_reminder_enabled` tinyint DEFAULT '1',
   `reminder_time` time DEFAULT '20:00:00',
   `daily_target_words` int DEFAULT '20',
+  `date_of_birth` date DEFAULT '2002-05-15',
+  `target_level` varchar(50) DEFAULT 'Trung cấp (B1)',
   `srs_base_ease` float DEFAULT '2.5',
   `srs_min_interval` int DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

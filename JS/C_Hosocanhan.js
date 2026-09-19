@@ -11,13 +11,22 @@ document.addEventListener("DOMContentLoaded", () => {
             fileInput.click();
         });
 
-        // 3. Khi người dùng chọn file ảnh -> Hiển thị xem trước (preview) ngay
+        // 3. Khi người dùng chọn file ảnh -> Kiểm tra và hiển thị xem trước (preview) ngay
         fileInput.addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                // Kiểm tra có đúng định dạng ảnh không
-                if (!file.type.startsWith("image/")) {
-                    alert("Vui lòng chọn một file hình ảnh hợp lệ (JPG, PNG, GIF...)");
+                // Kiểm tra định dạng ảnh
+                const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+                if (!validTypes.includes(file.type)) {
+                    alert("Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, GIF, WEBP)!");
+                    fileInput.value = "";
+                    return;
+                }
+
+                // Kiểm tra kích thước file (tối đa 5MB)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert("Kích thước ảnh không được vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn!");
                     fileInput.value = "";
                     return;
                 }
@@ -42,21 +51,30 @@ document.addEventListener("DOMContentLoaded", () => {
             const fullNameInput = document.getElementById("C_Hosocanhan_full_name");
             const emailInput = document.getElementById("C_Hosocanhan_email");
 
-            if (!fullNameInput.value.trim()) {
+            const fullNameVal = fullNameInput ? fullNameInput.value.trim() : "";
+            const emailVal = emailInput ? emailInput.value.trim() : "";
+
+            if (!fullNameVal || fullNameVal.length < 2) {
                 e.preventDefault();
-                alert("Họ tên không được để trống!");
-                fullNameInput.focus();
+                alert("Họ và tên phải có ít nhất 2 ký tự!");
+                if (fullNameInput) fullNameInput.focus();
                 return;
             }
 
-            if (!emailInput.value.trim()) {
+            if (!emailVal) {
                 e.preventDefault();
                 alert("Email không được để trống!");
-                emailInput.focus();
+                if (emailInput) emailInput.focus();
                 return;
             }
-            
-            /* Dữ liệu hợp lệ sẽ tiếp tục submit POST sang C_Hosocanhan.php để lưu vào DB */
+
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailVal)) {
+                e.preventDefault();
+                alert("Địa chỉ email không hợp lệ. Vui lòng kiểm tra lại!");
+                if (emailInput) emailInput.focus();
+                return;
+            }
         });
     }
 
