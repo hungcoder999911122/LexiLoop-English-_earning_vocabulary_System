@@ -52,6 +52,9 @@ try {
 
     $statusesJson = json_encode($validStatuses, JSON_THROW_ON_ERROR);
     $sourceIdForDb = $source === 'review' ? null : $sourceId;
+    
+    error_log("save_flashcard_progress debug: userId=$userId, source=$source, sourceIdForDb=" . var_export($sourceIdForDb, true) . ", statuses=$statusesJson");
+
     $rows = dbCallProcedure(
         $link,
         'CALL sp_save_flashcard_session(?, ?, ?, ?, ?, ?)',

@@ -1,21 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
     const cardBox = document.getElementById("C_HocFlashcard_cardBox");
-    const wordText = document.getElementById("C_HocFlashcard_word");
-    const hintText = document.getElementById("C_HocFlashcard_hint");
-    const badgeR = document.getElementById("C_HocFlashcard_badgeR");
+    
+    // Mặt trước
+    const wordTextFront = document.getElementById("C_HocFlashcard_wordFront");
+    const hintTextFront = document.getElementById("C_HocFlashcard_hintFront");
+    const badgeRFront = document.getElementById("C_HocFlashcard_badgeR");
+    const pronunciationAreaFront = document.getElementById("C_HocFlashcard_pronunciationAreaFront");
+    const pronunciationTextFront = document.getElementById("C_HocFlashcard_pronunciationFront");
+    const audioButtonFront = document.getElementById("C_HocFlashcard_audioButtonFront");
 
-    const pronunciationArea = document.getElementById(
-    "C_HocFlashcard_pronunciationArea"
-    );
-    const pronunciationText = document.getElementById(
-        "C_HocFlashcard_pronunciation"
-    );
-    const audioButton = document.getElementById(
-        "C_HocFlashcard_audioButton"
-    );
-    const audioPlayer = document.getElementById(
-        "C_HocFlashcard_audioPlayer"
-    );
+    // Mặt sau
+    const wordTextBack = document.getElementById("C_HocFlashcard_wordBack");
+    const hintTextBack = document.getElementById("C_HocFlashcard_hintBack");
+    const badgeRBack = document.getElementById("C_HocFlashcard_badgeRBack");
+    const pronunciationAreaBack = document.getElementById("C_HocFlashcard_pronunciationAreaBack");
+    const pronunciationTextBack = document.getElementById("C_HocFlashcard_pronunciationBack");
+    const audioButtonBack = document.getElementById("C_HocFlashcard_audioButtonBack");
+    const partOfSpeechBack = document.getElementById("C_HocFlashcard_partOfSpeech");
+    const exampleBack = document.getElementById("C_HocFlashcard_example");
+
+    const audioPlayer = document.getElementById("C_HocFlashcard_audioPlayer");
 
     const progressText = document.getElementById(
         "C_HocFlashcard_progressText"
@@ -171,11 +175,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderEmptyState() {
-        wordText.textContent = "Chủ đề này chưa có từ vựng";
-        hintText.textContent = "Hãy quay lại và chọn chủ đề khác.";
+        wordTextFront.textContent = "Chủ đề này chưa có từ vựng";
+        wordTextBack.textContent = "Chủ đề này chưa có từ vựng";
+        hintTextFront.textContent = "Hãy quay lại và chọn chủ đề khác.";
+        hintTextBack.textContent = "";
 
-        pronunciationText.textContent = "";
-        audioButton.hidden = true;
+        pronunciationTextFront.textContent = "";
+        pronunciationTextBack.textContent = "";
+        audioButtonFront.hidden = true;
+        audioButtonBack.hidden = true;
 
         progressText.textContent = "Thẻ 0/0";
         progressFill.style.width = "0%";
@@ -188,16 +196,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderPronunciation(card) {
         const pronunciation = card.phien_am?.trim();
+        const displayPronunciation = pronunciation || "Chưa có phiên âm";
 
-        pronunciationText.textContent = pronunciation || "Chưa có phiên âm";
+        pronunciationTextFront.textContent = displayPronunciation;
+        pronunciationTextBack.textContent = displayPronunciation;
 
         const audioUrl = card.audio_url?.trim();
-
         if (audioUrl) {
-            audioButton.hidden = false;
+            audioButtonFront.hidden = false;
+            audioButtonBack.hidden = false;
             audioPlayer.src = audioUrl;
         } else {
-            audioButton.hidden = true;
+            audioButtonFront.hidden = true;
+            audioButtonBack.hidden = true;
             audioPlayer.removeAttribute("src");
         }
     }
@@ -233,15 +244,28 @@ document.addEventListener("DOMContentLoaded", () => {
         isFlipped = false;
         cardBox.classList.remove("is-flipped");
 
-        wordText.textContent = currentCard.tu_vung;
-        hintText.textContent = "Nhấn vào thẻ để xem nghĩa";
+        wordTextFront.textContent = currentCard.tu_vung;
+        wordTextBack.textContent = currentCard.nghia;
+
+        if (currentCard.loai_tu) {
+            partOfSpeechBack.textContent = `(${currentCard.loai_tu})`;
+            partOfSpeechBack.hidden = false;
+        } else {
+            partOfSpeechBack.hidden = true;
+        }
+
+        if (currentCard.vi_du) {
+            exampleBack.textContent = `VD: ${currentCard.vi_du}`;
+            exampleBack.hidden = false;
+        } else {
+            exampleBack.hidden = true;
+        }
 
         progressText.textContent =
             `Thẻ ${currentIndex + 1}/${cards.length}`;
 
-        badgeR.style.display = currentCard.is_review
-            ? "flex"
-            : "none";
+        badgeRFront.style.display = currentCard.is_review ? "flex" : "none";
+        badgeRBack.style.display = currentCard.is_review ? "flex" : "none";
 
         renderPronunciation(currentCard);
         renderAssessmentButtons(currentCard.id);
@@ -370,31 +394,25 @@ document.addEventListener("DOMContentLoaded", () => {
         btnKetThuc.textContent = "Hoàn tất phiên học";
     }
 
-cardBox.addEventListener("click", () => {
-    const currentCard = getCurrentCard();
+    cardBox.addEventListener("click", () => {
+        if (cards.length === 0) {
+            return;
+        }
 
-    if (!currentCard) {
-        return;
-    }
+        isFlipped = !isFlipped;
+        cardBox.classList.toggle("is-flipped", isFlipped);
+    });
 
-    isFlipped = !isFlipped;
+    audioButtonFront.addEventListener("click", (e) => {
+        e.stopPropagation();
+        audioPlayer.currentTime = 0;
+        audioPlayer.play().catch(() => {
+            alert("Không thể phát audio của từ này.");
+        });
+    });
 
-    cardBox.classList.toggle("is-flipped", isFlipped);
-
-    if (isFlipped) {
-        wordText.textContent = currentCard.nghia;
-        hintText.textContent = "Nhấn vào thẻ để xem từ tiếng Anh";
-
-        pronunciationArea.hidden = true;
-    } else {
-        wordText.textContent = currentCard.tu_vung;
-        hintText.textContent = "Nhấn vào thẻ để xem nghĩa";
-
-        pronunciationArea.hidden = false;
-    }
-});
-
-    audioButton.addEventListener("click", () => {
+    audioButtonBack.addEventListener("click", (e) => {
+        e.stopPropagation();
         audioPlayer.currentTime = 0;
         audioPlayer.play().catch(() => {
             alert("Không thể phát audio của từ này.");

@@ -10,7 +10,7 @@ if (empty($_SESSION['C_learning_csrf'])) {
 
 $source = $_GET['source'] ?? 'topic';
 $source = in_array($source, ['topic', 'set', 'review'], true) ? $source : 'topic';
-$source_id = filter_var($_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
+$source_id = filter_var($_GET['source_id'] ?? $_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
 $mode = $_GET['mode'] ?? 'practice';
 $limit_option = (string) ($_GET['limit'] ?? '10');
 if (!in_array($limit_option, ['5', '10', '20', 'all'], true)) {

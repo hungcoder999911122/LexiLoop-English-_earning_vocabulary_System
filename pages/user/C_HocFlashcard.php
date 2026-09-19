@@ -14,8 +14,7 @@ if ($mode === 'review') {
     $source = 'review';
 }
 $source = in_array($source, ['topic', 'set', 'review'], true) ? $source : 'topic';
-$source_id = filter_var($_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
-$limit_option = (string) ($_GET['limit'] ?? '10');
+$source_id = filter_var($_GET['source_id'] ?? $_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
 if (!in_array($limit_option, ['5', '10', '20', 'all'], true)) {
     $limit_option = '10';
 }
@@ -149,36 +148,38 @@ if ($limit_option !== 'all') {
 
             <!-- Hộp thẻ Flashcard -->
             <div class="C_HocFlashcard_cardBox" id="C_HocFlashcard_cardBox">
-                <!-- Badge R (Ôn tập - Review) -->
-                <div class="C_HocFlashcard_badgeR" id="C_HocFlashcard_badgeR" title="Thẻ cần ôn tập">R</div>
+                <div class="C_HocFlashcard_cardInner" id="C_HocFlashcard_cardInner">
+                    <!-- MẶT TRƯỚC (Từ tiếng Anh) -->
+                    <div class="C_HocFlashcard_cardFront">
+                        <!-- Badge R (Ôn tập - Review) -->
+                        <div class="C_HocFlashcard_badgeR" id="C_HocFlashcard_badgeR" title="Thẻ cần ôn tập">R</div>
+                        <h2 class="C_HocFlashcard_word" id="C_HocFlashcard_wordFront">Software</h2>
+                        
+                        <div class="C_HocFlashcard_pronunciationArea" id="C_HocFlashcard_pronunciationAreaFront">
+                            <p class="C_HocFlashcard_pronunciation" id="C_HocFlashcard_pronunciationFront">/.../</p>
+                            <button type="button" class="C_HocFlashcard_audioButton" id="C_HocFlashcard_audioButtonFront" hidden>🔊 Nghe phát âm</button>
+                        </div>
+                        <p class="C_HocFlashcard_hint" id="C_HocFlashcard_hintFront">Nhấn để xem nghĩa</p>
+                    </div>
 
-                <h2 class="C_HocFlashcard_word" id="C_HocFlashcard_word">Software</h2>
+                    <!-- MẶT SAU (Nghĩa tiếng Việt, ví dụ) -->
+                    <div class="C_HocFlashcard_cardBack">
+                        <div class="C_HocFlashcard_badgeR" id="C_HocFlashcard_badgeRBack" title="Thẻ cần ôn tập" hidden>R</div>
+                        <h2 class="C_HocFlashcard_word" id="C_HocFlashcard_wordBack">Phần mềm</h2>
+                        
+                        <div class="C_HocFlashcard_pronunciationArea" id="C_HocFlashcard_pronunciationAreaBack">
+                            <p class="C_HocFlashcard_pronunciation" id="C_HocFlashcard_pronunciationBack" hidden>/.../</p>
+                            <button type="button" class="C_HocFlashcard_audioButton" id="C_HocFlashcard_audioButtonBack" hidden>🔊 Nghe phát âm</button>
+                        </div>
 
-                <!-- Thông tin phát âm đặt bên dưới Flashcard -->
-                <div
-                    class="C_HocFlashcard_pronunciationArea"
-                    id="C_HocFlashcard_pronunciationArea">
+                        <p class="C_HocFlashcard_partOfSpeech" id="C_HocFlashcard_partOfSpeech" hidden></p>
+                        <p class="C_HocFlashcard_example" id="C_HocFlashcard_example" hidden></p>
 
-                    <p
-                        class="C_HocFlashcard_pronunciation"
-                        id="C_HocFlashcard_pronunciation">
-                        /.../
-                    </p>
-
-                    <button
-                        type="button"
-                        class="C_HocFlashcard_audioButton"
-                        id="C_HocFlashcard_audioButton"
-                        hidden>
-                        🔊 Nghe phát âm
-                    </button>
-
-                    <audio
-                        id="C_HocFlashcard_audioPlayer"
-                        preload="none">
-                    </audio>
+                        <p class="C_HocFlashcard_hint" id="C_HocFlashcard_hintBack">Nhấn để xem lại từ tiếng Anh</p>
+                    </div>
                 </div>
-                <p class="C_HocFlashcard_hint" id="C_HocFlashcard_hint">Nhấn để xem nghĩa</p>
+
+                <audio id="C_HocFlashcard_audioPlayer" preload="none"></audio>
             </div>
 
             <!-- Nút từ tiếp theo -->
