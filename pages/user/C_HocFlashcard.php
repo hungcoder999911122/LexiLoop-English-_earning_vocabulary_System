@@ -15,6 +15,7 @@ if ($mode === 'review') {
 }
 $source = in_array($source, ['topic', 'set', 'review'], true) ? $source : 'topic';
 $source_id = filter_var($_GET['source_id'] ?? $_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
+$limit_option = (string) ($_GET['limit'] ?? '10');
 if (!in_array($limit_option, ['5', '10', '20', 'all'], true)) {
     $limit_option = '10';
 }
@@ -130,7 +131,16 @@ if ($limit_option !== 'all') {
                 : 'Học từ mới: ' . htmlspecialchars($ten_chu_de); ?>
         </h1>
 
-        <span class="C_HocFlashcard_progressText" id="C_HocFlashcard_progressText">Thẻ 1/5</span>
+        <div class="C_HocFlashcard_headerActions">
+            <span class="C_HocFlashcard_progressText" id="C_HocFlashcard_progressText">Thẻ 1/5</span>
+            <button type="button" class="C_HocFlashcard_exitButton" id="C_HocFlashcard_btnThoatHeader" title="Thoát phiên học">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Thoát</span>
+            </button>
+        </div>
     </header>
 
     <!-- Thanh tiến độ học -->
@@ -220,7 +230,12 @@ if ($limit_option !== 'all') {
                 type="button"
                 id="C_HocFlashcard_btnKetThuc"
                 class="C_HocFlashcard_btnKetThuc">
-                Kết thúc sớm
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Kết thúc sớm</span>
             </button>
         </div>
     </footer>

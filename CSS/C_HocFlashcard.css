@@ -67,8 +67,43 @@ body,
 
 .C_HocFlashcard_progressText {
     font-size: 15px;
-    font-weight: 600;
-    color: var(--color-text-muted);
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.C_HocFlashcard_headerActions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.C_HocFlashcard_exitButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid #e2b8b8;
+    border-radius: 10px;
+    color: #a83a3a;
+    background: #fff7f7;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.C_HocFlashcard_exitButton:hover {
+    border-color: #cf7777;
+    background: #ffeded;
+    color: #8b1e1e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(168, 58, 58, 0.15);
+}
+
+.C_HocFlashcard_exitButton:active {
+    transform: translateY(0);
 }
 
 .C_HocFlashcard_progressBarWrapper {
@@ -330,21 +365,40 @@ body,
 .C_HocFlashcard_stats { font-size: 14px; font-weight: 600; color: var(--color-text-muted); }
 
 .C_HocFlashcard_btnKetThuc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 8px 18px;
     background-color: var(--color-white);
-    border: 1px solid var(--color-border);
+    border: 1px solid #dceae1;
     border-radius: 20px;
-    color: var(--color-text);
+    color: #4a5c50;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .C_HocFlashcard_btnKetThuc:hover {
     background-color: #ffebee;
     border-color: #ffcdd2;
     color: #c62828;
+    transform: translateY(-1px);
+}
+
+.C_HocFlashcard_btnKetThuc.C_HocFlashcard_btnCompleted {
+    background: linear-gradient(135deg, #2d7a56 0%, #1f4e38 100%);
+    border-color: #1f4e38;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(45, 122, 86, 0.25);
+}
+
+.C_HocFlashcard_btnKetThuc.C_HocFlashcard_btnCompleted:hover {
+    background: linear-gradient(135deg, #236345 0%, #173b2a 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(45, 122, 86, 0.35);
 }
 
 /* 

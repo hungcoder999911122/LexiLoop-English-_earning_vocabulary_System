@@ -46,6 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnKetThuc = document.getElementById(
         "C_HocFlashcard_btnKetThuc"
     );
+    const btnThoatHeader = document.getElementById(
+        "C_HocFlashcard_btnThoatHeader"
+    );
 
     /*
      * Không tạo dữ liệu giả khi database không trả về từ nào.
@@ -367,7 +370,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok || !result.success) throw new Error(result.message || "Không thể lưu tiến trình.");
             return true;
         } catch (error) {
-            alert(error.message);
+            console.error("Lỗi saveProgress:", error);
+            if (isFinal) {
+                alert(error.message || "Không thể lưu tiến trình Flashcard.");
+            }
             return false;
         } finally {
             isSaving = false;
@@ -391,7 +397,13 @@ document.addEventListener("DOMContentLoaded", () => {
         await attemptRequest("complete").catch(console.error);
         btnDaNho.disabled = true;
         btnChuaNho.disabled = true;
-        btnKetThuc.textContent = "Hoàn tất phiên học";
+        btnKetThuc.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Hoàn tất & Quay lại</span>
+        `;
+        btnKetThuc.classList.add("C_HocFlashcard_btnCompleted");
     }
 
     cardBox.addEventListener("click", () => {
@@ -456,31 +468,39 @@ document.addEventListener("DOMContentLoaded", () => {
         await saveCheckpoint();
     });
 
-    btnKetThuc.addEventListener("click", async () => {
-        const shouldEnd = confirm(
-            "Bạn có chắc chắn muốn kết thúc phiên học này?"
-        );
+    async function exitSession(forcePrompt = false) {
+        if (!hasCompletedSession || forcePrompt) {
+            const shouldEnd = confirm(
+                "Bạn có chắc chắn muốn thoát phiên học? Tiến trình các thẻ đã học sẽ được lưu lại."
+            );
+            if (!shouldEnd) return;
 
-        if (shouldEnd) {
-            // Kết thúc sớm: vừa giữ checkpoint để học tiếp, vừa cập nhật ngay
-            // số từ Đã nhớ/Chưa nhớ cho khu vực thống kê.
-            if (!hasCompletedSession) {
+            // Thoát sớm: lưu checkpoint và cập nhật tiến trình thẻ đã học
+            try {
                 await saveCheckpoint();
-                const saved = await saveProgress(false);
-                if (!saved) return;
+                await saveProgress(false);
+            } catch (e) {
+                console.warn("Lỗi lưu tiến trình khi thoát:", e);
             }
-            if (sessionConfig.source === "review") {
-                window.location.href = "C_Ontaphomnay.php";
-                return;
-            }
-            const sourceQuery = new URLSearchParams({
-                source: sessionConfig.source || "topic",
-                id: sessionConfig.sourceId || sessionConfig.topicId,
-                limit: sessionConfig.limit || "10"
-            });
-            window.location.href = `C_Gocrenluyen.php?${sourceQuery.toString()}`;
         }
-    });
+
+        if (sessionConfig.source === "review") {
+            window.location.href = "C_Ontaphomnay.php";
+            return;
+        }
+        const sourceQuery = new URLSearchParams({
+            source: sessionConfig.source || "topic",
+            id: sessionConfig.sourceId || sessionConfig.topicId,
+            limit: sessionConfig.limit || "10"
+        });
+        window.location.href = `C_Gocrenluyen.php?${sourceQuery.toString()}`;
+    }
+
+    if (btnThoatHeader) {
+        btnThoatHeader.addEventListener("click", () => exitSession(true));
+    }
+
+    btnKetThuc.addEventListener("click", () => exitSession(false));
 
     window.addEventListener("pagehide", saveCheckpointOnExit);
 

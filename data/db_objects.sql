@@ -797,17 +797,18 @@ BEGIN
         END IF;
 
         -- SM-2 Algorithm Integration
-        SET v_old_interval = NULL;
-        SELECT `interval_days`, `ease_factor`, `repetitions`
+        -- Dùng aggregate COALESCE(MAX(...)) để luôn trả về đúng 1 dòng (kể cả khi từ chưa có trong user_vocab_progress),
+        -- tránh kích hoạt CONTINUE HANDLER FOR NOT FOUND làm cursor bị ngắt vòng lặp sớm.
+        SET v_old_interval = 0;
+        SET v_old_ease = v_base_ease;
+        SET v_old_repetitions = 0;
+
+        SELECT COALESCE(MAX(`interval_days`), 0),
+               COALESCE(MAX(`ease_factor`), v_base_ease),
+               COALESCE(MAX(`repetitions`), 0)
           INTO v_old_interval, v_old_ease, v_old_repetitions
           FROM `user_vocab_progress`
          WHERE `user_id` = p_user_id AND `vocabulary_id` = v_vocabulary_id;
-         
-        IF v_old_interval IS NULL THEN
-            SET v_old_interval = 0;
-            SET v_old_ease = v_base_ease;
-            SET v_old_repetitions = 0;
-        END IF;
 
         SET v_quality = IF(v_answer = 'da_nho', 5, 2);
         SET v_new_ease = GREATEST(1.30, v_old_ease + (0.10 - (5 - v_quality) * (0.08 + (5 - v_quality) * 0.02)));
@@ -857,6 +858,7 @@ BEGIN
         INSERT INTO `review_logs` (`progress_id`, `review_date`, `quality_rating`, `response_time_ms`)
         VALUES (v_progress_id, CURRENT_DATE, v_quality, NULL);
         SET v_word_count = v_word_count + 1;
+        SET v_done = FALSE;
     END LOOP;
     CLOSE status_cursor;
 
