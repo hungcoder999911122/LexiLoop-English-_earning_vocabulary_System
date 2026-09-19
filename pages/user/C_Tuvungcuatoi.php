@@ -80,23 +80,28 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/personal_vocabulary_controll
                 <div class="C_Tuvungcuatoi_colLeft">
                     <!-- Thanh lọc & tìm kiếm -->
                     <section class="C_Tuvungcuatoi_filterBar">
-                        <div class="C_Tuvungcuatoi_searchWrapper">
-                            <span class="C_Tuvungcuatoi_searchIcon" aria-hidden="true">
-                                <!-- Dán SVG icon tìm kiếm của anh vào đây. -->
-                            </span>
-                            <input
-                                type="text"
-                                id="C_Tuvungcuatoi_txtTimKiem"
-                                class="C_Tuvungcuatoi_inputSearch"
-                                placeholder="Tìm kiếm từ vựng, nghĩa...">
-                        </div>
+                        <form action="C_Tuvungcuatoi.php" method="GET" style="display: flex; flex-grow: 1; gap: inherit; align-items: inherit;">
+                            <div class="C_Tuvungcuatoi_searchWrapper">
+                                <span class="C_Tuvungcuatoi_searchIcon" aria-hidden="true">
+                                    <!-- Dán SVG icon tìm kiếm của anh vào đây. -->
+                                </span>
+                                <input
+                                    type="text"
+                                    name="q"
+                                    id="C_Tuvungcuatoi_txtTimKiem"
+                                    class="C_Tuvungcuatoi_inputSearch"
+                                    value="<?php echo htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8'); ?>"
+                                    placeholder="Tìm kiếm từ vựng, nghĩa...">
+                            </div>
 
-                        <select id="C_Tuvungcuatoi_selChuDe" class="C_Tuvungcuatoi_selectFilter">
-                            <option value="">Bộ từ: Tất cả</option>
-                            <?php foreach ($danh_sach_bo_tu as $bo_tu): ?>
-                                <option value="<?php echo $bo_tu['id']; ?>"><?php echo htmlspecialchars($bo_tu['name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                            <select name="set_id" id="C_Tuvungcuatoi_selChuDe" class="C_Tuvungcuatoi_selectFilter" onchange="this.form.submit()">
+                                <option value="">Bộ từ: Tất cả</option>
+                                <?php foreach ($danh_sach_bo_tu as $bo_tu): ?>
+                                    <option value="<?php echo $bo_tu['id']; ?>" <?php echo $filterSetId === $bo_tu['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($bo_tu['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <noscript><button type="submit">Lọc</button></noscript>
+                        </form>
 
                         <?php if ($isLoggedIn): ?>
                             <button type="button" id="C_Tuvungcuatoi_btnThemTu" class="C_Tuvungcuatoi_btnAdd">+ Thêm từ vựng</button>
@@ -240,8 +245,35 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/personal_vocabulary_controll
                                     </tbody>
                                 </table>
                             </div>
-                            <nav class="C_Tuvungcuatoi_pagination" id="C_Tuvungcuatoi_pagination" aria-label="Phân trang từ vựng"></nav>
-                            <p class="C_Tuvungcuatoi_noResults" id="C_Tuvungcuatoi_noResults" hidden>Không tìm thấy từ vựng phù hợp.</p>
+                            <?php if ($vocabTotalPages > 1): ?>
+                                <nav class="C_Tuvungcuatoi_pagination" id="C_Tuvungcuatoi_pagination" aria-label="Phân trang từ vựng">
+                                    <?php
+                                    $firstVisiblePage = max(1, min($page - 1, $vocabTotalPages - 2));
+                                    $lastVisiblePage = min($vocabTotalPages, $firstVisiblePage + 2);
+                                    ?>
+                                    
+                                    <?php if ($page > 1): ?>
+                                        <a href="?q=<?= urlencode($searchQuery) ?>&set_id=<?= $filterSetId ?>&page=<?= $page - 1 ?>" aria-label="Trang trước">&lt;</a>
+                                    <?php else: ?>
+                                        <span class="is-disabled" aria-hidden="true">&lt;</span>
+                                    <?php endif; ?>
+
+                                    <?php for ($p = $firstVisiblePage; $p <= $lastVisiblePage; $p++): ?>
+                                        <a href="?q=<?= urlencode($searchQuery) ?>&set_id=<?= $filterSetId ?>&page=<?= $p ?>"
+                                           class="<?= $p === $page ? 'is-active' : '' ?>"
+                                           <?= $p === $page ? 'aria-current="page"' : '' ?>><?= $p ?></a>
+                                    <?php endfor; ?>
+
+                                    <?php if ($page < $vocabTotalPages): ?>
+                                        <a href="?q=<?= urlencode($searchQuery) ?>&set_id=<?= $filterSetId ?>&page=<?= $page + 1 ?>" aria-label="Trang sau">&gt;</a>
+                                    <?php else: ?>
+                                        <span class="is-disabled" aria-hidden="true">&gt;</span>
+                                    <?php endif; ?>
+                                </nav>
+                            <?php endif; ?>
+                            <?php if (empty($danh_sach_tu)): ?>
+                                <p class="C_Tuvungcuatoi_noResults" id="C_Tuvungcuatoi_noResults">Không tìm thấy từ vựng phù hợp.</p>
+                            <?php endif; ?>
                         </section>
                     </form>
                     <!-- Form độc lập: tránh lồng form trong bảng chọn hàng loạt. -->

@@ -218,3 +218,60 @@ body,
     box-shadow: 0 4px 12px rgba(31, 45, 36, 0.03);
     text-align: center;
 }
+
+/* =========================================
+   CẤU HÌNH SRS
+   ========================================= */
+.C_Ontaphomnay_btnText {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 8px;
+    font-size: 13px;
+}
+
+.C_Ontaphomnay_srsPanel {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--color-border);
+    text-align: left;
+}
+
+.C_Ontaphomnay_srsForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.C_Ontaphomnay_srsForm .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.C_Ontaphomnay_srsForm label {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.C_Ontaphomnay_srsForm input[type="number"] {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.C_Ontaphomnay_srsForm small {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.srs-message {
+    font-size: 13px;
+    margin-top: 8px;
+}
+.srs-message.success { color: #2d7a56; }
+.srs-message.error { color: #d32f2f; }

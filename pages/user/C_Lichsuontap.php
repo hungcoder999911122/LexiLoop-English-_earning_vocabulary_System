@@ -8,6 +8,8 @@ $selectedRange = (string) ($_GET['range'] ?? '7');
 if (!in_array($selectedRange, ['7', '30', 'all'], true)) { $selectedRange = '7'; }
 $historyPage = max(1, filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
 $historyPerPage = 10;
+$historyTotalItems = 0;
+$historyTotalPages = 1;
 $chartEndDate = date('Y-m-d');
 $chartStartDate = null;
 $chartTitle = $selectedRange === 'all' ? 'Số từ ôn tập theo tháng' : 'Số từ ôn tập trong ' . $selectedRange . ' ngày qua';
@@ -82,11 +84,21 @@ if ($isLoggedIn && isset($link) && $link instanceof mysqli) {
             $activityParams[] = $chartStartDate;
             $activityParams[] = $chartEndDate;
         }
+        $countResult = dbSelectView($link, "SELECT COUNT(*) as total FROM vw_user_recent_activity WHERE $activityWhere", $activityTypes, $activityParams);
+        $historyTotalItems = (int)($countResult[0]['total'] ?? 0);
+        $historyTotalPages = max(1, (int) ceil($historyTotalItems / $historyPerPage));
+        $historyPage = min($historyPage, $historyTotalPages);
+        $offset = ($historyPage - 1) * $historyPerPage;
+
+        $newActivityParams = $activityParams;
+        $newActivityParams[] = $historyPerPage;
+        $newActivityParams[] = $offset;
+
         $activities = dbSelectView(
             $link,
-            "SELECT * FROM vw_user_recent_activity WHERE $activityWhere ORDER BY activity_time DESC, id DESC",
-            $activityTypes,
-            $activityParams
+            "SELECT * FROM vw_user_recent_activity WHERE $activityWhere ORDER BY activity_time DESC, id DESC LIMIT ? OFFSET ?",
+            $activityTypes . 'ii',
+            $newActivityParams
         );
         foreach ($activities as $row) {
             $time = dinhDangThoiGian($row['activity_time']);
@@ -109,10 +121,6 @@ if ($isLoggedIn && isset($link) && $link instanceof mysqli) {
     }
 }
 $du_lieu_bieu_do = array_values($du_lieu_bieu_do);
-$historyTotalItems = count($danh_sach_lich_su);
-$historyTotalPages = max(1, (int) ceil($historyTotalItems / $historyPerPage));
-$historyPage = min($historyPage, $historyTotalPages);
-$danh_sach_lich_su = array_slice($danh_sach_lich_su, ($historyPage - 1) * $historyPerPage, $historyPerPage);
 $historyFirstVisiblePage = max(1, min($historyPage - 1, $historyTotalPages - 2));
 $historyLastVisiblePage = min($historyTotalPages, $historyFirstVisiblePage + 2);
 $tong_tu_tuan = array_sum(array_column($du_lieu_bieu_do, 'so_tu'));

@@ -4,11 +4,18 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/Connect.php');
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/database_objects.php');
 
 $user_id = (int) $_SESSION['user_id'];
+$srs_base_ease = 2.5;
+$srs_min_interval = 1;
 $tu_can_on_tap = 0;
 $tu_da_hoc = 0;
 $quiz_da_lam = 0;
 
 try {
+    $userRows = dbSelectView($link, 'SELECT srs_base_ease, srs_min_interval FROM Users WHERE userID = ?', 'i', [$user_id]);
+    if (!empty($userRows)) {
+        $srs_base_ease = (float)($userRows[0]['srs_base_ease'] ?? 2.5);
+        $srs_min_interval = (int)($userRows[0]['srs_min_interval'] ?? 1);
+    }
     $dueRows = dbSelectView(
         $link,
         'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE',
@@ -135,7 +142,25 @@ $is_bước2_unlocked = $tong_tu_on_tap === 0 || $tu_da_hoc >= $tong_tu_on_tap;
         <!-- Ghi chú thuật toán Spaced Repetition -->
         <footer class="C_Ontaphomnay_bannerContainer">
             <div class="C_Ontaphomnay_bannerBox">
-                💡 <strong>Ghi chú:</strong> Sau khi hoàn thành, hệ thống sẽ tự động tính toán thời gian ngắt quãng (Spaced Repetition) để lên lịch ôn lại tối ưu cho bạn.
+                💡 <strong>Ghi chú:</strong> Hệ thống sử dụng thuật toán Spaced Repetition (SM-2) để lên lịch ôn tập. 
+                <button type="button" id="btnToggleSrsConfig" class="C_Ontaphomnay_btnText">Tùy chỉnh thuật toán</button>
+                
+                <div id="srsConfigPanel" class="C_Ontaphomnay_srsPanel" style="display: none;">
+                    <form id="formSrsConfig" class="C_Ontaphomnay_srsForm">
+                        <div class="form-group">
+                            <label for="srs_base_ease">Hệ số Ease ban đầu (Độ dễ):</label>
+                            <input type="number" id="srs_base_ease" name="srs_base_ease" step="0.1" min="1.3" max="3.0" value="<?php echo htmlspecialchars((string)$srs_base_ease); ?>">
+                            <small>Mặc định: 2.5. Tăng nếu bạn muốn khoảng thời gian giãn cách dài hơn.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="srs_min_interval">Khoảng cách tối thiểu (ngày):</label>
+                            <input type="number" id="srs_min_interval" name="srs_min_interval" min="1" max="10" value="<?php echo htmlspecialchars((string)$srs_min_interval); ?>">
+                            <small>Mặc định: 1. Số ngày giãn cách tối thiểu sau khi nhớ từ mới.</small>
+                        </div>
+                        <button type="submit" id="btnSaveSrsConfig" class="C_Ontaphomnay_btnAction" style="padding: 0.5rem 1rem; font-size: 0.9rem; height: 36px;">Lưu cấu hình</button>
+                        <div id="srsConfigMessage" class="srs-message"></div>
+                    </form>
+                </div>
             </div>
         </footer>
 

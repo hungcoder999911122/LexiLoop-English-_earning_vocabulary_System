@@ -170,7 +170,7 @@ $topics = dbSelectView($link, 'SELECT * FROM vw_topic_catalog ORDER BY topicID')
                                 <a
                                     class="topic-action topic-action-review"
                                     href="<?= $isLoggedIn
-                                                ? '../user/C_HocFlashcard.php?mode=review'
+                                                ? '../user/C_Ontaphomnay.php'
                                                 : '../auth/A_DangNhap.php' ?>"
 
                                     <?php if (!$isLoggedIn): ?>

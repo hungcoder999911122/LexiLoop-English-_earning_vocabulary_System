@@ -13,6 +13,12 @@ $danh_sach_chu_de = [];
 $danh_sach_bo_tu = [];
 $thong_ke_tu = ['tong' => 0, 'thuoc' => 0, 'chua_thuoc' => 0, 'phan_tram' => 0];
 
+$page = 1;
+$vocabTotalPages = 1;
+$vocabTotalItems = 0;
+$searchQuery = '';
+$filterSetId = 0;
+
 if (isset($_SESSION['C_Tuvungcuatoi_flash'])) {
     $thong_bao = (string) $_SESSION['C_Tuvungcuatoi_flash']['message'];
     $loai_thong_bao = (string) $_SESSION['C_Tuvungcuatoi_flash']['type'];
@@ -81,15 +87,50 @@ try {
                 $thong_bao = $vocabularyId > 0 ? "Cập nhật từ vựng \"$word\" thành công!" : "Thêm từ vựng \"$word\" thành công!";
             }
             $loai_thong_bao = 'success';
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['C_Tuvungcuatoi_flash'] = ['message' => $thong_bao, 'type' => $loai_thong_bao];
             header('Location: C_Tuvungcuatoi.php');
             exit;
         }
 
-        $rows = dbSelectView($link, 'SELECT * FROM vw_personal_vocabulary WHERE user_id = ? ORDER BY id DESC', 'i', [$user_id]);
+        $searchQuery = trim((string) ($_GET['q'] ?? ''));
+        $filterSetId = (int) ($_GET['set_id'] ?? 0);
+        $page = max(1, filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
+        $perPage = 10;
+        
+        $vocabWhere = 'user_id = ?';
+        $vocabTypes = 'i';
+        $vocabParams = [$user_id];
+        
+        if ($searchQuery !== '') {
+            $vocabWhere .= ' AND (word LIKE ? OR meaning LIKE ?)';
+            $vocabTypes .= 'ss';
+            $likeQuery = '%' . $searchQuery . '%';
+            $vocabParams[] = $likeQuery;
+            $vocabParams[] = $likeQuery;
+        }
+        if ($filterSetId > 0) {
+            $vocabWhere .= ' AND FIND_IN_SET(?, set_ids)';
+            $vocabTypes .= 's';
+            $vocabParams[] = (string) $filterSetId;
+        }
+
+        $countResult = dbSelectView($link, "SELECT COUNT(*) as total FROM vw_personal_vocabulary WHERE $vocabWhere", $vocabTypes, $vocabParams);
+        $vocabTotalItems = (int)($countResult[0]['total'] ?? 0);
+        $vocabTotalPages = max(1, (int) ceil($vocabTotalItems / $perPage));
+        $page = min($page, $vocabTotalPages);
+        $offset = ($page - 1) * $perPage;
+
+        $newVocabParams = $vocabParams;
+        $newVocabParams[] = $perPage;
+        $newVocabParams[] = $offset;
+
+        $rows = dbSelectView(
+            $link, 
+            "SELECT * FROM vw_personal_vocabulary WHERE $vocabWhere ORDER BY id DESC LIMIT ? OFFSET ?", 
+            $vocabTypes . 'ii', 
+            $newVocabParams
+        );
+
         $today = date('Y-m-d');
         foreach ($rows as $row) {
             $memoryLevel = 'moi';
@@ -106,6 +147,7 @@ try {
                 'muc_do_nho' => $memoryLevel, 'is_owner' => (int) $row['created_by'] === $user_id,
             ];
         }
+
         $setRows = dbSelectView($link, 'SELECT id, name FROM vw_vocabulary_sets WHERE user_id = ? ORDER BY updated_at DESC, name ASC', 'i', [$user_id]);
         foreach ($setRows as $row) {
             $danh_sach_bo_tu[] = ['id' => (int) $row['id'], 'name' => $row['name']];
@@ -113,8 +155,11 @@ try {
         foreach (dbSelectView($link, 'SELECT topicID, topicName FROM vw_topic_catalog ORDER BY topicName') as $row) {
             $danh_sach_chu_de[] = ['id' => (int) $row['topicID'], 'name' => $row['topicName']];
         }
-        $thong_ke_tu['tong'] = count($danh_sach_tu);
-        $thong_ke_tu['thuoc'] = count(array_filter($danh_sach_tu, static fn(array $word): bool => $word['muc_do_nho'] === 'tot'));
+
+        // Calculate stats via SQL
+        $statsRows = dbSelectView($link, 'SELECT COUNT(*) as total, SUM(CASE WHEN progress_status = "mastered" THEN 1 ELSE 0 END) as mastered FROM vw_personal_vocabulary WHERE user_id = ?', 'i', [$user_id]);
+        $thong_ke_tu['tong'] = (int) ($statsRows[0]['total'] ?? 0);
+        $thong_ke_tu['thuoc'] = (int) ($statsRows[0]['mastered'] ?? 0);
         $thong_ke_tu['chua_thuoc'] = $thong_ke_tu['tong'] - $thong_ke_tu['thuoc'];
         $thong_ke_tu['phan_tram'] = $thong_ke_tu['tong'] > 0 ? (int) round($thong_ke_tu['thuoc'] * 100 / $thong_ke_tu['tong']) : 0;
     }

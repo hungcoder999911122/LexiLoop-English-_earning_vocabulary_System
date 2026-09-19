@@ -102,58 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const searchInput = getById("C_Tuvungcuatoi_txtTimKiem");
     const topicFilter = getById("C_Tuvungcuatoi_selChuDe");
-    const vocabularyRows = [...document.querySelectorAll("#C_Tuvungcuatoi_table tbody tr")];
-    const pagination = getById("C_Tuvungcuatoi_pagination");
-    const noResults = getById("C_Tuvungcuatoi_noResults");
-    const rowsPerPage = 10;
-    let currentPage = 1;
-
-    function renderPagination(filteredRows) {
-        if (!pagination) return;
-
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-        pagination.replaceChildren();
-        pagination.hidden = totalPages <= 1;
-
-        for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.textContent = pageNumber;
-            button.classList.toggle("is-active", pageNumber === currentPage);
-            button.setAttribute("aria-label", `Trang ${pageNumber}`);
-            if (pageNumber === currentPage) button.setAttribute("aria-current", "page");
-            button.addEventListener("click", () => {
-                currentPage = pageNumber;
-                filterTable(false);
-            });
-            pagination.append(button);
-        }
-    }
-
-    function filterTable(resetPage = true) {
-        const query = searchInput.value.toLowerCase().trim();
-        const selectedSetId = topicFilter.value;
-        const filteredRows = vocabularyRows.filter((row) => {
-            const word = (row.dataset.word || "").toLowerCase();
-            const meaning = (row.dataset.meaning || "").toLowerCase();
-            return (word.includes(query) || meaning.includes(query))
-                && (!selectedSetId || (row.dataset.setIds || "").split(",").includes(selectedSetId));
-        });
-
-        if (resetPage) currentPage = 1;
-        const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-        currentPage = Math.min(currentPage, totalPages);
-        const firstRowIndex = (currentPage - 1) * rowsPerPage;
-        const visibleRows = new Set(filteredRows.slice(firstRowIndex, firstRowIndex + rowsPerPage));
-
-        vocabularyRows.forEach((row) => { row.hidden = !visibleRows.has(row); });
-        if (noResults) noResults.hidden = filteredRows.length > 0;
-        renderPagination(filteredRows);
-        refreshBulkBar();
-    }
-
-    searchInput?.addEventListener("input", filterTable);
-    topicFilter?.addEventListener("change", filterTable);
 
     // Chọn nhiều từ chỉ phục vụ thao tác hàng loạt; PHP mới kiểm tra quyền xóa.
     const checkAll = getById("C_Tuvungcuatoi_checkAll");
@@ -166,20 +114,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function refreshBulkBar() {
         const checked = rowChecks.filter((checkbox) => checkbox.checked);
-        const visibleChecks = rowChecks.filter((checkbox) => !checkbox.closest("tr").hidden);
-        const checkedVisible = visibleChecks.filter((checkbox) => checkbox.checked);
         selectedCount.textContent = checked.length;
         bulkBar.hidden = checked.length === 0;
         if (checkAll) {
-            checkAll.checked = visibleChecks.length > 0 && checkedVisible.length === visibleChecks.length;
-            checkAll.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleChecks.length;
+            checkAll.checked = rowChecks.length > 0 && checked.length === rowChecks.length;
+            checkAll.indeterminate = checked.length > 0 && checked.length < rowChecks.length;
         }
     }
 
     checkAll?.addEventListener("change", () => {
-        // "Chọn tất cả" chỉ tác động 10 dòng đang thấy ở trang hiện tại.
+        // "Chọn tất cả" tác động lên các dòng hiện có ở trang hiện tại.
         rowChecks.forEach((checkbox) => {
-            if (!checkbox.closest("tr").hidden) checkbox.checked = checkAll.checked;
+            checkbox.checked = checkAll.checked;
         });
         refreshBulkBar();
     });
@@ -212,8 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Khởi tạo trang đầu sau khi toàn bộ điều khiển chọn hàng đã sẵn sàng.
-    filterTable();
+    // Khởi tạo trạng thái bulk bar
+    refreshBulkBar();
 
     const alertBox = getById("C_Tuvungcuatoi_alert");
     if (alertBox) {

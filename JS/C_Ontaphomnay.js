@@ -33,4 +33,60 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("🔒 Bạn cần hoàn thành học FlashCard ở bước 1 trước khi làm Quiz ôn tập nhé!");
         });
     }
+
+    // 5. Toggle và Submit Cấu hình SRS
+    const btnToggleSrsConfig = document.getElementById("btnToggleSrsConfig");
+    const srsConfigPanel = document.getElementById("srsConfigPanel");
+    const formSrsConfig = document.getElementById("formSrsConfig");
+    const srsConfigMessage = document.getElementById("srsConfigMessage");
+
+    if (btnToggleSrsConfig && srsConfigPanel) {
+        btnToggleSrsConfig.addEventListener("click", () => {
+            if (srsConfigPanel.style.display === "none") {
+                srsConfigPanel.style.display = "block";
+                btnToggleSrsConfig.textContent = "Ẩn tùy chỉnh";
+            } else {
+                srsConfigPanel.style.display = "none";
+                btnToggleSrsConfig.textContent = "Tùy chỉnh thuật toán";
+            }
+        });
+    }
+
+    if (formSrsConfig) {
+        formSrsConfig.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btnSave = document.getElementById("btnSaveSrsConfig");
+            if(btnSave) btnSave.disabled = true;
+            srsConfigMessage.textContent = "Đang lưu...";
+            srsConfigMessage.className = "srs-message";
+
+            const data = {
+                srs_base_ease: parseFloat(document.getElementById("srs_base_ease").value),
+                srs_min_interval: parseInt(document.getElementById("srs_min_interval").value, 10)
+            };
+
+            try {
+                const response = await fetch("../api/save_srs_config.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    srsConfigMessage.textContent = result.message;
+                    srsConfigMessage.className = "srs-message success";
+                } else {
+                    srsConfigMessage.textContent = result.message || "Lỗi lưu cấu hình.";
+                    srsConfigMessage.className = "srs-message error";
+                }
+            } catch (error) {
+                console.error("SRS config error:", error);
+                srsConfigMessage.textContent = "Lỗi mạng hoặc máy chủ.";
+                srsConfigMessage.className = "srs-message error";
+            } finally {
+                if(btnSave) btnSave.disabled = false;
+            }
+        });
+    }
 });
