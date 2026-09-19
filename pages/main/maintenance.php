@@ -72,8 +72,7 @@ $siteLogo = getSystemSetting($link, 'site_logo', '/assets/images/logo.png');
         <img src="<?php echo htmlspecialchars($siteLogo); ?>" alt="Logo" class="maintenance-logo">
         <h1>Hệ thống đang bảo trì</h1>
         <p>Xin lỗi vì sự bất tiện này. Chúng tôi đang thực hiện nâng cấp hệ thống và sẽ sớm quay lại. Vui lòng thử lại sau ít phút.</p>
-        <p>Nếu bạn là Quản trị viên, bạn có thể đăng nhập bên dưới.</p>
-        <a href="/pages/admin/D_DangNhapAdmin.php" class="btn-admin">Đăng nhập Admin</a>
+        <p>Nếu bạn là Quản trị viên, vui lòng tiếp tục cập nhạt để hệ thống có thể sớm đi vào hoạt động bình thường</p>
     </div>
 </body>
 </html>

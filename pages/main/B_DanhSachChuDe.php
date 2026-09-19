@@ -2,8 +2,8 @@
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Connect.php");
 require_once($_SERVER['DOCUMENT_ROOT'] . "/includes/database_objects.php");
 
-// KIỂM TRA PHIÊN NGƯỜI DÙNG
-session_start();
+// // KIỂM TRA PHIÊN NGƯỜI DÙNG
+// session_start();
 
 $isLoggedIn = isset($_SESSION['user_id']);
 
