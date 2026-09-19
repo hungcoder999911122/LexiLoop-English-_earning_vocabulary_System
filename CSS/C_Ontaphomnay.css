@@ -99,6 +99,77 @@ body, .C_Ontaphomnay_body {
 }
 
 /* =========================================
+   CHART
+   ========================================= */
+.C_Ontaphomnay_chartBox {
+    background-color: var(--color-white);
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--color-border);
+}
+
+.C_Ontaphomnay_chartTitle {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin: 0 0 24px 0;
+    letter-spacing: 0.5px;
+}
+
+.C_Ontaphomnay_chartContainer {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 120px;
+    margin-bottom: 8px;
+}
+
+.chart-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.chart-value {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.chart-bar-bg {
+    width: 32px;
+    height: 80px;
+    background-color: transparent;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+}
+
+.chart-bar-fill {
+    width: 100%;
+    background-color: #b0bec5; /* Mặc định xám nhạt */
+    border-radius: 8px;
+    transition: height 0.5s ease-out;
+}
+
+/* Các màu cấp độ */
+.chart-bar-wrapper:nth-child(1) .chart-bar-fill { background-color: #90a4ae; } /* Lv0 */
+.chart-bar-wrapper:nth-child(2) .chart-bar-fill { background-color: #ffaa00; } /* Lv1 */
+.chart-bar-wrapper:nth-child(3) .chart-bar-fill { background-color: #fb8c00; } /* Lv2 */
+.chart-bar-wrapper:nth-child(4) .chart-bar-fill { background-color: #039be5; } /* Lv3+ */
+
+.chart-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+/* =========================================
    TOPIC GRID
    ========================================= */
 .C_Ontaphomnay_topicGrid {

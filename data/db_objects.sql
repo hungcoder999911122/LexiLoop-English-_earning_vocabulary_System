@@ -1637,3 +1637,245 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS `sp_submit_quiz`;
+DELIMITER $$
+CREATE PROCEDURE `sp_submit_quiz`(
+    IN p_user_id INT,
+    IN p_source_type VARCHAR(10),
+    IN p_source_id INT,
+    IN p_item_limit VARCHAR(10),
+    IN p_answers_json JSON,
+    IN p_duration_seconds INT
+)
+MODIFIES SQL DATA
+BEGIN
+    DECLARE v_input_count INT DEFAULT 0;
+    DECLARE v_locked_user_id INT;
+    DECLARE v_valid_count INT DEFAULT 0;
+    DECLARE v_correct_count INT DEFAULT 0;
+    DECLARE v_quiz_result_id INT;
+    DECLARE v_topic_id INT DEFAULT NULL;
+    DECLARE v_set_id INT DEFAULT NULL;
+    DECLARE v_source_id_db INT DEFAULT NULL;
+
+    -- SRS Variables
+    DECLARE v_vocabulary_id INT;
+    DECLARE v_is_correct BOOLEAN;
+    DECLARE v_progress_id INT;
+    DECLARE v_status VARCHAR(10);
+    DECLARE v_interval INT;
+    DECLARE v_quality INT;
+    DECLARE v_base_ease FLOAT DEFAULT 2.5;
+    DECLARE v_min_interval INT DEFAULT 1;
+    DECLARE v_old_interval INT DEFAULT 0;
+    DECLARE v_old_ease FLOAT DEFAULT 2.5;
+    DECLARE v_old_repetitions INT DEFAULT 0;
+    DECLARE v_repetitions INT DEFAULT 0;
+    DECLARE v_new_ease FLOAT;
+    DECLARE v_done BOOLEAN DEFAULT FALSE;
+
+    DECLARE answer_cursor CURSOR FOR
+        SELECT `vocabulary_id`, `is_correct` FROM `tmp_quiz_answers`;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        DROP TEMPORARY TABLE IF EXISTS `tmp_quiz_answers`;
+        RESIGNAL;
+    END;
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+    IF p_source_type NOT IN ('topic', 'set', 'review') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid learning source';
+    END IF;
+    IF p_source_type <> 'review' AND (p_source_id IS NULL OR p_source_id <= 0) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'source ID is required';
+    END IF;
+    IF p_item_limit NOT IN ('5', '10', '20', 'all') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid item limit';
+    END IF;
+    IF p_answers_json IS NULL OR JSON_TYPE(p_answers_json) <> 'ARRAY' OR JSON_LENGTH(p_answers_json) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'answers must be a non-empty JSON array';
+    END IF;
+    IF p_duration_seconds NOT BETWEEN 0 AND 86400 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid duration';
+    END IF;
+
+    DROP TEMPORARY TABLE IF EXISTS `tmp_quiz_answers`;
+    CREATE TEMPORARY TABLE `tmp_quiz_answers` (
+        `question_order` INT NOT NULL,
+        `vocabulary_id` INT NOT NULL,
+        `selected_answer` TEXT NULL,
+        `correct_answer` TEXT NOT NULL,
+        `is_correct` BOOLEAN NOT NULL,
+        `response_time_ms` INT NULL,
+        PRIMARY KEY (`vocabulary_id`)
+    ) ENGINE=InnoDB;
+
+    START TRANSACTION;
+    IF NOT EXISTS(SELECT 1 FROM `Users` WHERE `userID` = p_user_id AND `status` = 'active') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'active user not found';
+    END IF;
+    SELECT `userID`, COALESCE(`srs_base_ease`, 2.5), COALESCE(`srs_min_interval`, 1) 
+      INTO v_locked_user_id, v_base_ease, v_min_interval 
+      FROM `Users` WHERE `userID` = p_user_id FOR UPDATE;
+
+    SET v_input_count = JSON_LENGTH(p_answers_json);
+    IF p_source_type = 'topic' THEN
+        IF NOT EXISTS(SELECT 1 FROM `Topics` WHERE `topicID` = p_source_id) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'topic not found';
+        END IF;
+        SET v_topic_id = p_source_id;
+        SET v_source_id_db = p_source_id;
+        INSERT INTO `tmp_quiz_answers`
+        SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
+          FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
+              `question_order` FOR ORDINALITY,
+              `vocabulary_id` INT PATH '$.vocabularyId',
+              `selected_answer` TEXT PATH '$.selectedAnswer' NULL ON EMPTY,
+              `response_time_ms` INT PATH '$.responseTimeMs' NULL ON EMPTY
+          )) j
+          JOIN `vocabulary` v ON v.`id` = j.`vocabulary_id` AND v.`topic_id` = p_source_id;
+    ELSEIF p_source_type = 'set' THEN
+        IF NOT EXISTS(SELECT 1 FROM `vocabulary_sets` WHERE `id` = p_source_id AND `user_id` = p_user_id) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'vocabulary set is not owned by user';
+        END IF;
+        SET v_set_id = p_source_id;
+        SET v_source_id_db = p_source_id;
+        INSERT INTO `tmp_quiz_answers`
+        SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
+          FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
+              `question_order` FOR ORDINALITY,
+              `vocabulary_id` INT PATH '$.vocabularyId',
+              `selected_answer` TEXT PATH '$.selectedAnswer' NULL ON EMPTY,
+              `response_time_ms` INT PATH '$.responseTimeMs' NULL ON EMPTY
+          )) j
+          JOIN `vocabulary_set_items` vsi
+            ON vsi.`vocabulary_id` = j.`vocabulary_id` AND vsi.`vocabulary_set_id` = p_source_id
+          JOIN `vocabulary` v ON v.`id` = j.`vocabulary_id`;
+    ELSE
+        INSERT INTO `tmp_quiz_answers`
+        SELECT j.`question_order`, j.`vocabulary_id`, NULLIF(TRIM(j.`selected_answer`), ''),
+               v.`meaning`, COALESCE(LOWER(TRIM(j.`selected_answer`)) = LOWER(TRIM(v.`meaning`)), 0), j.`response_time_ms`
+          FROM JSON_TABLE(p_answers_json, '$[*]' COLUMNS (
+              `question_order` FOR ORDINALITY,
+              `vocabulary_id` INT PATH '$.vocabularyId',
+              `selected_answer` TEXT PATH '$.selectedAnswer' NULL ON EMPTY,
+              `response_time_ms` INT PATH '$.responseTimeMs' NULL ON EMPTY
+          )) j
+          JOIN `user_vocab_progress` p
+            ON p.`vocabulary_id` = j.`vocabulary_id` AND p.`user_id` = p_user_id
+           AND (p.`next_review_date` <= CURRENT_DATE OR DATE(p.`last_reviewed_at`) = CURRENT_DATE)
+          JOIN `vocabulary` v ON v.`id` = j.`vocabulary_id`;
+    END IF;
+
+    SELECT COUNT(*), COALESCE(SUM(`is_correct`), 0)
+      INTO v_valid_count, v_correct_count FROM `tmp_quiz_answers`;
+    IF v_valid_count = 0 OR v_valid_count <> v_input_count THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'one or more Quiz answers are invalid or duplicated';
+    END IF;
+
+    INSERT INTO `quiz_results`
+        (`user_id`, `topic_id`, `vocabulary_set_id`, `total_questions`, `correct_answers`, `started_at`, `finished_at`)
+    VALUES
+        (p_user_id, v_topic_id, v_set_id, v_valid_count, v_correct_count,
+         DATE_SUB(NOW(), INTERVAL p_duration_seconds SECOND), NOW());
+    SET v_quiz_result_id = LAST_INSERT_ID();
+
+    INSERT INTO `quiz_answer_details`
+        (`quiz_result_id`, `vocabulary_id`, `question_order`, `selected_answer`,
+         `correct_answer`, `is_correct`, `response_time_ms`)
+    SELECT v_quiz_result_id, `vocabulary_id`, `question_order`, `selected_answer`,
+           `correct_answer`, `is_correct`, `response_time_ms`
+      FROM `tmp_quiz_answers` ORDER BY `question_order`;
+
+    UPDATE `learning_attempts`
+       SET `status` = 'completed', `completed_at` = NOW(), `updated_at` = NOW()
+     WHERE `user_id` = p_user_id AND `activity_type` = 'quiz'
+       AND `source_type` = p_source_type AND `source_id` <=> v_source_id_db
+       AND `item_limit` = p_item_limit AND `status` = 'in_progress';
+
+    -- SRS Update Loop (SM-2 equivalent logic for Quiz)
+    SET v_done = FALSE;
+    OPEN answer_cursor;
+    answer_loop: LOOP
+        FETCH answer_cursor INTO v_vocabulary_id, v_is_correct;
+        IF v_done THEN
+            LEAVE answer_loop;
+        END IF;
+
+        IF v_is_correct = 1 THEN
+            SET v_quality = 4;
+        ELSE
+            SET v_quality = 1;
+        END IF;
+
+        SET v_progress_id = NULL;
+        SELECT `id`, `interval_days`, `ease_factor`, `repetitions`
+          INTO v_progress_id, v_old_interval, v_old_ease, v_old_repetitions
+          FROM `user_vocab_progress`
+         WHERE `user_id` = p_user_id AND `vocabulary_id` = v_vocabulary_id
+         LIMIT 1;
+
+        IF v_progress_id IS NULL THEN
+            SET v_old_interval = 0;
+            SET v_old_ease = v_base_ease;
+            SET v_old_repetitions = 0;
+        END IF;
+
+        IF v_quality < 3 THEN
+            SET v_repetitions = 0;
+            SET v_interval = v_min_interval;
+        ELSE
+            SET v_repetitions = v_old_repetitions + 1;
+            IF v_repetitions = 1 THEN
+                SET v_interval = v_min_interval;
+            ELSEIF v_repetitions = 2 THEN
+                SET v_interval = 6;
+            ELSE
+                SET v_interval = ROUND(v_old_interval * v_old_ease);
+            END IF;
+        END IF;
+
+        SET v_new_ease = v_old_ease + (0.1 - (5 - v_quality) * (0.08 + (5 - v_quality) * 0.02));
+        IF v_new_ease < 1.3 THEN
+            SET v_new_ease = 1.3;
+        END IF;
+        
+        SET v_status = IF(v_quality >= 3, 'learning', 'forgot');
+
+        IF v_progress_id IS NULL THEN
+            INSERT INTO `user_vocab_progress`
+                (`user_id`, `vocabulary_id`, `status`, `interval_days`, `ease_factor`, `repetitions`, `next_review_date`, `last_reviewed_at`)
+            VALUES
+                (p_user_id, v_vocabulary_id, v_status, v_interval, v_new_ease, v_repetitions, DATE_ADD(CURRENT_DATE, INTERVAL v_interval DAY), NOW());
+            SET v_progress_id = LAST_INSERT_ID();
+        ELSE
+            UPDATE `user_vocab_progress`
+               SET `status` = v_status,
+                   `interval_days` = v_interval,
+                   `ease_factor` = v_new_ease,
+                   `repetitions` = v_repetitions,
+                   `next_review_date` = DATE_ADD(CURRENT_DATE, INTERVAL v_interval DAY),
+                   `last_reviewed_at` = NOW()
+             WHERE `id` = v_progress_id;
+        END IF;
+
+        INSERT INTO `review_logs`
+            (`user_id`, `vocabulary_id`, `progress_id`, `quality`, `old_interval`, `new_interval`, `old_ease`, `new_ease`, `reviewed_at`)
+        VALUES
+            (p_user_id, v_vocabulary_id, v_progress_id, v_quality, v_old_interval, v_interval, v_old_ease, v_new_ease, NOW());
+            
+    END LOOP;
+    CLOSE answer_cursor;
+
+    COMMIT;
+    DROP TEMPORARY TABLE `tmp_quiz_answers`;
+    SELECT v_quiz_result_id AS `quiz_result_id`, v_correct_count AS `correct_count`,
+           v_valid_count AS `total_questions`;
+END$$
+DELIMITER ;
+

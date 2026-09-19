@@ -27,6 +27,20 @@ try {
         $tu_can_on_tap += (int) $topic['due_word_count'];
     }
 
+    // Lấy thống kê phân bố từ vựng theo cấp độ (Lv)
+    $levelCounts = ['Lv0' => 0, 'Lv1' => 0, 'Lv2' => 0, 'Lv3' => 0];
+    $allVocab = dbSelectView($link, 'SELECT repetitions FROM user_vocab_progress WHERE user_id = ?', 'i', [$user_id]);
+    foreach ($allVocab as $row) {
+        $rep = (int)$row['repetitions'];
+        if ($rep === 0) $levelCounts['Lv0']++;
+        elseif ($rep === 1) $levelCounts['Lv1']++;
+        elseif ($rep === 2) $levelCounts['Lv2']++;
+        else $levelCounts['Lv3']++;
+    }
+    
+    $maxCount = max(1, max($levelCounts)); // Tránh chia cho 0 khi tính % chiều cao
+
+
 } catch (Throwable $error) {
     error_log('Lỗi Ôn tập hôm nay: ' . $error->getMessage());
 }
@@ -62,6 +76,27 @@ try {
                 <?php endif; ?>
             </p>
         </div>
+
+        <div class="C_Ontaphomnay_chartBox">
+            <h3 class="C_Ontaphomnay_chartTitle">PHÂN BỐ TỪ VỰNG THEO CẤP ĐỘ</h3>
+            <div class="C_Ontaphomnay_chartContainer">
+                <?php foreach ($levelCounts as $level => $count): ?>
+                    <?php 
+                        $heightPercent = ($count / $maxCount) * 100;
+                        // Đảm bảo cột có hiển thị kể cả khi nhỏ
+                        $displayHeight = $count > 0 ? max(15, $heightPercent) : 0; 
+                    ?>
+                    <div class="chart-bar-wrapper">
+                        <span class="chart-value"><?php echo $count; ?></span>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="height: <?php echo $displayHeight; ?>%;"></div>
+                        </div>
+                        <span class="chart-label"><?php echo $level; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
 
         <?php if ($tu_can_on_tap > 0): ?>
             <div class="C_Ontaphomnay_topicGrid">
