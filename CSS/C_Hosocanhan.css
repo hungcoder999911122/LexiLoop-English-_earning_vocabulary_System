@@ -1,10 +1,6 @@
 /* =========================================
-   DESIGN TOKENS
+   HỒ SƠ CÁ NHÂN - LEXILOOP
    ========================================= */
-/*
-    Màu sắc dùng chung được khai báo tại CSS/Style.css.
-    Không khai báo :root tại file trang để tránh hai trang dùng hai bộ màu khác nhau.
-*/
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -18,133 +14,24 @@ body,
     min-height: 100vh;
 }
 
-/* =========================================
-   BỐ CỤC CHUNG
-   ========================================= */
-.sidebar-logo,
-.sidebar-link,
-.C_Hosocanhan_profileSection,
-.C_Hosocanhan_avatarWrapper {
-    display: flex;
-}
-
-.sidebar-icon,
-.C_Hosocanhan_avatarCircle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* =========================================
-   SIDEBAR
-   ========================================= */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 245px;
-    height: 100vh;
-    padding: 26px 16px;
-    background-color: var(--color-white);
-    border-right: 1px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-}
-
-.sidebar-logo {
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 32px 10px;
-    color: var(--color-primary-dark);
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    text-decoration: none;
-}
-
-.logo-badge { font-size: 22px; }
-
-.sidebar-nav {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-}
-
-.sidebar-link {
-    position: relative;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    min-height: 48px;
-    padding: 0 16px;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.sidebar-icon { width: 22px; height: 22px; }
-
-.sidebar-link:hover {
-    background-color: var(--color-background);
-    color: var(--color-primary);
-    transform: translateX(3px);
-}
-
-.sidebar-link.active {
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-dark);
-    font-weight: 700;
-}
-
-.sidebar-link.active::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 20%;
-    bottom: 20%;
-    width: 4px;
-    background-color: var(--color-primary);
-    border-radius: 0 4px 4px 0;
-}
-
-.sidebar-bottom {
-    margin-top: auto;
-    padding-top: 15px;
-    border-top: 1px solid var(--color-border);
-}
-
-.sidebar-logout:hover {
-    color: #c62828 !important;
-    background-color: #ffebee !important;
-}
-
-/* =========================================
-   CONTENT
-   ========================================= */
-.page-content {
-    margin-left: 245px;
-    min-height: 100vh;
-}
-
 .C_Hosocanhan_main {
     max-width: 980px;
     margin: 0 auto;
     padding: 32px 30px 60px;
 }
 
-/* Alerts */
+/* =========================================
+   THÔNG BÁO / ALERTS
+   ========================================= */
 .C_Hosocanhan_alert {
-    padding: 12px 18px;
+    padding: 14px 20px;
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .C_Hosocanhan_alert_success {
@@ -154,15 +41,16 @@ body,
 }
 
 .C_Hosocanhan_alert_error {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ffcdd2;
+    background-color: var(--color-danger-light);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
 }
 
 /* =========================================
-   PROFILE & AVATAR
+   THÔNG TIN HỒ SƠ & AVATAR
    ========================================= */
 .C_Hosocanhan_profileSection {
+    display: flex;
     gap: 40px;
     align-items: flex-start;
     background-color: var(--color-surface);
@@ -173,31 +61,39 @@ body,
 }
 
 .C_Hosocanhan_avatarWrapper {
+    display: flex;
     flex-direction: column;
     align-items: center;
     gap: 14px;
-    width: 130px;
+    width: 140px;
     flex-shrink: 0;
 }
 
 .C_Hosocanhan_avatarCircle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 120px;
     height: 120px;
-    border: 2px solid var(--color-primary);
+    border: 3px solid var(--color-primary);
     border-radius: 50%;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--color-primary-dark);
     background-color: var(--color-primary-light);
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(31, 45, 36, 0.08);
+    box-shadow: 0 4px 14px rgba(31, 45, 36, 0.08);
 }
 
-.C_Hosocanhan_avatarCircle img { width: 100%; height: 100%; object-fit: cover; }
+.C_Hosocanhan_avatarCircle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
 .C_Hosocanhan_btnAvatar {
-    padding: 7px 16px;
-    background-color: var(--color-white);
+    padding: 8px 16px;
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 20px;
     color: var(--color-text);
@@ -205,19 +101,34 @@ body,
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .C_Hosocanhan_btnAvatar:hover {
     background-color: var(--color-primary-light);
     border-color: var(--color-primary);
     color: var(--color-primary-dark);
+    transform: translateY(-1px);
 }
 
-/* Form controls */
-.C_Hosocanhan_form { flex: 1; }
-.C_Hosocanhan_formGroup { margin-bottom: 16px; }
-.C_Hosocanhan_label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 600; }
+/* =========================================
+   FORM CONTROLS
+   ========================================= */
+.C_Hosocanhan_form {
+    flex: 1;
+}
+
+.C_Hosocanhan_formGroup {
+    margin-bottom: 18px;
+}
+
+.C_Hosocanhan_label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+}
 
 .C_Hosocanhan_input {
     width: 100%;
@@ -227,14 +138,14 @@ body,
     padding: 0 16px;
     font-size: 15px;
     color: var(--color-text);
-    background-color: var(--color-white);
+    background-color: var(--color-surface-elevated);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .C_Hosocanhan_input:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-light);
+    box-shadow: 0 0 0 3px rgba(45, 122, 86, 0.15);
 }
 
 .C_Hosocanhan_formRow {
@@ -246,31 +157,39 @@ body,
 .C_Hosocanhan_btnSubmit {
     padding: 0 28px;
     height: 46px;
-    background-color: var(--color-primary-light);
-    border: 1px solid var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    border: none;
     border-radius: 24px;
-    color: var(--color-primary-dark);
+    color: #ffffff;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    margin-top: 8px;
-    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(14, 119, 72, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .C_Hosocanhan_btnSubmit:hover {
-    background-color: #cce9d8;
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(14, 119, 72, 0.3);
 }
 
-.C_Hosocanhan_spacer { height: 36px; }
+.C_Hosocanhan_btnSubmit:active {
+    transform: translateY(0);
+}
+
+.C_Hosocanhan_spacer {
+    height: 36px;
+}
 
 /* =========================================
-   THÀNH TỰU
+   THÀNH TỰU HỌC TẬP
    ========================================= */
 .C_Hosocanhan_sectionTitle {
     font-size: 20px;
     font-weight: 700;
     margin: 0 0 18px;
+    color: var(--color-text);
 }
 
 .C_Hosocanhan_achievementGrid {
@@ -283,7 +202,7 @@ body,
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 16px;
-    padding: 18px 20px;
+    padding: 20px;
     min-height: 110px;
     display: flex;
     flex-direction: column;
@@ -298,15 +217,98 @@ body,
     box-shadow: 0 8px 20px rgba(31, 45, 36, 0.08);
 }
 
-.C_Hosocanhan_cardLabel { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
-.C_Hosocanhan_cardValue { font-size: 28px; font-weight: 800; color: var(--color-primary-dark); line-height: 1.1; }
+.C_Hosocanhan_cardLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
 
-/* Responsive */
+.C_Hosocanhan_cardValue {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+    line-height: 1.1;
+}
+
+/* =========================================
+   DARK MODE
+   ========================================= */
+html.dark-mode .C_Hosocanhan_profileSection,
+html.dark-mode .C_Hosocanhan_card {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+html.dark-mode .C_Hosocanhan_avatarCircle {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-elevated);
+    color: var(--color-primary-dark);
+}
+
+html.dark-mode .C_Hosocanhan_btnAvatar {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Hosocanhan_btnAvatar:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+}
+
+html.dark-mode .C_Hosocanhan_input {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+html.dark-mode .C_Hosocanhan_input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(69, 200, 120, 0.2);
+}
+
+html.dark-mode .C_Hosocanhan_btnSubmit {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #208bd4 100%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+html.dark-mode .C_Hosocanhan_card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
 @media (max-width: 900px) {
-    .sidebar { width: 76px; padding: 20px 10px; }
-    .sidebar-logo span:last-child, .sidebar-link span:last-child { display: none; }
-    .page-content { margin-left: 76px; }
-    .C_Hosocanhan_profileSection { flex-direction: column; align-items: center; }
-    .C_Hosocanhan_formRow { grid-template-columns: 1fr; }
-    .C_Hosocanhan_achievementGrid { grid-template-columns: repeat(2, 1fr); }
+    .C_Hosocanhan_profileSection {
+        flex-direction: column;
+        align-items: center;
+        padding: 24px;
+        gap: 24px;
+    }
+
+    .C_Hosocanhan_form {
+        width: 100%;
+    }
+
+    .C_Hosocanhan_formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .C_Hosocanhan_achievementGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 540px) {
+    .C_Hosocanhan_main {
+        padding: 20px 16px 40px;
+    }
+
+    .C_Hosocanhan_achievementGrid {
+        grid-template-columns: 1fr;
+    }
 }

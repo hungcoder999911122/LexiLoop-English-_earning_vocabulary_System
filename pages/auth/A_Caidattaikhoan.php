@@ -85,186 +85,239 @@ $curTarget = (int) ($userRow['daily_target_words'] ?? 20);
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-	<meta charset="UTF-8">
-	<link rel="stylesheet" type="text/css" href="/CSS/Style.css"> 
-	<link rel="stylesheet" type="text/css" href="/CSS/A_Caidattaikhoan.css"> 
-	<script src="/JS/jquery-4.0.0.min.js"></script> 
-	<title>Cài đặt tài khoản</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt tài khoản - LexiLoop</title>
+    <link rel="stylesheet" href="/CSS/Style.css">
+    <link rel="stylesheet" href="/CSS/topheader.css">
+    <link rel="stylesheet" href="/CSS/A_Caidattaikhoan.css">
+    <link rel="stylesheet" href="/CSS/responsive.css">
 </head>
-<body>
+<body class="A_Caidattaikhoan_body">
 
-	<div class="wrapper">
-		<h2>Cài đặt tài khoản</h2>
+    <!-- Sidebar dùng chung cho mọi trang người dùng -->
+    <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/sidebar_user.php'; ?>
 
-		<?php if (!empty($thongBao)): ?>
-			<div style="background-color: #d4edda; color: #155724; padding: 12px; margin-bottom: 20px; border-radius: 6px; text-align: center;">
-				<?php echo htmlspecialchars($thongBao); ?>
-			</div>
-		<?php endif; ?>
+    <div class="page-content">
+        <!-- TOPHEADER -->
+        <?php
+        $headerTitle = 'Cài đặt tài khoản';
+        $topHeaderPageActions = '';
+        include $_SERVER['DOCUMENT_ROOT'] . '/includes/topheader.php';
+        ?>
 
-		<?php if (!empty($loi)): ?>
-			<div style="background-color: #f8d7da; color: #721c24; padding: 12px; margin-bottom: 20px; border-radius: 6px; text-align: center;">
-				<?php echo htmlspecialchars($loi); ?>
-			</div>
-		<?php endif; ?>
+        <main class="A_Caidattaikhoan_main">
 
-		<div class="top-row">
+            <?php if (!empty($thongBao)): ?>
+                <div class="A_Caidattaikhoan_alert A_Caidattaikhoan_alert_success" id="A_Caidattaikhoan_alert">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span><?php echo htmlspecialchars($thongBao); ?></span>
+                </div>
+            <?php endif; ?>
 
-			<div class="box">
-				<h3>Đổi mật khẩu</h3>
-				<form method="POST" action="">
-					<label>Mật khẩu hiện tại</label> <br />
-					<input id="A_Caidattaikhoan_password" name="A_Caidattaikhoan_password" type="password" placeholder="Để trống nếu không muốn đổi"> <br /><br />
+            <?php if (!empty($loi)): ?>
+                <div class="A_Caidattaikhoan_alert A_Caidattaikhoan_alert_error" id="A_Caidattaikhoan_alert">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span><?php echo htmlspecialchars($loi); ?></span>
+                </div>
+            <?php endif; ?>
 
-					<label>Mật khẩu mới</label> <br />
-					<input id="A_Caidattaikhoan_password_new" name="A_Caidattaikhoan_password_new" type="password" placeholder="Ít nhất 6 ký tự"> <br /><br />
+            <form method="POST" action="" class="A_Caidattaikhoan_form">
+                <div class="A_Caidattaikhoan_grid">
 
-					<label>Xác nhận mật khẩu mới</label> <br />
-					<input id="A_Caidattaikhoan_password_new_acp" name="A_Caidattaikhoan_password_new_acp" type="password" placeholder="Nhập lại mật khẩu mới"> <br /><br />
-			</div>
-				
-			<div class="box">
-				<h3>Nhắc nhở ôn tập</h3>
-				
-					<div>
-						<input type="checkbox" id="A_Caidattaikhoan_reminder" name="A_Caidattaikhoan_reminder" <?php echo $curReminder === 1 ? 'checked' : ''; ?>>
-						<label for="A_Caidattaikhoan_reminder">Bật nhắc nhở ôn tập hằng ngày gửi về Email</label>
-					</div>
-					<br />
-					<div>
-						<label for="hour">Giờ nhận nhắc nhở</label> <br />
-							<select name="hour" id="hour" data-selected="<?php echo htmlspecialchars($curHourVal); ?>">
-                                <option value="0015">00:15</option>
-                                <option value="0030">00:30</option>
-                                <option value="0045">00:45</option>
-                                <option value="0100">01:00</option>
-                                <option value="0115">01:15</option>
-                                <option value="0130">01:30</option>
-                                <option value="0145">01:45</option>
-                                <option value="0200">02:00</option>
-                                <option value="0215">02:15</option>
-                                <option value="0230">02:30</option>
-                                <option value="0245">02:45</option>
-                                <option value="0300">03:00</option>
-                                <option value="0315">03:15</option>
-                                <option value="0330">03:30</option>
-                                <option value="0345">03:45</option>
-                                <option value="0400">04:00</option>
-                                <option value="0415">04:15</option>
-                                <option value="0430">04:30</option>
-                                <option value="0445">04:45</option>
-                                <option value="0500">05:00</option>
-                                <option value="0515">05:15</option>
-                                <option value="0530">05:30</option>
-                                <option value="0545">05:45</option>
-                                <option value="0600">06:00</option>
-                                <option value="0615">06:15</option>
-                                <option value="0630">06:30</option>
-                                <option value="0645">06:45</option>
-                                <option value="0700">07:00</option>
-                                <option value="0715">07:15</option>
-                                <option value="0730">07:30</option>
-                                <option value="0745">07:45</option>
-                                <option value="0800">08:00</option>
-                                <option value="0815">08:15</option>
-                                <option value="0830">08:30</option>
-                                <option value="0845">08:45</option>
-                                <option value="0900">09:00</option>
-                                <option value="0915">09:15</option>
-                                <option value="0930">09:30</option>
-                                <option value="0945">09:45</option>
-                                <option value="1000">10:00</option>
-                                <option value="1015">10:15</option>
-                                <option value="1030">10:30</option>
-                                <option value="1045">10:45</option>
-                                <option value="1100">11:00</option>
-                                <option value="1115">11:15</option>
-                                <option value="1130">11:30</option>
-                                <option value="1145">11:45</option>
-                                <option value="1200">12:00</option>
-                                <option value="1215">12:15</option>
-                                <option value="1230">12:30</option>
-                                <option value="1245">12:45</option>
-                                <option value="1300">13:00</option>
-                                <option value="1315">13:15</option>
-                                <option value="1330">13:30</option>
-                                <option value="1345">13:45</option>
-                                <option value="1400">14:00</option>
-                                <option value="1415">14:15</option>
-                                <option value="1430">14:30</option>
-                                <option value="1445">14:45</option>
-                                <option value="1500">15:00</option>
-                                <option value="1515">15:15</option>
-                                <option value="1530">15:30</option>
-                                <option value="1545">15:45</option>
-                                <option value="1600">16:00</option>
-                                <option value="1615">16:15</option>
-                                <option value="1630">16:30</option>
-                                <option value="1645">16:45</option>
-                                <option value="1700">17:00</option>
-                                <option value="1715">17:15</option>
-                                <option value="1730">17:30</option>
-                                <option value="1745">17:45</option>
-                                <option value="1800">18:00</option>
-                                <option value="1815">18:15</option>
-                                <option value="1830">18:30</option>
-                                <option value="1845">18:45</option>
-                                <option value="1900">19:00</option>
-                                <option value="1915">19:15</option>
-                                <option value="1930">19:30</option>
-                                <option value="1945">19:45</option>
-                                <option value="2000">20:00</option>
-                                <option value="2015">20:15</option>
-                                <option value="2030">20:30</option>
-                                <option value="2045">20:45</option>
-                                <option value="2100">21:00</option>
-                                <option value="2115">21:15</option>
-                                <option value="2130">21:30</option>
-                                <option value="2145">21:45</option>
-                                <option value="2200">22:00</option>
-                                <option value="2215">22:15</option>
-                                <option value="2230">22:30</option>
-                                <option value="2245">22:45</option>
-                                <option value="2300">23:00</option>
-                                <option value="2315">23:15</option>
-                                <option value="2330">23:30</option>
-                                <option value="2345">23:45</option>
-						</select>
-					</div>
-				
-		</div>
+                    <!-- CỘT TRÁI: ĐỔI MẬT KHẨU -->
+                    <section class="A_Caidattaikhoan_card">
+                        <div class="A_Caidattaikhoan_cardHeader">
+                            <div class="A_Caidattaikhoan_cardIcon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="A_Caidattaikhoan_cardTitle">Đổi mật khẩu</h2>
+                                <p class="A_Caidattaikhoan_cardDesc">Cập nhật mật khẩu để tăng tính bảo mật tài khoản</p>
+                            </div>
+                        </div>
 
-		<div class="box">
-			<h3>Tùy chọn học tập</h3>
-			
-				<div class="flex-row">
-					<div class="form-group">
-						<label for="quantity">Số từ ôn tập mỗi ngày</label> <br />
-						<select name="quantity" id="quantity">
-							<option value="5" <?php echo $curTarget === 5 ? 'selected' : ''; ?>>5 từ</option>
-							<option value="10" <?php echo $curTarget === 10 ? 'selected' : ''; ?>>10 từ</option>
-							<option value="20" <?php echo $curTarget === 20 ? 'selected' : ''; ?>>20 từ</option>
-							<option value="30" <?php echo $curTarget === 30 ? 'selected' : ''; ?>>30 từ</option>
-							<option value="50" <?php echo $curTarget === 50 ? 'selected' : ''; ?>>50 từ</option>
-						</select>
-					</div>
-				</div>
-			
+                        <div class="A_Caidattaikhoan_cardBody">
+                            <div class="A_Caidattaikhoan_formGroup">
+                                <label for="A_Caidattaikhoan_password" class="A_Caidattaikhoan_label">Mật khẩu hiện tại</label>
+                                <input
+                                    id="A_Caidattaikhoan_password"
+                                    name="A_Caidattaikhoan_password"
+                                    type="password"
+                                    class="A_Caidattaikhoan_input"
+                                    placeholder="Để trống nếu không muốn đổi"
+                                    autocomplete="current-password">
+                            </div>
 
-		<div>
-			<input type="submit" name="saved" value="Lưu thay đổi" />
+                            <div class="A_Caidattaikhoan_formGroup">
+                                <label for="A_Caidattaikhoan_password_new" class="A_Caidattaikhoan_label">Mật khẩu mới</label>
+                                <input
+                                    id="A_Caidattaikhoan_password_new"
+                                    name="A_Caidattaikhoan_password_new"
+                                    type="password"
+                                    class="A_Caidattaikhoan_input"
+                                    placeholder="Ít nhất 6 ký tự"
+                                    autocomplete="new-password">
+                            </div>
 
-		</div>
-				</form>
-	</div>
+                            <div class="A_Caidattaikhoan_formGroup">
+                                <label for="A_Caidattaikhoan_password_new_acp" class="A_Caidattaikhoan_label">Xác nhận mật khẩu mới</label>
+                                <input
+                                    id="A_Caidattaikhoan_password_new_acp"
+                                    name="A_Caidattaikhoan_password_new_acp"
+                                    type="password"
+                                    class="A_Caidattaikhoan_input"
+                                    placeholder="Nhập lại mật khẩu mới"
+                                    autocomplete="new-password">
+                            </div>
+                        </div>
+                    </section>
 
-	<script>
-		$(document).ready(function() {
-			var selectedHour = $('#hour').data('selected');
-			if (selectedHour) {
-				$('#hour').val(selectedHour);
-			}
-		});
-	</script>
+                    <!-- CỘT PHẢI: NHẮC NHỞ & TÙY CHỌN HỌC TẬP -->
+                    <div class="A_Caidattaikhoan_colRight">
+
+                        <!-- Nhắc nhở ôn tập -->
+                        <section class="A_Caidattaikhoan_card">
+                            <div class="A_Caidattaikhoan_cardHeader">
+                                <div class="A_Caidattaikhoan_cardIcon A_Caidattaikhoan_iconWarning">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="A_Caidattaikhoan_cardTitle">Nhắc nhở ôn tập</h2>
+                                    <p class="A_Caidattaikhoan_cardDesc">Gửi thông báo định kỳ giúp duy trì chuỗi học tập</p>
+                                </div>
+                            </div>
+
+                            <div class="A_Caidattaikhoan_cardBody">
+                                <div class="A_Caidattaikhoan_toggleRow">
+                                    <div class="A_Caidattaikhoan_toggleInfo">
+                                        <span class="A_Caidattaikhoan_toggleTitle">Bật nhắc nhở hằng ngày</span>
+                                        <span class="A_Caidattaikhoan_toggleSub">Gửi email nhắc nhở ôn từ vựng đến hòm thư</span>
+                                    </div>
+                                    <label class="A_Caidattaikhoan_switch" aria-label="Bật nhắc nhở ôn tập">
+                                        <input
+                                            type="checkbox"
+                                            id="A_Caidattaikhoan_reminder"
+                                            name="A_Caidattaikhoan_reminder"
+                                            <?php echo $curReminder === 1 ? 'checked' : ''; ?>>
+                                        <span class="A_Caidattaikhoan_slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="A_Caidattaikhoan_formGroup" id="A_Caidattaikhoan_timeGroup">
+                                    <label for="hour" class="A_Caidattaikhoan_label">Giờ nhận nhắc nhở</label>
+                                    <select
+                                        name="hour"
+                                        id="hour"
+                                        class="A_Caidattaikhoan_select"
+                                        data-selected="<?php echo htmlspecialchars($curHourVal); ?>">
+                                        <?php
+                                        for ($h = 0; $h < 24; $h++) {
+                                            for ($m = 0; $m < 60; $m += 15) {
+                                                $val = sprintf('%02d%02d', $h, $m);
+                                                $text = sprintf('%02d:%02d', $h, $m);
+                                                $selected = ($val === $curHourVal) ? 'selected' : '';
+                                                echo "<option value=\"{$val}\" {$selected}>{$text}</option>\n";
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Tùy chọn học tập -->
+                        <section class="A_Caidattaikhoan_card">
+                            <div class="A_Caidattaikhoan_cardHeader">
+                                <div class="A_Caidattaikhoan_cardIcon A_Caidattaikhoan_iconAccent">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="m4.93 4.93 4.24 4.24"></path>
+                                        <path d="m14.83 9.17 4.24-4.24"></path>
+                                        <path d="m14.83 14.83 4.24 4.24"></path>
+                                        <path d="m9.17 14.83-4.24 4.24"></path>
+                                        <circle cx="12" cy="12" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="A_Caidattaikhoan_cardTitle">Mục tiêu ôn tập</h2>
+                                    <p class="A_Caidattaikhoan_cardDesc">Số lượng từ vựng bạn muốn đặt mục tiêu ôn mỗi ngày</p>
+                                </div>
+                            </div>
+
+                            <div class="A_Caidattaikhoan_cardBody">
+                                <div class="A_Caidattaikhoan_formGroup">
+                                    <label for="quantity" class="A_Caidattaikhoan_label">Số từ ôn tập mỗi ngày</label>
+                                    <select name="quantity" id="quantity" class="A_Caidattaikhoan_select">
+                                        <option value="5" <?php echo $curTarget === 5 ? 'selected' : ''; ?>>5 từ / ngày (Khởi động)</option>
+                                        <option value="10" <?php echo $curTarget === 10 ? 'selected' : ''; ?>>10 từ / ngày (Tiêu chuẩn)</option>
+                                        <option value="20" <?php echo $curTarget === 20 ? 'selected' : ''; ?>>20 từ / ngày (Khuyến nghị)</option>
+                                        <option value="30" <?php echo $curTarget === 30 ? 'selected' : ''; ?>>30 từ / ngày (Chăm chỉ)</option>
+                                        <option value="50" <?php echo $curTarget === 50 ? 'selected' : ''; ?>>50 từ / ngày (Tăng tốc)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+
+                <!-- HÀNH ĐỘNG -->
+                <div class="A_Caidattaikhoan_actions">
+                    <button type="submit" name="saved" value="1" class="A_Caidattaikhoan_btnSubmit">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>Lưu thay đổi</span>
+                    </button>
+                </div>
+            </form>
+
+        </main>
+    </div>
+
+    <script src="/JS/jquery-4.0.0.min.js"></script>
+    <script src="/JS/auth.js"></script>
+    <script>
+        $(document).ready(function() {
+            var $reminder = $('#A_Caidattaikhoan_reminder');
+            var $timeGroup = $('#A_Caidattaikhoan_timeGroup');
+            var $hour = $('#hour');
+
+            function syncReminderState() {
+                if ($reminder.is(':checked')) {
+                    $timeGroup.removeClass('is-disabled');
+                } else {
+                    $timeGroup.addClass('is-disabled');
+                }
+            }
+
+            $reminder.on('change', syncReminderState);
+            syncReminderState();
+
+            var selectedHour = $hour.data('selected');
+            if (selectedHour) {
+                $hour.val(selectedHour);
+            }
+
+            // Tự động ẩn thông báo sau 4 giây
+            var $alert = $('#A_Caidattaikhoan_alert');
+            if ($alert.length) {
+                setTimeout(function() {
+                    $alert.fadeOut(500, function() {
+                        $(this).remove();
+                    });
+                }, 4000);
+            }
+        });
+    </script>
 </body>
 </html>

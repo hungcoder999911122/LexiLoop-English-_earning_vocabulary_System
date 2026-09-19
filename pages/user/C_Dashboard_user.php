@@ -15,8 +15,10 @@ $learningRows = dbSelectView($link, "SELECT COUNT(*) AS total FROM vw_user_progr
 $learningWords = (int) ($learningRows[0]['total'] ?? 0);
 $masteredRows = dbSelectView($link, "SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND status = 'mastered'", 'i', [$userId]);
 $masteredWords = (int) ($masteredRows[0]['total'] ?? 0);
-$trackedWords = $learningWords + $masteredWords;
-$learningProgressPercent = $trackedWords > 0 ? min(100, (int) round($masteredWords * 100 / $trackedWords)) : 0;
+$quizStatsRows = dbSelectView($link, 'SELECT COUNT(*) AS total_quizzes, AVG(score) AS avg_score FROM vw_quiz_results WHERE user_id = ?', 'i', [$userId]);
+$totalQuizzes = (int) ($quizStatsRows[0]['total_quizzes'] ?? 0);
+$avgQuizScore = $totalQuizzes > 0 && isset($quizStatsRows[0]['avg_score']) ? (int) round((float) $quizStatsRows[0]['avg_score']) : null;
+$avgQuizScoreDisplay = $avgQuizScore !== null ? $avgQuizScore . '%' : '--';
 $reviewRows = dbSelectView($link, 'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE', 'i', [$userId]);
 $reviewToday = (int) ($reviewRows[0]['total'] ?? 0);
 // Một từ chỉ được tính một lần trong ngày, dù user học lặp hoặc dùng cả
@@ -97,13 +99,10 @@ unset($row);
                     <span>Đã thuộc</span>
                 </div>
                 <div class="C_Dashboard_user_statItem C_Dashboard_user_statItem--violet">
-                    <span class="C_Dashboard_user_statIcon" aria-hidden="true">◔</span>
-                    <strong><?= $learningProgressPercent ?>%</strong>
-                    <span>Tiến độ %</span>
-
-                    <!-- Bổ sung về sau -->
-                    <!-- <small><?= $masteredWords ?>/<?= $trackedWords ?> từ đã thuộc</small>
-                    <div class="C_Dashboard_user_statProgress" aria-hidden="true"><i style="width: <?= $learningProgressPercent ?>%"></i></div> -->
+                    <span class="C_Dashboard_user_statIcon" aria-hidden="true">★</span>
+                    <strong><?= $avgQuizScoreDisplay ?></strong>
+                    <span>Điểm TB Quiz</span>
+                    <small><?= $totalQuizzes > 0 ? $totalQuizzes . ' bài đã làm' : 'Chưa làm bài nào' ?></small>
                 </div>
                 <div class="C_Dashboard_user_statItem C_Dashboard_user_statItem--orange">
                     <span class="C_Dashboard_user_statIcon" aria-hidden="true">◎</span>

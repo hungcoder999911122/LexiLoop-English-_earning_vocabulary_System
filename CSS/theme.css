@@ -256,7 +256,10 @@ html.dark-mode :is(
     .C_Tuvungcuatoi_tableCard,
     .C_Tuvungcuatoi_formCard,
     .C_Tuvungcuatoi_formModalContainer,
-    .C_Tuvungcuatoi_stats article
+    .C_Tuvungcuatoi_stats article,
+    .C_Hosocanhan_profileSection,
+    .C_Hosocanhan_card,
+    .A_Caidattaikhoan_card
 ) {
     background: var(--color-surface);
     border-color: var(--color-border);

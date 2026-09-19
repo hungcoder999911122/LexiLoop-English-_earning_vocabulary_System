@@ -55,6 +55,15 @@ try {
     $thong_bao = (int) $error->getCode() === 1062 ? 'Email này đã được sử dụng!' : 'Không thể xử lý hồ sơ lúc này.';
     $loai_thong_bao = 'error';
 }
+
+$profileInitials = '';
+foreach (explode(' ', trim($user_profile['C_Hosocanhan_full_name'] ?: 'User')) as $namePart) {
+    if ($namePart !== '') {
+        $profileInitials .= mb_substr($namePart, 0, 1, 'UTF-8');
+    }
+}
+$profileInitials = mb_substr($profileInitials, 0, 2, 'UTF-8') ?: 'U';
+$profileInitials = mb_strtoupper($profileInitials, 'UTF-8');
 ?>
 
 <!DOCTYPE html>
@@ -65,8 +74,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hồ sơ cá nhân - LexiLoop</title>
     <link rel="stylesheet" href="../../CSS/Style.css">
-    <link rel="stylesheet" href="../../CSS/C_Hosocanhan.css">
     <link rel="stylesheet" href="../../CSS/topheader.css">
+    <link rel="stylesheet" href="../../CSS/C_Hosocanhan.css">
+    <link rel="stylesheet" href="../../CSS/responsive.css">
 </head>
 
 <body class="C_Hosocanhan_body">
@@ -75,7 +85,7 @@ try {
          SIDEBAR
          ========================================= -->
     <!-- Sidebar dùng chung cho mọi trang người dùng -->
-    <?php include '../../includes/sidebar_user.php'; ?>
+    <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/sidebar_user.php'; ?>
 
     <!-- =========================================
          KHU VỰC NỘI DUNG CHÍNH
@@ -87,7 +97,7 @@ try {
         $headerTitle = 'Hồ sơ cá nhân';
         $topHeaderPageActions = '';
 
-        include '../../includes/topheader.php';
+        include $_SERVER['DOCUMENT_ROOT'] . '/includes/topheader.php';
         ?>
 
         <main class="C_Hosocanhan_main">
@@ -103,7 +113,7 @@ try {
 
                 <div class="C_Hosocanhan_avatarWrapper">
                     <div class="C_Hosocanhan_avatarCircle" id="C_Hosocanhan_avatarCircle">
-                        <span id="C_Hosocanhan_avatarInitials">NA</span>
+                        <span id="C_Hosocanhan_avatarInitials"><?php echo htmlspecialchars($profileInitials); ?></span>
                         <img id="C_Hosocanhan_avatarPreview" src="" alt="Avatar" style="display:none;">
                     </div>
                     <input type="file" id="C_Hosocanhan_fileInput" name="C_Hosocanhan_avatar_file" accept="image/*" style="display:none;">
