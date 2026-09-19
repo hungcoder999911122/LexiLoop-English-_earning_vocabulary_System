@@ -159,35 +159,6 @@ $topics = dbSelectView($link, 'SELECT * FROM vw_topic_catalog ORDER BY topicID')
                                     </span>
                                 </a>
 
-                                <!-- =========================================
-                                    NÚT ÔN TẬP
-                                    - User: đi đến Flashcard ở chế độ review.
-                                    - Guest: mở modal yêu cầu đăng nhập.
-                                    
-                                    Dùng C_HocFlashcard.php?mode=review vì file này
-                                    đã có auth_guard.php và truy vấn đúng user_id.
-                                ========================================= -->
-                                <a
-                                    class="topic-action topic-action-review"
-                                    href="<?= $isLoggedIn
-                                                ? '../user/C_Ontaphomnay.php'
-                                                : '../auth/A_DangNhap.php' ?>"
-
-                                    <?php if (!$isLoggedIn): ?>
-                                    data-requires-auth
-                                    data-feature-title=""
-                                    data-feature-benefits="Ôn từ đến hạn theo lịch SRS|Lưu kết quả ôn tập|Cải thiện trí nhớ lâu dài"
-                                    <?php endif; ?>>
-
-                                    <span class="topic-action-number">
-                                        0
-                                    </span>
-
-                                    <span class="topic-action-label">
-                                        ÔN TẬP
-                                    </span>
-                                </a>
-
                             </div>
 
                         </div>

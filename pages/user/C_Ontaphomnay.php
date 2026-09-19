@@ -7,8 +7,7 @@ $user_id = (int) $_SESSION['user_id'];
 $srs_base_ease = 2.5;
 $srs_min_interval = 1;
 $tu_can_on_tap = 0;
-$tu_da_hoc = 0;
-$quiz_da_lam = 0;
+$dueTopics = [];
 
 try {
     $userRows = dbSelectView($link, 'SELECT srs_base_ease, srs_min_interval FROM Users WHERE userID = ?', 'i', [$user_id]);
@@ -16,48 +15,21 @@ try {
         $srs_base_ease = (float)($userRows[0]['srs_base_ease'] ?? 2.5);
         $srs_min_interval = (int)($userRows[0]['srs_min_interval'] ?? 1);
     }
-    $dueRows = dbSelectView(
+    
+    $dueTopics = dbSelectView(
         $link,
-        'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND next_review_date <= CURRENT_DATE',
+        'SELECT * FROM vw_srs_due_topics WHERE user_id = ? ORDER BY overdue_days DESC, oldest_due_date ASC',
         'i',
         [$user_id]
     );
-    $tu_can_on_tap = (int) ($dueRows[0]['total'] ?? 0);
 
-    $studyRows = dbSelectView(
-        $link,
-        'SELECT COALESCE(SUM(words_studied), 0) AS total FROM vw_learning_sessions WHERE user_id = ? AND session_date = CURRENT_DATE',
-        'i',
-        [$user_id]
-    );
-    $tu_da_hoc = (int) ($studyRows[0]['total'] ?? 0);
-    if ($tu_da_hoc === 0) {
-        $reviewRows = dbSelectView(
-            $link,
-            'SELECT COUNT(*) AS total FROM vw_user_progress WHERE user_id = ? AND DATE(last_reviewed_at) = CURRENT_DATE',
-            'i',
-            [$user_id]
-        );
-        $tu_da_hoc = (int) ($reviewRows[0]['total'] ?? 0);
+    foreach ($dueTopics as $topic) {
+        $tu_can_on_tap += (int) $topic['due_word_count'];
     }
 
-    $quizRows = dbSelectView(
-        $link,
-        'SELECT COUNT(*) AS total FROM vw_quiz_results
-         WHERE user_id = ? AND DATE(COALESCE(finished_at, started_at)) = CURRENT_DATE',
-        'i',
-        [$user_id]
-    );
-    $quiz_da_lam = (int) ($quizRows[0]['total'] ?? 0);
 } catch (Throwable $error) {
     error_log('Lỗi Ôn tập hôm nay: ' . $error->getMessage());
 }
-
-$tong_tu_on_tap = $tu_da_hoc + $tu_can_on_tap;
-$phan_tram_b1 = $tong_tu_on_tap > 0
-    ? min(100, round($tu_da_hoc * 100 / $tong_tu_on_tap))
-    : 100;
-$is_bước2_unlocked = $tong_tu_on_tap === 0 || $tu_da_hoc >= $tong_tu_on_tap;
 ?>
 
 <!DOCTYPE html>
@@ -83,61 +55,48 @@ $is_bước2_unlocked = $tong_tu_on_tap === 0 || $tu_da_hoc >= $tong_tu_on_tap;
         
         <div class="C_Ontaphomnay_infoBox">
             <p class="C_Ontaphomnay_subtitle">
-                Bạn có <strong><?php echo $tong_tu_on_tap; ?> từ</strong> cần ôn tập hôm nay, được chia thành 2 bước:
+                <?php if ($tu_can_on_tap > 0): ?>
+                    Bạn có <strong><?php echo $tu_can_on_tap; ?> từ</strong> cần ôn tập hôm nay. Dưới đây là các chủ đề đến hạn:
+                <?php else: ?>
+                    Tuyệt vời! Bạn không còn từ nào cần ôn tập hôm nay. Hãy nghỉ ngơi hoặc học chủ đề mới.
+                <?php endif; ?>
             </p>
         </div>
 
-        <!-- BƯỚC 1: HỌC FLASHCARD -->
-        <section class="C_Ontaphomnay_stepCard">
-            <div class="C_Ontaphomnay_badge C_Ontaphomnay_badgeActive">1</div>
-
-            <div class="C_Ontaphomnay_stepContent">
-                <h2 class="C_Ontaphomnay_stepTitle">Học FlashCard</h2>
-                <p class="C_Ontaphomnay_stepDesc">
-                    Ôn lại <?php echo $tong_tu_on_tap; ?> từ bằng thẻ ghi nhớ, đánh dấu đã nhớ / chưa nhớ.
-                </p>
-
-                <div class="C_Ontaphomnay_progressRow">
-                    <div class="C_Ontaphomnay_progressBar">
-                        <div class="C_Ontaphomnay_progressFill" style="width: <?php echo $phan_tram_b1; ?>%;"></div>
-                    </div>
-                    <span class="C_Ontaphomnay_progressText"><?php echo $tu_da_hoc; ?>/<?php echo $tong_tu_on_tap; ?></span>
-                </div>
-
-                <button type="button" id="C_Ontaphomnay_btnTiepTucHoc" class="C_Ontaphomnay_btnAction">
-                    Tiếp tục học
-                </button>
+        <?php if ($tu_can_on_tap > 0): ?>
+            <div class="C_Ontaphomnay_topicGrid">
+                <?php foreach ($dueTopics as $topic): ?>
+                    <?php 
+                        $overdueDays = (int) $topic['overdue_days'];
+                        $dueStatus = $overdueDays > 0 ? "Quá hạn $overdueDays ngày" : "Đến hạn hôm nay";
+                        $statusClass = $overdueDays > 0 ? 'is-overdue' : 'is-due';
+                    ?>
+                    <article class="C_Ontaphomnay_topicCard">
+                        <div class="C_Ontaphomnay_topicHeader">
+                            <span class="C_Ontaphomnay_topicCategory"><?php echo htmlspecialchars((string)$topic['category']); ?></span>
+                            <h2 class="C_Ontaphomnay_topicTitle"><?php echo htmlspecialchars((string)$topic['topic_name']); ?></h2>
+                        </div>
+                        <div class="C_Ontaphomnay_topicBody">
+                            <div class="C_Ontaphomnay_topicMeta">
+                                <strong><?php echo (int) $topic['due_word_count']; ?> từ</strong>
+                                <span class="C_Ontaphomnay_dueStatus <?php echo $statusClass; ?>"><?php echo $dueStatus; ?></span>
+                            </div>
+                            <!-- Truyền tham số topic_id và mode=review để Quiz chỉ lấy từ đến hạn -->
+                            <a href="C_Quiz.php?source=topic&id=<?php echo (int) $topic['topic_id']; ?>&mode=review" class="C_Ontaphomnay_btnAction C_Ontaphomnay_btnReview">
+                                Ôn tập ngay (Quiz)
+                            </a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
             </div>
-        </section>
-
-        <!-- BƯỚC 2: LÀM QUIZ ÔN TẬP -->
-        <section class="C_Ontaphomnay_stepCard <?php echo !$is_bước2_unlocked ? 'is-locked' : ''; ?>">
-            <div class="C_Ontaphomnay_badge <?php echo $is_bước2_unlocked ? 'C_Ontaphomnay_badgeActive' : ''; ?>">2</div>
-
-            <div class="C_Ontaphomnay_stepContent">
-                <h2 class="C_Ontaphomnay_stepTitle">Làm Quiz ôn tập</h2>
-                <p class="C_Ontaphomnay_stepDesc">
-                    Kiểm tra phản xạ và ghi nhớ sâu các từ vựng sau khi hoàn thành FlashCard.
-                </p>
-
-                <div class="C_Ontaphomnay_progressRow">
-                    <div class="C_Ontaphomnay_progressBar">
-                        <div class="C_Ontaphomnay_progressFill" style="width: 0%;"></div>
-                    </div>
-                    <span class="C_Ontaphomnay_progressText">0/<?php echo $tong_tu_on_tap; ?></span>
-                </div>
-
-                <?php if (!$is_bước2_unlocked): ?>
-                    <p class="C_Ontaphomnay_lockNote">
-                        🔒 Hoàn thành bước 1 để mở khóa
-                    </p>
-                <?php else: ?>
-                    <button type="button" id="C_Ontaphomnay_btnVaoQuiz" class="C_Ontaphomnay_btnAction">
-                        Bắt đầu làm Quiz
-                    </button>
-                <?php endif; ?>
+        <?php else: ?>
+            <div class="C_Ontaphomnay_emptyState">
+                <img src="../../assets/images/all_caught_up.svg" alt="Hoàn thành" onerror="this.style.display='none'">
+                <h2>Đã hoàn thành!</h2>
+                <p>Bạn đã hoàn tất tất cả lịch ôn tập của ngày hôm nay.</p>
+                <a href="../main/B_DanhSachChuDe.php" class="C_Ontaphomnay_btnAction">Khám phá chủ đề mới</a>
             </div>
-        </section>
+        <?php endif; ?>
 
         <!-- Ghi chú thuật toán Spaced Repetition -->
         <footer class="C_Ontaphomnay_bannerContainer">

@@ -5,6 +5,8 @@
     --color-primary: #2d7a56;
     --color-primary-light: #e8f5ed;
     --color-primary-dark: #1f4e38;
+    --color-secondary: #ffaa00;
+    --color-danger: #d9381e;
     --color-surface: #ffffff;
     --color-background: #edf6f0;
     --color-border: #dceae1;
@@ -15,8 +17,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-body,
-.C_Ontaphomnay_body {
+body, .C_Ontaphomnay_body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -26,26 +27,12 @@ body,
 }
 
 /* =========================================
-   BỐ CỤC CHUNG
-   ========================================= */
-.C_Ontaphomnay_header,
-.C_Ontaphomnay_progressRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.C_Ontaphomnay_main,
-.C_Ontaphomnay_badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* =========================================
    HEADER
    ========================================= */
 .C_Ontaphomnay_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 16px 40px;
     background-color: var(--color-white);
     border-bottom: 1px solid var(--color-border);
@@ -58,170 +45,161 @@ body,
     margin: 0;
     font-size: 24px;
     font-weight: 800;
+    color: var(--color-primary);
+    text-transform: uppercase;
     letter-spacing: -0.5px;
-    color: var(--color-primary-dark);
 }
 
 .C_Ontaphomnay_btnBack {
-    padding: 8px 18px;
-    background-color: var(--color-white);
-    border: 1px solid var(--color-border);
-    border-radius: 20px;
-    color: var(--color-text);
-    font-size: 14px;
-    font-weight: 600;
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: var(--color-text-muted);
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    padding: 8px 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .C_Ontaphomnay_btnBack:hover {
-    background-color: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark);
+    background-color: #f1f5f9;
+    color: var(--color-text);
 }
 
 /* =========================================
-   MAIN & STEP CARDS
+   MAIN CONTENT
    ========================================= */
 .C_Ontaphomnay_main {
-    flex-direction: column;
-    max-width: 680px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 20px 60px;
-}
-
-.C_Ontaphomnay_infoBox { width: 100%; margin-bottom: 24px; }
-.C_Ontaphomnay_subtitle { font-size: 16px; color: var(--color-text-muted); margin: 0; text-align: left; }
-.C_Ontaphomnay_subtitle strong { color: var(--color-primary-dark); }
-
-/* Thẻ bước ôn tập */
-.C_Ontaphomnay_stepCard {
-    width: 100%;
+    padding: 40px 20px;
     display: flex;
-    gap: 22px;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 20px;
-    padding: 28px 30px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
-    align-items: flex-start;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    flex-direction: column;
+    gap: 32px;
 }
 
-.C_Ontaphomnay_stepCard:hover {
-    transform: translateY(-3px);
-    border-color: var(--color-primary);
-    box-shadow: 0 8px 20px rgba(31, 45, 36, 0.08);
-}
-
-.C_Ontaphomnay_stepCard.is-locked {
-    opacity: 0.7;
-    background-color: #f7faf8;
-}
-.C_Ontaphomnay_stepCard.is-locked:hover {
-    transform: none;
-    border-color: var(--color-border);
-    box-shadow: 0 4px 16px rgba(31, 45, 36, 0.04);
-}
-
-/* Huy hiệu số thứ tự */
-.C_Ontaphomnay_badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    font-weight: 800;
-    font-size: 16px;
-    flex-shrink: 0;
-    background-color: var(--color-background);
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
-}
-
-.C_Ontaphomnay_badgeActive {
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-dark);
-    border-color: var(--color-primary);
-}
-
-.C_Ontaphomnay_stepContent { flex: 1; }
-.C_Ontaphomnay_stepTitle { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-.C_Ontaphomnay_stepDesc { margin: 0 0 16px; font-size: 14px; color: var(--color-text-muted); line-height: 1.5; }
-
-/* Progress bar trong card */
-.C_Ontaphomnay_progressRow {
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.C_Ontaphomnay_progressBar {
-    flex: 1;
-    height: 8px;
-    border-radius: 10px;
-    background-color: var(--color-border);
-    overflow: hidden;
-}
-
-.C_Ontaphomnay_progressFill {
-    height: 100%;
-    background-color: var(--color-primary);
-    border-radius: 10px;
-    transition: width 0.3s ease;
-}
-
-.C_Ontaphomnay_progressText {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-primary-dark);
-}
-
-/* Nút hành động */
-.C_Ontaphomnay_btnAction {
-    padding: 0 26px;
-    height: 44px;
-    background-color: var(--color-primary-light);
-    border: 1px solid var(--color-primary);
-    border-radius: 24px;
-    color: var(--color-primary-dark);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.C_Ontaphomnay_btnAction:hover {
-    background-color: #cce9d8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(31, 45, 36, 0.08);
-}
-
-.C_Ontaphomnay_lockNote {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-}
-
-/* =========================================
-   BANNER THÔNG TIN
-   ========================================= */
-.C_Ontaphomnay_bannerContainer { width: 100%; margin-top: 24px; }
-
-.C_Ontaphomnay_bannerBox {
+.C_Ontaphomnay_infoBox {
     background-color: var(--color-white);
-    border: 1px solid var(--color-border);
+    padding: 24px 32px;
     border-radius: 16px;
-    padding: 16px 22px;
-    font-size: 13px;
-    color: var(--color-text-muted);
-    line-height: 1.6;
-    box-shadow: 0 4px 12px rgba(31, 45, 36, 0.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     text-align: center;
 }
 
+.C_Ontaphomnay_subtitle {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--color-text);
+}
+
+.C_Ontaphomnay_subtitle strong {
+    color: var(--color-primary);
+    font-size: 1.25rem;
+}
+
 /* =========================================
-   CẤU HÌNH SRS
+   TOPIC GRID
    ========================================= */
+.C_Ontaphomnay_topicGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.C_Ontaphomnay_topicCard {
+    background-color: var(--color-white);
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.C_Ontaphomnay_topicCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(45, 122, 86, 0.1);
+}
+
+.C_Ontaphomnay_topicHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.C_Ontaphomnay_topicCategory {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.C_Ontaphomnay_topicTitle {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.4;
+}
+
+.C_Ontaphomnay_topicBody {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: auto;
+}
+
+.C_Ontaphomnay_topicMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.C_Ontaphomnay_dueStatus {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.C_Ontaphomnay_dueStatus.is-due {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+.C_Ontaphomnay_dueStatus.is-overdue {
+    background-color: #fef2f2;
+    color: var(--color-danger);
+}
+
+/* =========================================
+   BUTTONS
+   ========================================= */
+.C_Ontaphomnay_btnAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 100%;
+}
+
+.C_Ontaphomnay_btnAction:hover {
+    background-color: var(--color-primary-dark);
+}
+
 .C_Ontaphomnay_btnText {
     background: none;
     border: none;
@@ -229,49 +207,97 @@ body,
     font-weight: 600;
     cursor: pointer;
     text-decoration: underline;
-    margin-left: 8px;
-    font-size: 13px;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+.C_Ontaphomnay_emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: var(--color-white);
+    border-radius: 16px;
+}
+
+.C_Ontaphomnay_emptyState img {
+    width: 120px;
+    height: auto;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+.C_Ontaphomnay_emptyState h2 {
+    margin: 0 0 12px 0;
+    color: var(--color-primary);
+}
+
+.C_Ontaphomnay_emptyState p {
+    color: var(--color-text-muted);
+    margin: 0 0 32px 0;
+}
+
+.C_Ontaphomnay_emptyState .C_Ontaphomnay_btnAction {
+    width: auto;
+}
+
+/* =========================================
+   SRS BANNER & FORM
+   ========================================= */
+.C_Ontaphomnay_bannerContainer {
+    margin-top: 40px;
+}
+
+.C_Ontaphomnay_bannerBox {
+    background-color: #fff9e6;
+    border: 1px solid #ffe499;
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 0.95rem;
+    color: #8c6b00;
 }
 
 .C_Ontaphomnay_srsPanel {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px dashed var(--color-border);
-    text-align: left;
+    border-top: 1px solid #ffe499;
 }
 
 .C_Ontaphomnay_srsForm {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    max-width: 400px;
 }
 
-.C_Ontaphomnay_srsForm .form-group {
+.form-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
-.C_Ontaphomnay_srsForm label {
+.form-group label {
     font-weight: 600;
     color: var(--color-text);
 }
 
-.C_Ontaphomnay_srsForm input[type="number"] {
+.form-group input {
     padding: 8px 12px;
     border: 1px solid var(--color-border);
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 1rem;
 }
 
-.C_Ontaphomnay_srsForm small {
+.form-group small {
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: 0.85rem;
 }
 
 .srs-message {
-    font-size: 13px;
-    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
-.srs-message.success { color: #2d7a56; }
-.srs-message.error { color: #d32f2f; }
+
+.srs-message.success { color: var(--color-primary); }
+.srs-message.error { color: var(--color-danger); }

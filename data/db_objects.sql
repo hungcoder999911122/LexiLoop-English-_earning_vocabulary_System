@@ -32,6 +32,7 @@ DROP VIEW IF EXISTS `vw_learning_items`;
 DROP VIEW IF EXISTS `vw_learning_sources`;
 DROP VIEW IF EXISTS `vw_daily_vocab_list`;
 DROP VIEW IF EXISTS `vw_user_progress`;
+DROP VIEW IF EXISTS `vw_srs_due_topics`;
 DROP FUNCTION IF EXISTS `fn_get_current_streak`;
 DROP FUNCTION IF EXISTS `fn_calculate_retention_rate`;
 DROP PROCEDURE IF EXISTS `sp_add_new_vocabulary`;
@@ -94,6 +95,21 @@ FROM `user_vocab_progress` p
 JOIN `Users` u ON u.`userID` = p.`user_id`
 JOIN `vocabulary` v ON v.`id` = p.`vocabulary_id`
 LEFT JOIN `Topics` t ON t.`topicID` = v.`topic_id`$$
+
+-- Aggregates due vocabulary for SRS review by topic.
+CREATE VIEW `vw_srs_due_topics` AS
+SELECT 
+    up.`user_id`,
+    up.`topic_id`,
+    up.`topic_name`,
+    tc.`category`,
+    COUNT(up.`vocabulary_id`) AS `due_word_count`,
+    MIN(up.`next_review_date`) AS `oldest_due_date`,
+    DATEDIFF(CURRENT_DATE, MIN(up.`next_review_date`)) AS `overdue_days`
+FROM `vw_user_progress` up
+JOIN `Topics` tc ON up.`topic_id` = tc.`topicID`
+WHERE up.`next_review_date` <= CURRENT_DATE
+GROUP BY up.`user_id`, up.`topic_id`, up.`topic_name`, tc.`category`$$
 
 -- Stable read contracts used while legacy pages are migrated away from tables.
 CREATE VIEW `vw_users` AS

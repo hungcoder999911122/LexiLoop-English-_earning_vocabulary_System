@@ -11,6 +11,7 @@ if (empty($_SESSION['C_learning_csrf'])) {
 $source = $_GET['source'] ?? 'topic';
 $source = in_array($source, ['topic', 'set', 'review'], true) ? $source : 'topic';
 $source_id = filter_var($_GET['id'] ?? $_GET['topic_id'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
+$mode = $_GET['mode'] ?? 'practice';
 $limit_option = (string) ($_GET['limit'] ?? '10');
 if (!in_array($limit_option, ['5', '10', '20', 'all'], true)) {
     $limit_option = '10';
@@ -43,12 +44,25 @@ try {
     }
 
     if ($source === 'topic') {
-        $topic_words = dbSelectView(
-            $link,
-            'SELECT vocabulary_id AS id, word, meaning FROM vw_learning_items WHERE source_type = ? AND source_id = ?',
-            'si',
-            [$source, $source_id]
-        );
+        if ($mode === 'review') {
+            $topic_words = dbSelectView(
+                $link,
+                'SELECT i.vocabulary_id AS id, i.word, i.meaning 
+                 FROM vw_learning_items i
+                 JOIN vw_user_progress p ON i.vocabulary_id = p.vocabulary_id
+                 WHERE i.source_type = ? AND i.source_id = ? AND p.user_id = ? AND p.next_review_date <= CURRENT_DATE',
+                'sii',
+                [$source, $source_id, $user_id]
+            );
+            $ten_chu_de = "Ôn tập: " . $ten_chu_de;
+        } else {
+            $topic_words = dbSelectView(
+                $link,
+                'SELECT vocabulary_id AS id, word, meaning FROM vw_learning_items WHERE source_type = ? AND source_id = ?',
+                'si',
+                [$source, $source_id]
+            );
+        }
     } elseif ($source === 'set') {
         $topic_words = dbSelectView(
             $link,
